@@ -28,9 +28,9 @@ Requirements for initial research validation. Each maps to roadmap phases.
 
 ### Advanced
 
-- [ ] **ADV-01**: G₂-equivariant neural layer implementation parameterized via G₂ embedding in SO(7), with numerical equivariance verification (apply random G₂ transform before vs after layer, measure deviation), tested on tasks with known G₂ symmetry
-- [ ] **ADV-02**: Hyperboloid-octonionic hybrid model implements Option B from thesis (Lorentzian inner product, hyperboloid H⁷), with empirical characterization of projection stability (|project(a*b) - project(a) *_H project(b)|), tested on hierarchical data (trees, DAGs) against Poincaré embeddings baseline
-- [ ] **ADV-03**: Fano plane subalgebra decomposition analysis of trained octonionic representations — project learned weights onto 7 quaternionic subalgebras, measure subalgebra activity distribution, test whether subalgebras specialize on sub-tasks via ablation
+- [ ] **ADV-01**: G2-equivariant neural layer implementation parameterized via G2 embedding in SO(7), with numerical equivariance verification (apply random G2 transform before vs after layer, measure deviation), tested on tasks with known G2 symmetry
+- [ ] **ADV-02**: Hyperboloid-octonionic hybrid model implements Option B from thesis (Lorentzian inner product, hyperboloid H7), with empirical characterization of projection stability (|project(a*b) - project(a) *_H project(b)|), tested on hierarchical data (trees, DAGs) against Poincare embeddings baseline
+- [ ] **ADV-03**: Fano plane subalgebra decomposition analysis of trained octonionic representations -- project learned weights onto 7 quaternionic subalgebras, measure subalgebra activity distribution, test whether subalgebras specialize on sub-tasks via ablation
 - [ ] **ADV-04**: Associator-aware architecture design that uses the associator [a,b,c] = (ab)c - a(bc) as an informative signal (attention-like, regularization, or gating mechanism), demonstrating that non-associativity carries useful information beyond being a nuisance
 
 ## v2 Requirements
@@ -45,8 +45,8 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Exotic Extensions
 
-- **EXT-01**: Option C exotic octonionic hyperbolic plane (𝕆H²) with F₄ isometry group
-- **EXT-02**: Jordan algebra J₃(𝕆) extension with F₄ automorphism group
+- **EXT-01**: Option C exotic octonionic hyperbolic plane (OH2) with F4 isometry group
+- **EXT-02**: Jordan algebra J3(O) extension with F4 automorphism group
 - **EXT-03**: Octonionic transformer / attention mechanism adaptation
 
 ## Out of Scope
@@ -67,26 +67,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| FOUND-03 | — | Pending |
-| FOUND-04 | — | Pending |
-| BASE-01 | — | Pending |
-| BASE-02 | — | Pending |
-| BASE-03 | — | Pending |
-| BASE-04 | — | Pending |
-| CLAIM-01 | — | Pending |
-| CLAIM-02 | — | Pending |
-| ADV-01 | — | Pending |
-| ADV-02 | — | Pending |
-| ADV-03 | — | Pending |
-| ADV-04 | — | Pending |
+| FOUND-01 | Phase 1: Octonionic Algebra | Pending |
+| FOUND-02 | Phase 2: GHR Calculus | Pending |
+| FOUND-03 | Phase 4: Numerical Stability | Pending |
+| FOUND-04 | Phase 5: Optimization Landscape (GO/NO-GO) | Pending |
+| BASE-01 | Phase 3: Baseline Implementations | Pending |
+| BASE-02 | Phase 3: Baseline Implementations | Pending |
+| BASE-03 | Phase 3: Baseline Implementations | Pending |
+| BASE-04 | Phase 7: Density & Geometric Claims | Pending |
+| CLAIM-01 | Phase 6: Reversibility Claim | Pending |
+| CLAIM-02 | Phase 7: Density & Geometric Claims | Pending |
+| ADV-01 | Phase 8: G2 Equivariance & Hyperbolic Hybrid | Pending |
+| ADV-02 | Phase 8: G2 Equivariance & Hyperbolic Hybrid | Pending |
+| ADV-03 | Phase 9: Associator & Subalgebra Analysis | Pending |
+| ADV-04 | Phase 9: Associator & Subalgebra Analysis | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
