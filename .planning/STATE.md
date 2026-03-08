@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02 autograd Functions and custom gradcheck
-last_updated: "2026-03-08T18:33:33Z"
-last_activity: 2026-03-08 -- Completed 02-02 autograd Functions, custom gradcheck, SC-1 verified
+stopped_at: Completed 02-04 analyticity, LR scaling, GPU parity, public API
+last_updated: "2026-03-08T18:44:30Z"
+last_activity: 2026-03-08 -- Completed 02-04 analyticity conditions, LR scaling, GPU parity (SC-4), complete API
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 2 of 9 (GHR Calculus)
-Plan: 2 of 4 in current phase
-Status: Executing
-Last activity: 2026-03-08 -- Completed 02-02 autograd Functions, custom gradcheck, SC-1 verified
+Plan: 4 of 4 in current phase
+Status: Phase Complete
+Last activity: 2026-03-08 -- Completed 02-04 analyticity conditions, LR scaling, GPU parity (SC-4), complete API
 
-Progress: [████████--] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 9min
-- Total execution time: 1.07 hours
+- Total plans completed: 10
+- Average duration: 8min
+- Total execution time: 1.32 hours
 
 **By Phase:**
 
@@ -51,10 +51,11 @@ Progress: [████████--] 80%
 | 01-05 | 1 | 5min | 5min |
 | 02-01 | 1 | 12min | 12min |
 | 02-02 | 1 | 8min | 8min |
+| 02-04 | 1 | 7min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (4min), 01-05 (5min), 02-01 (12min), 02-02 (8min)
-- Trend: Autograd Functions plan (8min) faster than Jacobian derivation (12min)
+- Last 5 plans: 01-05 (5min), 02-01 (12min), 02-02 (8min), 02-04 (7min)
+- Trend: Analyticity/LR/GPU plan (7min) continues efficient execution
 
 *Updated after each plan completion*
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 02-02]: Cross product backward zeros grad_output[..., 0] to exclude C[i,j,0] terms
 - [Phase 02-02]: Inner product Function returns scalar shape [] matching torch.sum convention
 - [Phase 02-02]: Exp/log backward use sqrt(r_sq + 1e-30) for sqrt gradient stability
+- [Phase 02-04]: GPU/CPU parity tolerance 1e-12 at float64 (~4500x machine epsilon for ROCm)
+- [Phase 02-04]: CR analyticity extracts putative c from J[:, 0], verifies J == L_c via Frobenius norm
+- [Phase 02-04]: LR scaling uses simple 1/K inverse heuristic (K = octonionic/real gradient norm ratio)
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T18:33:33Z
-Stopped at: Completed 02-02-PLAN.md
-Resume file: .planning/phases/02-ghr-calculus/02-02-SUMMARY.md
+Last session: 2026-03-08T18:44:30Z
+Stopped at: Completed 02-04-PLAN.md (Phase 2 complete)
+Resume file: .planning/phases/02-ghr-calculus/02-04-SUMMARY.md
