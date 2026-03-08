@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-03 AlgebraNetwork skeleton and RNN cells
-last_updated: "2026-03-08T23:38:42.832Z"
-last_activity: 2026-03-08 -- Completed 03-04 training utility, Optuna HP search, statistical testing, plotting
+stopped_at: Completed 03-05 comparison runner and experiment management
+last_updated: "2026-03-08T23:53:29Z"
+last_activity: 2026-03-08 -- Completed 03-05 comparison runner and experiment management
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 16
-  completed_plans: 14
-  percent: 81
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 3 of 9 (Baseline Implementations)
-Plan: 5 of 6 in current phase
+Plan: 6 of 6 in current phase
 Status: In Progress
-Last activity: 2026-03-08 -- Completed 03-04 training utility, Optuna HP search, statistical testing, plotting
+Last activity: 2026-03-08 -- Completed 03-05 comparison runner and experiment management
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 8min
-- Total execution time: 1.85 hours
+- Total plans completed: 14
+- Average duration: 9min
+- Total execution time: 2.07 hours
 
 **By Phase:**
 
@@ -57,9 +57,11 @@ Progress: [████████░░] 81%
 | 03-02 | 1 | 9min | 9min |
 | 03-04 | 1 | 11min | 11min |
 
+| 03-05 | 1 | 13min | 13min |
+
 **Recent Trend:**
-- Last 5 plans: 02-04 (7min), 02-03 (13min), 03-01 (12min), 03-02 (9min), 03-04 (11min)
-- Trend: Training infrastructure plan (11min) consistent with Phase 3 complexity
+- Last 5 plans: 02-03 (13min), 03-01 (12min), 03-02 (9min), 03-04 (11min), 03-05 (13min)
+- Trend: Comparison runner plan (13min) consistent with Phase 3 complexity
 
 *Updated after each plan completion*
 | Phase 03 P03 | 10min | 2 tasks | 5 files |
@@ -122,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase 03]: QuaternionLSTMCell/OctonionLSTMCell gates derived from real component of algebra computation, broadcasting scalar gates across dims
 - [Phase 03]: AlgebraNetwork uses base_hidden * multiplier for hidden width, with layer factories dispatching to algebra-specific modules
 - [Phase 03]: Conv2D input handling: real channels replicated across algebra dims for non-real algebras
+- [Phase 03-05]: _build_simple_mlp upgraded to _SimpleAlgebraMLP class for trainable param-matched models
+- [Phase 03-05]: Comparison runner uses first algebra in config as reference for param matching (not hardcoded octonion)
+- [Phase 03-05]: Tests use input_dim=32 and ref_hidden=25 to ensure width steps <1% of total params for matching
 
 ### Pending Todos
 
@@ -135,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T23:38:42.830Z
-Stopped at: Completed 03-03 AlgebraNetwork skeleton and RNN cells
+Last session: 2026-03-08T23:53:29Z
+Stopped at: Completed 03-05 comparison runner and experiment management
 Resume file: None
