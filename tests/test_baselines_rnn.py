@@ -241,8 +241,9 @@ class TestGradientFlow:
 
     def test_rnn_cell_gradient_flow_real(self, real_cell):
         x = torch.randn(B, INPUT_SIZE)
-        h = torch.zeros(B, HIDDEN_SIZE)
-        c = torch.zeros(B, HIDDEN_SIZE)
+        # Use non-zero initial state so weight_hh gets gradient
+        h = torch.randn(B, HIDDEN_SIZE) * 0.1
+        c = torch.randn(B, HIDDEN_SIZE) * 0.1
         h_t, c_t = real_cell(x, (h, c))
         loss = h_t.sum()
         loss.backward()
@@ -252,7 +253,7 @@ class TestGradientFlow:
 
     def test_rnn_cell_gradient_flow_complex(self, complex_cell):
         x = torch.randn(B, INPUT_SIZE, 2)
-        h = torch.zeros(B, HIDDEN_SIZE, 2)
+        h = torch.randn(B, HIDDEN_SIZE, 2) * 0.1
         h_t = complex_cell(x, h)
         loss = h_t.sum()
         loss.backward()
