@@ -11,6 +11,12 @@ dependencies = [
     "torch>=2.7",
 ]
 
+[tool.uv]
+# torch and triton are provided by the ROCm dev container (/opt/venv/).
+# Prevent uv from installing PyPI's CUDA builds which shadow the ROCm ones.
+# The container's packages are made visible via .pth file (see Containerfile).
+exclude-dependencies = ["torch", "triton"]
+
 [dependency-groups]
 dev = [
     "pytest",

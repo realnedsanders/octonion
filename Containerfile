@@ -20,6 +20,11 @@ ENV PATH="/root/.local/bin:${PATH}"
 # uv requires copy mode inside containers with mounted volumes
 ENV UV_LINK_MODE=copy
 
+# Make ROCm PyTorch (installed in /opt/venv/) visible to project venvs.
+# uv creates .venv/ which can't see /opt/venv/lib/python3.12/site-packages/.
+# PYTHONPATH ensures all Python processes (including uv run) find the ROCm torch.
+ENV PYTHONPATH="/opt/venv/lib/python3.12/site-packages"
+
 WORKDIR /workspace
 
 # Project source is mounted via docker-compose, not copied

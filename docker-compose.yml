@@ -15,7 +15,8 @@ services:
       - uv-cache:/root/.cache/uv
     devices:
       - "/dev/kfd"
-      - "/dev/dri"
+      - "/dev/dri/card1"
+      - "/dev/dri/renderD128"
     group_add:
       - video
       - render
@@ -24,8 +25,6 @@ services:
     ipc: host
     stdin_open: true
     tty: true
-    environment:
-      - HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION:-}
     working_dir: /workspace
     command: bash
 
