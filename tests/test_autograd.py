@@ -1,9 +1,14 @@
-"""Tests for octonionic autograd Functions and custom gradient checking.
+"""Tests for octonionic autograd Functions, custom gradient checking, and SC-1.
 
 Verifies that torch.autograd.Function subclasses for all 7 octonionic
 primitives produce correct forward output, correct backward gradients,
 pass torch.autograd.gradcheck, and support double backward (create_graph=True)
 via gradgradcheck.
+
+Also tests the custom octonion_gradcheck utility that reports per-component
+errors and validates both Wirtinger derivatives.
+
+SC-1: Single OctonionLinear layer gradient check at float64 with rel error < 1e-5.
 
 All gradient checks use float64 for finite-difference precision.
 Inputs are kept in [-2, 2] range for numerical stability of transcendental functions.
@@ -408,3 +413,143 @@ class TestBatchedAutograd:
         loss.backward()
         assert a.grad is not None and a.grad.shape == (3, 8)
         assert b.grad is not None and b.grad.shape == (3, 8)
+
+
+# =============================================================================
+# Custom octonion gradcheck tests
+# =============================================================================
+
+from octonion.calculus._gradcheck import octonion_gradcheck, octonion_gradgradcheck
+
+
+class TestOctonionGradcheck:
+    """Test the custom octonion gradcheck utility on all 7 primitives."""
+
+    def test_gradcheck_mul(self) -> None:
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(OctonionMulFunction.apply, (a, b))
+        assert result["passed"] is True
+        assert "per_component_errors" in result
+        assert "wirtinger_passed" in result
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_exp(self) -> None:
+        o = (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
+        result = octonion_gradcheck(OctonionExpFunction.apply, (o,))
+        assert result["passed"] is True
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_log(self) -> None:
+        o = (torch.randn(8, dtype=torch.float64) + 1.0).requires_grad_(True)
+        result = octonion_gradcheck(OctonionLogFunction.apply, (o,))
+        assert result["passed"] is True
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_conjugate(self) -> None:
+        o = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(OctonionConjugateFunction.apply, (o,))
+        assert result["passed"] is True
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_inverse(self) -> None:
+        o = (torch.randn(8, dtype=torch.float64) + 1.0).requires_grad_(True)
+        result = octonion_gradcheck(OctonionInverseFunction.apply, (o,))
+        assert result["passed"] is True
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_inner_product(self) -> None:
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(OctonionInnerProductFunction.apply, (a, b))
+        assert result["passed"] is True
+        # Inner product returns scalar, Wirtinger check not applicable for 1D output
+        # but the function should still report on what it can
+
+    def test_gradcheck_cross_product(self) -> None:
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(OctonionCrossProductFunction.apply, (a, b))
+        assert result["passed"] is True
+        assert result["wirtinger_passed"] is True
+
+    def test_gradcheck_reports_per_component_errors(self) -> None:
+        """Verify that per-component errors are reported for each input."""
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(OctonionMulFunction.apply, (a, b))
+        # Should have per-component error info
+        assert len(result["per_component_errors"]) == 2  # two inputs
+        for comp_errors in result["per_component_errors"]:
+            assert len(comp_errors) == 8  # 8 components per octonion input
+
+
+class TestOctonionGradcheckDetectsWrong:
+    """Verify gradcheck detects wrong backward implementations."""
+
+    def test_gradcheck_detects_wrong_backward(self) -> None:
+        """Create a deliberately wrong backward and verify detection."""
+
+        class WrongMulFunction(torch.autograd.Function):
+            @staticmethod
+            def forward(ctx, a, b):
+                ctx.save_for_backward(a, b)
+                return octonion_mul(a, b)
+
+            @staticmethod
+            def backward(ctx, grad_output):
+                a, b = ctx.saved_tensors
+                # Deliberately wrong: swap a and b in gradient computation
+                return grad_output * 2.0, grad_output * 3.0
+
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradcheck(WrongMulFunction.apply, (a, b))
+        assert result["passed"] is False
+
+
+class TestOctonionGradgradcheck:
+    """octonion_gradgradcheck passes for mul and exp (create_graph=True)."""
+
+    def test_gradgradcheck_mul(self) -> None:
+        a = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        b = torch.randn(8, dtype=torch.float64, requires_grad=True)
+        result = octonion_gradgradcheck(OctonionMulFunction.apply, (a, b))
+        assert result["passed"] is True
+
+    def test_gradgradcheck_exp(self) -> None:
+        o = (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
+        result = octonion_gradgradcheck(OctonionExpFunction.apply, (o,))
+        assert result["passed"] is True
+
+
+# =============================================================================
+# SC-1: OctonionLinear single layer gradient check
+# =============================================================================
+
+
+from octonion._linear import OctonionLinear
+
+
+class TestGradcheckOctonionLinear:
+    """SC-1: Single OctonionLinear layer gradient check at float64, rel error < 1e-5."""
+
+    def test_gradcheck_octonion_linear(self) -> None:
+        """Create an OctonionLinear(dtype=float64) layer, verify gradient check passes.
+
+        This is Success Criterion 1 from the ROADMAP.
+        """
+        layer = OctonionLinear(dtype=torch.float64)
+
+        x = torch.randn(8, dtype=torch.float64, requires_grad=True)
+
+        result = octonion_gradcheck(layer.forward, (x,))
+
+        assert result["passed"] is True, (
+            f"SC-1 FAILED: OctonionLinear gradcheck failed.\n"
+            f"max_abs_error: {result['max_abs_error']:.2e}\n"
+            f"max_rel_error: {result['max_rel_error']:.2e}"
+        )
+        assert result["max_rel_error"] < 1e-5, (
+            f"SC-1 FAILED: rel error {result['max_rel_error']:.2e} >= 1e-5"
+        )
