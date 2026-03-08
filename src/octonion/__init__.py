@@ -1,4 +1,10 @@
-"""Octonion: PyTorch-native octonionic algebra for ML research."""
+"""Octonion: PyTorch-native octonionic algebra for ML research.
+
+The ``octonion.calculus`` submodule provides GHR differentiation tools::
+
+    from octonion import calculus
+    from octonion.calculus import ghr_derivative, jacobian_mul, octonion_gradcheck
+"""
 
 from octonion._cayley_dickson import cayley_dickson_mul
 from octonion._fano import FANO_PLANE, FanoPlane
