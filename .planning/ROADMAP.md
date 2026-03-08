@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [ ] 01-00-PLAN.md — Development container setup (ROCm PyTorch, uv, GPU passthrough)
-- [ ] 01-01-PLAN.md — Project scaffolding, core multiplication engine (Fano plane + Cayley-Dickson), and test infrastructure
+- [x] 01-01-PLAN.md — Project scaffolding, core multiplication engine (Fano plane + Cayley-Dickson), and test infrastructure
 - [ ] 01-02-PLAN.md — Octonion class, R/C/H tower types, random generators, and FOUND-01 property-based test suite
 - [ ] 01-03-PLAN.md — Extended operations, linear algebra, OctonionLinear, batch tests, edge cases, and benchmarks
 
@@ -173,7 +173,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Octonionic Algebra | 0/4 | Planning complete | - |
+| 1. Octonionic Algebra | 2/4 | In progress | - |
 | 2. GHR Calculus | 0/? | Not started | - |
 | 3. Baseline Implementations | 0/? | Not started | - |
 | 4. Numerical Stability | 0/? | Not started | - |
