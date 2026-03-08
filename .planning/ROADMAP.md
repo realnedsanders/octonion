@@ -56,7 +56,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — GHR Wirtinger formalism, analytic Jacobians for all 7 primitives, numeric Jacobian utility
+- [x] 02-01-PLAN.md — GHR Wirtinger formalism, analytic Jacobians for all 7 primitives, numeric Jacobian utility
 - [ ] 02-02-PLAN.md — Autograd Functions for all 7 primitives, custom octonion gradcheck, SC-1 single-layer verification
 - [ ] 02-03-PLAN.md — CompositionBuilder, parenthesization-aware chain rule, exhaustive testing (SC-2), naive-vs-correct demo (SC-3)
 - [ ] 02-04-PLAN.md — Analyticity conditions, LR scaling heuristic, GPU/CPU parity (SC-4), public API finalization
@@ -178,7 +178,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
-| 2. GHR Calculus | 0/4 | Planned | - |
+| 2. GHR Calculus | 1/4 | In progress | - |
 | 3. Baseline Implementations | 0/? | Not started | - |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |

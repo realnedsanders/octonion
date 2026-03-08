@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-08T09:50:44.403Z"
-last_activity: 2026-03-08 -- Completed 01-05 Gap closure (dtype promotion, raw tensor coercion)
+stopped_at: Completed 02-01 GHR calculus foundation
+last_updated: "2026-03-08T18:21:52Z"
+last_activity: 2026-03-08 -- Completed 02-01 GHR Wirtinger formalism and analytic Jacobians
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 10
+  completed_plans: 7
+  percent: 70
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Determine empirically whether octonionic representations provide measurable advantages over quaternionic, complex, and real-valued alternatives for geometric reasoning in ML
-**Current focus:** Phase 1: Octonionic Algebra
+**Current focus:** Phase 2: GHR Calculus
 
 ## Current Position
 
-Phase: 1 of 9 (Octonionic Algebra)
-Plan: 6 of 6 in current phase (PHASE COMPLETE)
+Phase: 2 of 9 (GHR Calculus)
+Plan: 1 of 4 in current phase
 Status: Executing
-Last activity: 2026-03-08 -- Completed 01-05 Gap closure (dtype promotion, raw tensor coercion)
+Last activity: 2026-03-08 -- Completed 02-01 GHR Wirtinger formalism and analytic Jacobians
 
-Progress: [██████████] 100%
+Progress: [███████---] 70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 8min
-- Total execution time: 0.73 hours
+- Total plans completed: 7
+- Average duration: 9min
+- Total execution time: 0.93 hours
 
 **By Phase:**
 
@@ -49,10 +49,11 @@ Progress: [██████████] 100%
 | 01-03 | 1 | 13min | 13min |
 | 01-04 | 1 | 4min | 4min |
 | 01-05 | 1 | 5min | 5min |
+| 02-01 | 1 | 12min | 12min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (16min), 01-03 (13min), 01-04 (4min), 01-05 (5min)
-- Trend: gap closure plans faster (4-5min) than full implementation plans (13-16min)
+- Last 5 plans: 01-03 (13min), 01-04 (4min), 01-05 (5min), 02-01 (12min)
+- Trend: Phase 2 Jacobian derivation plan (12min) comparable to Phase 1 implementation plans
 
 *Updated after each plan completion*
 
@@ -85,6 +86,10 @@ Recent decisions affecting current work:
 - [Phase 01]: OctonionLinear default dtype changed from float64 to float32 (PyTorch convention)
 - [Phase 01]: octonion_mul uses torch.promote_types for mixed-dtype safety
 - [Phase 01]: exp/log use isinstance guard for raw tensor auto-coercion to Octonion
+- [Phase 02-01]: Numeric Jacobian eps=1e-5 for tests (reduces roundoff on adversarial Hypothesis inputs)
+- [Phase 02-01]: Test tolerances: atol=1e-7 standard, 1e-6 transcendental (100x tighter than 1e-5 criterion)
+- [Phase 02-01]: GHR Wirtinger pair uses 1/8 normalization (octonionic extension of quaternionic 1/4)
+- [Phase 02-01]: Cross product Jacobian via imaginary-block extraction from mul Jacobian
 
 ### Pending Todos
 
@@ -98,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T09:50:44.401Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-ghr-calculus/02-CONTEXT.md
+Last session: 2026-03-08T18:21:52Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: .planning/phases/02-ghr-calculus/02-01-SUMMARY.md
