@@ -5,6 +5,7 @@ import torch
 
 from octonion import Octonion, UnitOctonion, PureOctonion, associator
 from octonion._multiplication import octonion_mul
+from octonion._random import random_octonion
 
 
 class TestOctonionConstruction:
@@ -354,3 +355,41 @@ class TestPureOctonion:
         data = torch.tensor([5.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0], dtype=torch.float64)
         p = PureOctonion(data)
         assert p.real.item() == 0.0
+
+
+class TestOctonionCopyConstructor:
+    """Octonion(Octonion(...)) copy constructor and __str__ noise suppression."""
+
+    def test_copy_constructor(self) -> None:
+        """Octonion(Octonion(t)) returns Octonion with identical components."""
+        t = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64)
+        inner = Octonion(t)
+        outer = Octonion(inner)
+        assert isinstance(outer, Octonion)
+        assert torch.equal(outer.components, t)
+
+    def test_copy_constructor_from_random(self) -> None:
+        """Octonion(random_octonion()) succeeds without error."""
+        a = random_octonion()
+        wrapped = Octonion(a)
+        assert isinstance(wrapped, Octonion)
+        assert torch.equal(wrapped.components, a.components)
+
+    def test_str_suppresses_float32_noise(self) -> None:
+        """str() of near-identity (a*a.inverse()) suppresses float32 noise."""
+        data = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float32)
+        a = Octonion(data)
+        identity_approx = a * a.inverse()
+        s = str(identity_approx)
+        # Should show "1.0" with no imaginary noise terms
+        assert "e" not in s, f"Float32 noise leaked into display: {s}"
+
+    def test_str_preserves_real_values(self) -> None:
+        """str() of exact non-zero values still displays correctly."""
+        data = torch.tensor([1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0], dtype=torch.float64)
+        o = Octonion(data)
+        s = str(o)
+        assert "e1" in s, f"Expected e1 in display: {s}"
+        assert "e7" in s, f"Expected e7 in display: {s}"
+        assert "2.0" in s
+        assert "3.0" in s
