@@ -33,6 +33,8 @@ class Octonion(NormedDivisionAlgebra):
     __slots__ = ("_data",)
 
     def __init__(self, data: torch.Tensor) -> None:
+        if isinstance(data, Octonion):
+            data = data.components
         if data.shape[-1] != 8:
             raise ValueError(
                 f"Octonion requires last dimension to be 8, got shape {data.shape}. "
@@ -226,12 +228,16 @@ class Octonion(NormedDivisionAlgebra):
             # Batched: show shape summary like PyTorch tensors
             return f"Octonion(shape={list(self._data.shape[:-1])}, dtype={self._data.dtype})"
 
+        # Dtype-aware display threshold: suppress near-zero noise
+        # float32 eps ~1.2e-7, float64 eps ~2.2e-16
+        atol = 1e-7 if self._data.dtype == torch.float32 else 1e-14
+
         parts = []
         for i in range(8):
             val = self._data[i].item()
             if i == 0:
                 parts.append(f"{val}")
-            elif val != 0.0:
+            elif abs(val) > atol:
                 sign = " + " if val > 0 else " - "
                 parts.append(f"{sign}{abs(val)}*{_BASIS_LABELS[i]}")
         return "".join(parts) if parts else "0.0"
