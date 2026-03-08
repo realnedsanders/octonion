@@ -51,12 +51,26 @@ class TestOctonionExp:
             )
 
     def test_log_exp_roundtrip_pure_octonions(self) -> None:
-        """log(exp(a)) ~ a for pure octonions within 1e-10."""
+        """log(exp(a)) ~ a for pure octonions with ||v|| < pi within 1e-10.
+
+        The log/exp roundtrip works only within the principal branch:
+        ||imaginary part|| < pi (arccos range constraint).
+        """
+        import math
+
         torch.manual_seed(42)
         for _ in range(20):
-            # Pure octonion: real part = 0
+            # Pure octonion: real part = 0, imaginary norm < pi
             data = torch.zeros(8, dtype=torch.float64)
-            data[1:] = torch.randn(7, dtype=torch.float64) * 2.0  # moderate magnitude
+            v = torch.randn(7, dtype=torch.float64)
+            # Scale so ||v|| is in (0.1, pi - 0.1) for safety margin
+            v_norm = torch.linalg.norm(v)
+            if v_norm < 1e-10:
+                v[0] = 1.0
+                v_norm = torch.linalg.norm(v)
+            target_norm = 0.1 + torch.rand(1).item() * (math.pi - 0.2)
+            v = v / v_norm * target_norm
+            data[1:] = v
             a = Octonion(data)
             result = octonion_log(octonion_exp(a))
             assert torch.allclose(result.components, a.components, atol=1e-10), (
@@ -149,13 +163,18 @@ class TestInnerProduct:
 class TestCrossProduct:
     """Tests for the 7D cross product on pure imaginary octonions."""
 
-    @given(a=octonions(), b=octonions())
+    @given(a=octonions(min_value=-1e3, max_value=1e3), b=octonions(min_value=-1e3, max_value=1e3))
     @settings(max_examples=200)
     def test_cross_product_antisymmetry(self, a: Octonion, b: Octonion) -> None:
-        """cross_product(a, b) = -cross_product(b, a) (antisymmetry)."""
+        """cross_product(a, b) = -cross_product(b, a) (antisymmetry).
+
+        Uses looser tolerance (1e-9) because cross product involves
+        multiplication of components that can be O(1e3), producing
+        floating-point rounding at the ~1e-12 level.
+        """
         ab = cross_product(a, b)
         ba = cross_product(b, a)
-        assert torch.allclose(ab.components, -ba.components, atol=ATOL_FLOAT64)
+        assert torch.allclose(ab.components, -ba.components, atol=1e-9)
 
     def test_cross_product_basis_elements_fano(self) -> None:
         """Cross product of basis elements matches Fano plane structure.
