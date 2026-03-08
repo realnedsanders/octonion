@@ -23,15 +23,15 @@ class OctonionLinear(nn.Module):
     initialized as unit-norm random octonions.
 
     Args:
-        dtype: Tensor dtype for parameters (default float64).
+        dtype: Tensor dtype for parameters (default float32, matching PyTorch convention).
 
     Example:
-        >>> layer = OctonionLinear(dtype=torch.float64)
-        >>> x = torch.randn(8, dtype=torch.float64)
+        >>> layer = OctonionLinear()
+        >>> x = torch.randn(8)  # float32 by default
         >>> y = layer(x)  # shape [8]
     """
 
-    def __init__(self, dtype: torch.dtype = torch.float64) -> None:
+    def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         # Initialize as unit-norm octonions (preserves scale at init)
         a_init = torch.randn(8, dtype=dtype)

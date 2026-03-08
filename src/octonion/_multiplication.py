@@ -66,6 +66,7 @@ def octonion_mul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
 
     Uses structure constants tensor for fully vectorized computation.
     Supports arbitrary batch dimensions via PyTorch broadcasting.
+    Handles mixed dtypes by promoting to a common type.
 
     Args:
         a: Octonion tensor of shape [..., 8].
@@ -74,5 +75,9 @@ def octonion_mul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     Returns:
         Product tensor of shape [..., 8] where ... is the broadcast batch shape.
     """
-    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+    # Promote a and b to common dtype (handles float32/float64 mismatch)
+    common_dtype = torch.promote_types(a.dtype, b.dtype)
+    a = a.to(dtype=common_dtype)
+    b = b.to(dtype=common_dtype)
+    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=common_dtype)
     return torch.einsum("...i, ijk, ...j -> ...k", a, C, b)
