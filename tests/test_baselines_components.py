@@ -235,3 +235,174 @@ class TestNormPreservingActivation:
         in_norm = x.norm(dim=-1)
         out_norm = out.norm(dim=-1)
         torch.testing.assert_close(in_norm, out_norm, atol=1e-5, rtol=1e-5)
+
+
+# ── Convolutional layer output shape tests ─────────────────────────
+
+
+class TestRealConvShapes:
+    """RealConv1d/2d output shapes."""
+
+    def test_real_conv1d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import RealConv1d
+
+        layer = RealConv1d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 10)  # [B, C, L]
+        out = layer(x)
+        assert out.shape == (2, 16, 10)
+
+    def test_real_conv2d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import RealConv2d
+
+        layer = RealConv2d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 8, 8)  # [B, C, H, W]
+        out = layer(x)
+        assert out.shape == (2, 16, 8, 8)
+
+
+class TestComplexConvShapes:
+    """ComplexConv1d/2d output shapes."""
+
+    def test_complex_conv1d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import ComplexConv1d
+
+        layer = ComplexConv1d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 2, 10)  # [B, C, 2, L]
+        out = layer(x)
+        assert out.shape == (2, 16, 2, 10)
+
+    def test_complex_conv2d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import ComplexConv2d
+
+        layer = ComplexConv2d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 2, 8, 8)  # [B, C, 2, H, W]
+        out = layer(x)
+        assert out.shape == (2, 16, 2, 8, 8)
+
+
+class TestQuaternionConvShapes:
+    """QuaternionConv1d/2d output shapes."""
+
+    def test_quaternion_conv1d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import QuaternionConv1d
+
+        layer = QuaternionConv1d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 4, 10)  # [B, C, 4, L]
+        out = layer(x)
+        assert out.shape == (2, 16, 4, 10)
+
+    def test_quaternion_conv2d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import QuaternionConv2d
+
+        layer = QuaternionConv2d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 4, 8, 8)  # [B, C, 4, H, W]
+        out = layer(x)
+        assert out.shape == (2, 16, 4, 8, 8)
+
+
+class TestOctonionConvShapes:
+    """OctonionConv1d/2d output shapes."""
+
+    def test_octonion_conv1d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import OctonionConv1d
+
+        layer = OctonionConv1d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 8, 10)  # [B, C, 8, L]
+        out = layer(x)
+        assert out.shape == (2, 16, 8, 10)
+
+    def test_octonion_conv2d_shape(self) -> None:
+        from octonion.baselines._algebra_conv import OctonionConv2d
+
+        layer = OctonionConv2d(3, 16, kernel_size=3, padding=1)
+        x = torch.randn(2, 3, 8, 8, 8)  # [B, C, 8, H, W]
+        out = layer(x)
+        assert out.shape == (2, 16, 8, 8, 8)
+
+
+# ── Conv parameter count ratio tests ──────────────────────────────
+
+
+class TestConvParameterRatios:
+    """Conv layers should have param counts scaling by algebra dimension."""
+
+    def test_conv2d_param_ratios(self) -> None:
+        """C has 2x, H has 4x, O has 8x params vs R for same in/out/kernel."""
+        from octonion.baselines._algebra_conv import (
+            ComplexConv2d,
+            OctonionConv2d,
+            QuaternionConv2d,
+            RealConv2d,
+        )
+
+        in_ch, out_ch, k = 3, 16, 3
+        r = RealConv2d(in_ch, out_ch, kernel_size=k, bias=False)
+        c = ComplexConv2d(in_ch, out_ch, kernel_size=k, bias=False)
+        h = QuaternionConv2d(in_ch, out_ch, kernel_size=k, bias=False)
+        o = OctonionConv2d(in_ch, out_ch, kernel_size=k, bias=False)
+
+        r_params = sum(p.numel() for p in r.parameters())
+        c_params = sum(p.numel() for p in c.parameters())
+        h_params = sum(p.numel() for p in h.parameters())
+        o_params = sum(p.numel() for p in o.parameters())
+
+        assert c_params == pytest.approx(2 * r_params, rel=0.01)
+        assert h_params == pytest.approx(4 * r_params, rel=0.01)
+        assert o_params == pytest.approx(8 * r_params, rel=0.01)
+
+    def test_conv1d_param_ratios(self) -> None:
+        """Same ratio test for 1D variants."""
+        from octonion.baselines._algebra_conv import (
+            ComplexConv1d,
+            OctonionConv1d,
+            QuaternionConv1d,
+            RealConv1d,
+        )
+
+        in_ch, out_ch, k = 3, 16, 3
+        r = RealConv1d(in_ch, out_ch, kernel_size=k, bias=False)
+        c = ComplexConv1d(in_ch, out_ch, kernel_size=k, bias=False)
+        h = QuaternionConv1d(in_ch, out_ch, kernel_size=k, bias=False)
+        o = OctonionConv1d(in_ch, out_ch, kernel_size=k, bias=False)
+
+        r_params = sum(p.numel() for p in r.parameters())
+        c_params = sum(p.numel() for p in c.parameters())
+        h_params = sum(p.numel() for p in h.parameters())
+        o_params = sum(p.numel() for p in o.parameters())
+
+        assert c_params == pytest.approx(2 * r_params, rel=0.01)
+        assert h_params == pytest.approx(4 * r_params, rel=0.01)
+        assert o_params == pytest.approx(8 * r_params, rel=0.01)
+
+
+# ── Conv non-zero output test ─────────────────────────────────────
+
+
+class TestConvNonZeroOutput:
+    """Forward pass should produce non-zero output with random input."""
+
+    @pytest.mark.parametrize(
+        "ConvClass,input_shape",
+        [
+            ("RealConv1d", (2, 3, 10)),
+            ("RealConv2d", (2, 3, 8, 8)),
+            ("ComplexConv1d", (2, 3, 2, 10)),
+            ("ComplexConv2d", (2, 3, 2, 8, 8)),
+            ("QuaternionConv1d", (2, 3, 4, 10)),
+            ("QuaternionConv2d", (2, 3, 4, 8, 8)),
+            ("OctonionConv1d", (2, 3, 8, 10)),
+            ("OctonionConv2d", (2, 3, 8, 8, 8)),
+        ],
+    )
+    def test_nonzero_output(
+        self, ConvClass: str, input_shape: tuple[int, ...]
+    ) -> None:
+        import octonion.baselines._algebra_conv as conv_mod
+
+        cls = getattr(conv_mod, ConvClass)
+        layer = cls(3, 16, kernel_size=3, padding=1)
+        torch.manual_seed(42)
+        x = torch.randn(*input_shape)
+        with torch.no_grad():
+            out = layer(x)
+        assert out.abs().max().item() > 0.0
