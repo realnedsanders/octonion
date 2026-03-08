@@ -14,7 +14,7 @@ from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
 
 
-def octonion_exp(o: Octonion) -> Octonion:
+def octonion_exp(o: Octonion | torch.Tensor) -> Octonion:
     """Compute the exponential of an octonion.
 
     For octonion q = a + v where a is the real part and v is the imaginary vector:
@@ -23,11 +23,13 @@ def octonion_exp(o: Octonion) -> Octonion:
     When ||v|| is near zero, reduces to exp(a) * e_0 (pure real exponential).
 
     Args:
-        o: Octonion instance with shape [..., 8].
+        o: Octonion instance or raw [..., 8] tensor.
 
     Returns:
         Octonion: exp(o) with the same batch shape.
     """
+    if isinstance(o, torch.Tensor) and not isinstance(o, Octonion):
+        o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector
     v_norm = torch.sqrt(torch.sum(v**2, dim=-1))  # [...]
@@ -57,7 +59,7 @@ def octonion_exp(o: Octonion) -> Octonion:
     return Octonion(torch.cat([result_real, result_imag], dim=-1))
 
 
-def octonion_log(o: Octonion) -> Octonion:
+def octonion_log(o: Octonion | torch.Tensor) -> Octonion:
     """Compute the logarithm of an octonion.
 
     For octonion q = a + v where a is the real part and v is the imaginary vector:
@@ -69,11 +71,13 @@ def octonion_log(o: Octonion) -> Octonion:
     of exp for pure octonions and near-identity octonions.
 
     Args:
-        o: Octonion instance with shape [..., 8]. Must have non-zero norm.
+        o: Octonion instance or raw [..., 8] tensor. Must have non-zero norm.
 
     Returns:
         Octonion: log(o) with the same batch shape.
     """
+    if isinstance(o, torch.Tensor) and not isinstance(o, Octonion):
+        o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector
     v_norm = torch.sqrt(torch.sum(v**2, dim=-1))  # [...]
