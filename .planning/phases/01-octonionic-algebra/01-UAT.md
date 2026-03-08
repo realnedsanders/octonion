@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 01-octonionic-algebra
 source: 01-00-SUMMARY.md, 01-01-SUMMARY.md, 01-02-SUMMARY.md, 01-03-SUMMARY.md
 started: 2026-03-08T06:30:00Z
-updated: 2026-03-08T06:50:00Z
+updated: 2026-03-08T07:30:00Z
 ---
 
 ## Current Test
@@ -58,7 +58,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Container builds, dependencies install, and all 209 tests pass on cold start"
-  status: failed
+  status: resolved
   reason: "User reported: fail, python error on docker compose run --rm dev uv run pytest, no module named octonion found. Previous two commands appear successful."
   severity: blocker
   test: 1
@@ -70,7 +70,7 @@ skipped: 0
     - "Migrate dev dependencies from [project.optional-dependencies] to [dependency-groups] dev"
   debug_session: ".planning/debug/no-module-octonion-pytest.md"
 - truth: "Two random octonions can be multiplied and show non-commutativity"
-  status: failed
+  status: resolved
   reason: "User reported: Octonion(random_octonion()) raises AttributeError: 'Octonion' object has no attribute 'shape'. random_octonion() returns an Octonion not a tensor, so wrapping it in Octonion() fails. Also numpy missing warning."
   severity: blocker
   test: 3
@@ -82,7 +82,7 @@ skipped: 0
     - "Add isinstance(data, Octonion) guard in __init__ to extract .components"
   debug_session: ".planning/debug/uat3-octonion-wrapping-octonion.md"
 - truth: "a*a^-1 shows clean identity [1,0,0,0,0,0,0,0]"
-  status: failed
+  status: resolved
   reason: "User reported: identity looks wrong at minimum. a*inv shows 1.0 with ~1.5e-08 residuals on imaginary components instead of clean identity. float32 precision noise visible in output."
   severity: minor
   test: 4
@@ -94,7 +94,7 @@ skipped: 0
     - "Add dtype-aware near-zero suppression in __str__ (e.g., abs(val) > atol)"
   debug_session: ".planning/debug/float32-precision-noise-identity.md"
 - truth: "OctonionLinear forward pass works with default float32 input"
-  status: failed
+  status: resolved
   reason: "User reported: RuntimeError: expected scalar type Double but found Float. STRUCTURE_CONSTANTS is float64, torch.randn defaults to float32, einsum refuses mixed dtypes in octonion_mul."
   severity: blocker
   test: 5
@@ -109,7 +109,7 @@ skipped: 0
     - "Add dtype promotion in octonion_mul via torch.promote_types"
   debug_session: ".planning/debug/dtype-mismatch-einsum.md"
 - truth: "octonion_exp and octonion_log are inverse operations on raw tensors"
-  status: failed
+  status: resolved
   reason: "User reported: RuntimeError: imag is not implemented for tensors with non-complex dtypes. octonion_exp uses o.imag on a real-valued [8] tensor — .imag only works on complex dtypes."
   severity: blocker
   test: 6
