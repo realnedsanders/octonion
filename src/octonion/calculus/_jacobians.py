@@ -247,11 +247,11 @@ def jacobian_log(o: torch.Tensor) -> torch.Tensor:
     # d(log q)/da = a/q^2
     J[..., 0, 0] = (a / safe_q_sq).squeeze(-1)
     # d(log q)/dv_i = v_i/q^2
-    J[..., 0, 1:] = (v / safe_q_sq).reshape(*batch_shape, 7)
+    J[..., 0, 1:] = v / safe_q_sq
 
     # --- Rows 1..7: imag output = theta/r * v ---
     # d(theta/r * v_{k-1}) / da = -v_{k-1}/q^2
-    J[..., 1:, 0] = (-v / safe_q_sq).reshape(*batch_shape, 7)
+    J[..., 1:, 0] = -v / safe_q_sq
 
     # d(theta/r * v_{k-1})/dv_i:
     #   = v_{k-1} * v_i * (a/q^2 - theta/r) / r^2  + theta/r * delta_{k-1,i}
