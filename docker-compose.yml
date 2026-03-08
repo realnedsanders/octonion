@@ -1,0 +1,33 @@
+# Octonion Computation Substrate - Docker Compose
+# Provides GPU-enabled development environment with ROCm support
+#
+# Usage:
+#   docker compose build        # Build the dev container
+#   docker compose run --rm dev # Launch interactive shell with GPU access
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Containerfile
+    volumes:
+      - .:/workspace
+      - uv-cache:/root/.cache/uv
+    devices:
+      - "/dev/kfd"
+      - "/dev/dri"
+    group_add:
+      - video
+      - render
+    security_opt:
+      - seccomp=unconfined
+    ipc: host
+    stdin_open: true
+    tty: true
+    environment:
+      - HSA_OVERRIDE_GFX_VERSION=${HSA_OVERRIDE_GFX_VERSION:-}
+    working_dir: /workspace
+    command: bash
+
+volumes:
+  uv-cache:
