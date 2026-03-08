@@ -2,7 +2,7 @@
 
 import hypothesis.strategies as st
 import torch
-from hypothesis import settings
+from hypothesis import assume, settings
 
 # --- Tolerance constants ---
 # float64 tolerance for numerical comparison in property-based tests
@@ -23,13 +23,13 @@ settings.register_profile(
 settings.load_profile("dev")
 
 
-# --- Hypothesis strategies ---
-# Strategies produce raw torch.Tensor of shape [8] at float64.
-# The Octonion class wrapper comes in Plan 02.
+# =============================================================================
+# Raw tensor strategies (from Plan 01, kept for backward compatibility)
+# =============================================================================
 
 
 @st.composite
-def octonions(
+def octonion_tensors(
     draw: st.DrawFn,
     *,
     dtype: torch.dtype = torch.float64,
@@ -48,7 +48,7 @@ def octonions(
 
 
 @st.composite
-def unit_octonions(
+def unit_octonion_tensors(
     draw: st.DrawFn,
     *,
     dtype: torch.dtype = torch.float64,
@@ -63,15 +63,12 @@ def unit_octonions(
     components = [draw(elements) for _ in range(8)]
     t = torch.tensor(components, dtype=dtype)
     n = torch.linalg.norm(t)
-    # Reject near-zero vectors via assume (Hypothesis will retry)
-    from hypothesis import assume
-
     assume(n > 1e-10)
     return t / n
 
 
 @st.composite
-def nonzero_octonions(
+def nonzero_octonion_tensors(
     draw: st.DrawFn,
     *,
     dtype: torch.dtype = torch.float64,
@@ -86,8 +83,49 @@ def nonzero_octonions(
     components = [draw(elements) for _ in range(8)]
     t = torch.tensor(components, dtype=dtype)
     n = torch.linalg.norm(t)
-    # Ensure non-zero by adding a small real part if needed
     if n < 1e-10:
         t = t.clone()
         t[0] = 1.0
     return t
+
+
+# =============================================================================
+# Octonion class strategies (Plan 02+)
+# =============================================================================
+
+from octonion import Octonion  # noqa: E402
+
+
+@st.composite
+def octonions(
+    draw: st.DrawFn,
+    *,
+    dtype: torch.dtype = torch.float64,
+    min_value: float = -1e6,
+    max_value: float = 1e6,
+) -> Octonion:
+    """Strategy generating random Octonion instances."""
+    t = draw(octonion_tensors(dtype=dtype, min_value=min_value, max_value=max_value))
+    return Octonion(t)
+
+
+@st.composite
+def unit_octonions(
+    draw: st.DrawFn,
+    *,
+    dtype: torch.dtype = torch.float64,
+) -> Octonion:
+    """Strategy generating unit-norm Octonion instances on S^7."""
+    t = draw(unit_octonion_tensors(dtype=dtype))
+    return Octonion(t)
+
+
+@st.composite
+def nonzero_octonions(
+    draw: st.DrawFn,
+    *,
+    dtype: torch.dtype = torch.float64,
+) -> Octonion:
+    """Strategy generating non-zero Octonion instances (for inverse testing)."""
+    t = draw(nonzero_octonion_tensors(dtype=dtype))
+    return Octonion(t)

@@ -7,7 +7,7 @@ the Baez 2002 mod-7 convention.
 import torch
 from hypothesis import given, settings
 
-from conftest import ATOL_FLOAT64, octonions
+from conftest import ATOL_FLOAT64, octonion_tensors
 
 from octonion._fano import FANO_PLANE
 from octonion._multiplication import STRUCTURE_CONSTANTS, octonion_mul
@@ -218,9 +218,9 @@ class TestDistributivity:
     """Multiplication distributes over addition (property test)."""
 
     @given(
-        a=octonions(min_value=-1e3, max_value=1e3),
-        b=octonions(min_value=-1e3, max_value=1e3),
-        c=octonions(min_value=-1e3, max_value=1e3),
+        a=octonion_tensors(min_value=-1e3, max_value=1e3),
+        b=octonion_tensors(min_value=-1e3, max_value=1e3),
+        c=octonion_tensors(min_value=-1e3, max_value=1e3),
     )
     @settings(max_examples=200)
     def test_left_distributivity(
@@ -234,9 +234,9 @@ class TestDistributivity:
         )
 
     @given(
-        a=octonions(min_value=-1e3, max_value=1e3),
-        b=octonions(min_value=-1e3, max_value=1e3),
-        c=octonions(min_value=-1e3, max_value=1e3),
+        a=octonion_tensors(min_value=-1e3, max_value=1e3),
+        b=octonion_tensors(min_value=-1e3, max_value=1e3),
+        c=octonion_tensors(min_value=-1e3, max_value=1e3),
     )
     @settings(max_examples=200)
     def test_right_distributivity(
@@ -264,9 +264,9 @@ class TestNonAssociativity:
             f"Expected non-zero associator, got {associator}"
         )
 
-    @given(a=octonions(min_value=-10, max_value=10),
-           b=octonions(min_value=-10, max_value=10),
-           c=octonions(min_value=-10, max_value=10))
+    @given(a=octonion_tensors(min_value=-10, max_value=10),
+           b=octonion_tensors(min_value=-10, max_value=10),
+           c=octonion_tensors(min_value=-10, max_value=10))
     @settings(max_examples=50)
     def test_not_associative_generic(
         self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor

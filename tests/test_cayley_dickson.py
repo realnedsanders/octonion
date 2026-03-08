@@ -7,7 +7,7 @@ This implements success criterion 3 from the ROADMAP:
 import torch
 from hypothesis import given, settings
 
-from conftest import ATOL_FLOAT64, octonions
+from conftest import ATOL_FLOAT64, octonion_tensors
 
 from octonion._cayley_dickson import cayley_dickson_mul, quaternion_conj, quaternion_mul
 from octonion._multiplication import octonion_mul
@@ -111,8 +111,8 @@ class TestFanoCDCrosscheckBasis:
 class TestFanoCDCrosscheckRandom:
     """Random octonion pairs produce matching results (within tolerance)."""
 
-    @given(a=octonions(min_value=-100, max_value=100),
-           b=octonions(min_value=-100, max_value=100))
+    @given(a=octonion_tensors(min_value=-100, max_value=100),
+           b=octonion_tensors(min_value=-100, max_value=100))
     @settings(max_examples=200)
     def test_fano_cd_random_match(self, a: torch.Tensor, b: torch.Tensor) -> None:
         """For random octonions, Fano and CD multiplication give the same result."""
