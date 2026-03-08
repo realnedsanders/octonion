@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 03-02 normalization, activation, conv layers
-last_updated: "2026-03-08T23:21:30Z"
-last_activity: 2026-03-08 -- Completed 03-02 normalization, activation, conv layers
+stopped_at: Completed 03-04 training utility, Optuna, stats, plotting
+last_updated: "2026-03-08T23:23:22Z"
+last_activity: 2026-03-08 -- Completed 03-04 training utility, Optuna HP search, statistical testing, plotting
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 16
-  completed_plans: 12
-  percent: 75
+  completed_plans: 13
+  percent: 81
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 3 of 9 (Baseline Implementations)
-Plan: 3 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In Progress
-Last activity: 2026-03-08 -- Completed 03-02 normalization, activation, conv layers
+Last activity: 2026-03-08 -- Completed 03-04 training utility, Optuna HP search, statistical testing, plotting
 
-Progress: [███████░░░] 75%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 8min
-- Total execution time: 1.67 hours
+- Total execution time: 1.85 hours
 
 **By Phase:**
 
@@ -55,10 +55,11 @@ Progress: [███████░░░] 75%
 
 | 03-01 | 1 | 12min | 12min |
 | 03-02 | 1 | 9min | 9min |
+| 03-04 | 1 | 11min | 11min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (8min), 02-04 (7min), 02-03 (13min), 03-01 (12min), 03-02 (9min)
-- Trend: Normalization/conv layers plan (9min) slightly faster than linear layers (12min)
+- Last 5 plans: 02-04 (7min), 02-03 (13min), 03-01 (12min), 03-02 (9min), 03-04 (11min)
+- Trend: Training infrastructure plan (11min) consistent with Phase 3 complexity
 
 *Updated after each plan completion*
 
@@ -113,6 +114,10 @@ Recent decisions affecting current work:
 - [Phase 03-02]: ComplexBN uses analytic Cayley-Hamilton V^{-1/2}; QuaternionBN/OctonionBN use Cholesky whitening
 - [Phase 03-02]: Conv tensor layout [B, C, algebra_dim, *spatial] for F.conv compatibility
 - [Phase 03-02]: OctonionConv precomputes nonzero structure constant entries; caches F.convNd per (i,j) pair
+- [Phase 03-04]: Warmup via direct optimizer param group LR manipulation (not LambdaLR composition) for simplicity
+- [Phase 03-04]: Gradient stats computed after backward pass, before zero_grad, to capture actual training gradients
+- [Phase 03-04]: Optuna study uses reduced epochs (20) per trial with MedianPruner for efficient search
+- [Phase 03-04]: paired_comparison returns NaN-safe results for identical inputs (common edge case)
 
 ### Pending Todos
 
@@ -126,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T23:21:30Z
-Stopped at: Completed 03-02 normalization, activation, conv layers
-Resume file: .planning/phases/03-baseline-implementations/03-02-SUMMARY.md
+Last session: 2026-03-08T23:23:22Z
+Stopped at: Completed 03-04 training utility, Optuna, stats, plotting
+Resume file: .planning/phases/03-baseline-implementations/03-04-SUMMARY.md
