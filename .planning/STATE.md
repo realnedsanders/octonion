@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 03-01 algebra linear layers
-last_updated: "2026-03-08T23:08:24Z"
-last_activity: 2026-03-08 -- Completed 03-01 algebra linear layers, param matching, FLOP reporting
+stopped_at: Completed 03-02 normalization, activation, conv layers
+last_updated: "2026-03-08T23:21:30Z"
+last_activity: 2026-03-08 -- Completed 03-02 normalization, activation, conv layers
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 3 of 9 (Baseline Implementations)
-Plan: 2 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In Progress
-Last activity: 2026-03-08 -- Completed 03-01 algebra linear layers, param matching, FLOP reporting
+Last activity: 2026-03-08 -- Completed 03-02 normalization, activation, conv layers
 
-Progress: [██████░░░░] 69%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 8min
-- Total execution time: 1.52 hours
+- Total execution time: 1.67 hours
 
 **By Phase:**
 
@@ -54,10 +54,11 @@ Progress: [██████░░░░] 69%
 | 02-04 | 1 | 7min | 7min |
 
 | 03-01 | 1 | 12min | 12min |
+| 03-02 | 1 | 9min | 9min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (12min), 02-02 (8min), 02-04 (7min), 02-03 (13min), 03-01 (12min)
-- Trend: Baseline linear layers plan (12min) consistent with typical execution
+- Last 5 plans: 02-02 (8min), 02-04 (7min), 02-03 (13min), 03-01 (12min), 03-02 (9min)
+- Trend: Normalization/conv layers plan (9min) slightly faster than linear layers (12min)
 
 *Updated after each plan completion*
 
@@ -108,6 +109,10 @@ Recent decisions affecting current work:
 - [Phase 03-01]: OctonionDenseLinear uses W*x ordering: C[i,j,k] * F.linear(x_j, W_i) matching octonion_mul convention
 - [Phase 03-01]: Nonzero structure constant entries precomputed at init time; F.linear results cached per (i,j) pair
 - [Phase 03-01]: Parameter matching tests use target=500000 with input_dim=32 to ensure per-unit jumps <1% of total
+- [Phase 03-02]: QuaternionBN/OctonionBN gamma stored as flat lower-triangular entries (10/36) for exact param counts
+- [Phase 03-02]: ComplexBN uses analytic Cayley-Hamilton V^{-1/2}; QuaternionBN/OctonionBN use Cholesky whitening
+- [Phase 03-02]: Conv tensor layout [B, C, algebra_dim, *spatial] for F.conv compatibility
+- [Phase 03-02]: OctonionConv precomputes nonzero structure constant entries; caches F.convNd per (i,j) pair
 
 ### Pending Todos
 
@@ -121,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T23:08:24Z
-Stopped at: Completed 03-01 algebra linear layers
-Resume file: .planning/phases/03-baseline-implementations/03-01-SUMMARY.md
+Last session: 2026-03-08T23:21:30Z
+Stopped at: Completed 03-02 normalization, activation, conv layers
+Resume file: .planning/phases/03-baseline-implementations/03-02-SUMMARY.md
