@@ -98,24 +98,26 @@ class TestRawTensorCoercion:
     """Tests for auto-coercion of raw tensors to Octonion in exp/log."""
 
     def test_exp_raw_tensor(self) -> None:
-        """octonion_exp(torch.zeros(8)) succeeds and returns Octonion."""
+        """octonion_exp(raw_tensor) returns raw tensor (same type as input)."""
         result = octonion_exp(torch.zeros(8, dtype=torch.float64))
-        assert isinstance(result, Octonion), f"Expected Octonion, got {type(result)}"
+        assert isinstance(result, torch.Tensor) and not isinstance(result, Octonion), (
+            f"Expected raw Tensor, got {type(result)}"
+        )
         expected = torch.tensor([1.0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)
-        assert torch.allclose(result.components, expected, atol=ATOL_FLOAT64)
+        assert torch.allclose(result, expected, atol=ATOL_FLOAT64)
 
     def test_log_raw_tensor(self) -> None:
-        """octonion_log(identity_tensor) succeeds and returns Octonion."""
+        """octonion_log(raw_tensor) returns raw tensor (same type as input)."""
         identity = torch.tensor([1.0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)
         result = octonion_log(identity)
-        assert isinstance(result, Octonion), f"Expected Octonion, got {type(result)}"
+        assert isinstance(result, torch.Tensor) and not isinstance(result, Octonion), (
+            f"Expected raw Tensor, got {type(result)}"
+        )
         expected = torch.zeros(8, dtype=torch.float64)
-        assert torch.allclose(result.components, expected, atol=ATOL_FLOAT64)
+        assert torch.allclose(result, expected, atol=ATOL_FLOAT64)
 
     def test_exp_log_roundtrip_raw_tensor(self) -> None:
         """exp(log(x)) roundtrip works with raw tensor input within principal branch."""
-        import math
-
         torch.manual_seed(99)
         for _ in range(10):
             # Near identity with positive real part
@@ -123,9 +125,10 @@ class TestRawTensorCoercion:
             data[0] = 1.0 + torch.randn(1, dtype=torch.float64).item() * 0.1
             data[1:] = torch.randn(7, dtype=torch.float64) * 0.1
             result = octonion_exp(octonion_log(data))
-            assert torch.allclose(result.components, data, atol=1e-10), (
+            assert isinstance(result, torch.Tensor) and not isinstance(result, Octonion)
+            assert torch.allclose(result, data, atol=1e-10), (
                 f"exp(log(x)) roundtrip failed on raw tensor: max diff = "
-                f"{(result.components - data).abs().max().item()}"
+                f"{(result - data).abs().max().item()}"
             )
 
     def test_exp_still_works_with_octonion(self) -> None:

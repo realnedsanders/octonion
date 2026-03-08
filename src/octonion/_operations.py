@@ -14,7 +14,7 @@ from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
 
 
-def octonion_exp(o: Octonion | torch.Tensor) -> Octonion:
+def octonion_exp(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     """Compute the exponential of an octonion.
 
     For octonion q = a + v where a is the real part and v is the imaginary vector:
@@ -26,9 +26,10 @@ def octonion_exp(o: Octonion | torch.Tensor) -> Octonion:
         o: Octonion instance or raw [..., 8] tensor.
 
     Returns:
-        Octonion: exp(o) with the same batch shape.
+        Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    if isinstance(o, torch.Tensor) and not isinstance(o, Octonion):
+    raw_tensor = isinstance(o, torch.Tensor) and not isinstance(o, Octonion)
+    if raw_tensor:
         o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector
@@ -56,10 +57,11 @@ def octonion_exp(o: Octonion | torch.Tensor) -> Octonion:
     near_zero_mask = (v_norm < eps).unsqueeze(-1)  # [..., 1]
     result_imag = torch.where(near_zero_mask, torch.zeros_like(result_imag), result_imag)
 
-    return Octonion(torch.cat([result_real, result_imag], dim=-1))
+    result = torch.cat([result_real, result_imag], dim=-1)
+    return result if raw_tensor else Octonion(result)
 
 
-def octonion_log(o: Octonion | torch.Tensor) -> Octonion:
+def octonion_log(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     """Compute the logarithm of an octonion.
 
     For octonion q = a + v where a is the real part and v is the imaginary vector:
@@ -74,9 +76,10 @@ def octonion_log(o: Octonion | torch.Tensor) -> Octonion:
         o: Octonion instance or raw [..., 8] tensor. Must have non-zero norm.
 
     Returns:
-        Octonion: log(o) with the same batch shape.
+        Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    if isinstance(o, torch.Tensor) and not isinstance(o, Octonion):
+    raw_tensor = isinstance(o, torch.Tensor) and not isinstance(o, Octonion)
+    if raw_tensor:
         o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector
@@ -104,7 +107,8 @@ def octonion_log(o: Octonion | torch.Tensor) -> Octonion:
     near_zero_mask = (v_norm < eps).unsqueeze(-1)
     result_imag = torch.where(near_zero_mask, torch.zeros_like(result_imag), result_imag)
 
-    return Octonion(torch.cat([result_real, result_imag], dim=-1))
+    result = torch.cat([result_real, result_imag], dim=-1)
+    return result if raw_tensor else Octonion(result)
 
 
 def commutator(a: Octonion, b: Octonion) -> Octonion:
