@@ -331,52 +331,54 @@ class TestFindMatchedWidth:
 
     def test_real_match(self) -> None:
         """Find width for real MLP matching a target param count."""
-        target = 10000
+        # Use large enough target that per-unit width changes are <1%
+        # of total params, ensuring binary search can converge
+        target = 500000
         width = find_matched_width(
             target_params=target,
             algebra=AlgebraType.REAL,
             topology="mlp",
             depth=3,
-            input_dim=784,
+            input_dim=32,
             output_dim=10,
         )
         assert isinstance(width, int)
         assert width > 0
 
     def test_complex_match(self) -> None:
-        target = 10000
+        target = 500000
         width = find_matched_width(
             target_params=target,
             algebra=AlgebraType.COMPLEX,
             topology="mlp",
             depth=3,
-            input_dim=784,
+            input_dim=32,
             output_dim=10,
         )
         assert isinstance(width, int)
         assert width > 0
 
     def test_quaternion_match(self) -> None:
-        target = 10000
+        target = 500000
         width = find_matched_width(
             target_params=target,
             algebra=AlgebraType.QUATERNION,
             topology="mlp",
             depth=3,
-            input_dim=784,
+            input_dim=32,
             output_dim=10,
         )
         assert isinstance(width, int)
         assert width > 0
 
     def test_octonion_match(self) -> None:
-        target = 10000
+        target = 500000
         width = find_matched_width(
             target_params=target,
             algebra=AlgebraType.OCTONION,
             topology="mlp",
             depth=3,
-            input_dim=784,
+            input_dim=32,
             output_dim=10,
         )
         assert isinstance(width, int)
@@ -384,14 +386,14 @@ class TestFindMatchedWidth:
 
     def test_all_algebras_within_tolerance(self) -> None:
         """All 4 algebras should achieve within 1% of same target."""
-        target = 50000
+        target = 500000
         for algebra in AlgebraType:
             width = find_matched_width(
                 target_params=target,
                 algebra=algebra,
                 topology="mlp",
                 depth=3,
-                input_dim=784,
+                input_dim=32,
                 output_dim=10,
             )
             # Build model and count params
@@ -401,7 +403,7 @@ class TestFindMatchedWidth:
                 algebra=algebra,
                 hidden=width,
                 depth=3,
-                input_dim=784,
+                input_dim=32,
                 output_dim=10,
             )
             count = sum(p.numel() for p in model.parameters())
