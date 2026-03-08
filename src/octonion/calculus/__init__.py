@@ -49,6 +49,16 @@ from octonion.calculus._jacobians import (
     jacobian_log,
     jacobian_mul,
 )
+from octonion.calculus._autograd_functions import (
+    OctonionConjugateFunction,
+    OctonionCrossProductFunction,
+    OctonionExpFunction,
+    OctonionInnerProductFunction,
+    OctonionInverseFunction,
+    OctonionLogFunction,
+    OctonionMulFunction,
+)
+from octonion.calculus._gradcheck import octonion_gradcheck, octonion_gradgradcheck
 from octonion.calculus._numeric import numeric_jacobian, numeric_jacobian_2arg
 
 __all__ = [
@@ -64,6 +74,17 @@ __all__ = [
     "jacobian_inverse",
     "jacobian_inner_product",
     "jacobian_cross_product",
+    # Autograd Functions
+    "OctonionMulFunction",
+    "OctonionExpFunction",
+    "OctonionLogFunction",
+    "OctonionConjugateFunction",
+    "OctonionInverseFunction",
+    "OctonionInnerProductFunction",
+    "OctonionCrossProductFunction",
+    # Gradient checking
+    "octonion_gradcheck",
+    "octonion_gradgradcheck",
     # Numeric Jacobians
     "numeric_jacobian",
     "numeric_jacobian_2arg",
