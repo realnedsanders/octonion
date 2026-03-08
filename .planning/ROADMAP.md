@@ -34,11 +34,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Cayley-Dickson construction produces results identical to Fano-plane multiplication table (Baez 2002)
   4. Inverse operation satisfies a * a_inv = 1 and a_inv * a = 1 to within numerical precision
   5. Associator [a,b,c] = (ab)c - a(bc) is non-zero for generic triples but zero when any two arguments are equal (alternativity)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Project scaffolding, core multiplication engine (Fano plane + Cayley-Dickson), and test infrastructure
+- [ ] 01-02-PLAN.md — Octonion class, R/C/H tower types, random generators, and FOUND-01 property-based test suite
+- [ ] 01-03-PLAN.md — Extended operations, linear algebra, OctonionLinear, batch tests, edge cases, and benchmarks
 
 ### Phase 2: GHR Calculus
 **Goal**: Octonionic gradients are computed correctly so that gradient-based training can be trusted
@@ -171,7 +172,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Octonionic Algebra | 0/? | Not started | - |
+| 1. Octonionic Algebra | 0/3 | Planning complete | - |
 | 2. GHR Calculus | 0/? | Not started | - |
 | 3. Baseline Implementations | 0/? | Not started | - |
 | 4. Numerical Stability | 0/? | Not started | - |
