@@ -25,6 +25,12 @@ from octonion.baselines._algebra_linear import (
     QuaternionLinear,
     RealLinear,
 )
+from octonion.baselines._algebra_rnn import (
+    ComplexGRUCell,
+    OctonionLSTMCell,
+    QuaternionLSTMCell,
+    RealLSTMCell,
+)
 from octonion.baselines._config import (
     AlgebraType,
     ComparisonConfig,
@@ -36,6 +42,9 @@ from octonion.baselines._initialization import (
     octonion_init,
     quaternion_init,
     real_init,
+)
+from octonion.baselines._network import (
+    AlgebraNetwork,
 )
 from octonion.baselines._normalization import (
     ComplexBatchNorm,
@@ -79,6 +88,13 @@ __all__ = [
     "ComplexLinear",
     "QuaternionLinear",
     "OctonionDenseLinear",
+    # Recurrent cells
+    "RealLSTMCell",
+    "ComplexGRUCell",
+    "QuaternionLSTMCell",
+    "OctonionLSTMCell",
+    # Network skeleton
+    "AlgebraNetwork",
     # Convolutional layers
     "RealConv1d",
     "RealConv2d",
