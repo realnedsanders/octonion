@@ -334,3 +334,135 @@ class TestOptunaStudy:
         with open(results_file) as f:
             data = json.load(f)
         assert "best_params" in data
+
+
+# ── Task 2: Statistical testing and plotting utility tests ────────
+
+
+class TestPairedComparison:
+    """paired_comparison produces correct p-values."""
+
+    def test_paired_comparison_known_values(self) -> None:
+        """Two identical lists should give p-value ~ 1.0 (no difference)."""
+        from octonion.baselines._stats import paired_comparison
+
+        a = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        b = list(a)  # identical
+        result = paired_comparison(a, b)
+
+        assert "t_stat" in result
+        assert "t_p_value" in result
+        assert "w_stat" in result
+        assert "w_p_value" in result
+        assert "effect_size" in result
+        assert "mean_diff" in result
+        assert "ci_lower" in result
+        assert "ci_upper" in result
+
+        # No difference => p-value should be high (essentially 1.0)
+        assert result["t_p_value"] > 0.99
+        assert abs(result["mean_diff"]) < 1e-10
+
+    def test_paired_comparison_different(self) -> None:
+        """Two clearly different lists should give p-value < 0.05."""
+        from octonion.baselines._stats import paired_comparison
+
+        a = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        b = [11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0]
+        result = paired_comparison(a, b)
+
+        assert result["t_p_value"] < 0.05
+        assert result["w_p_value"] < 0.05
+
+
+class TestCohenD:
+    """cohen_d computes effect size correctly."""
+
+    def test_cohen_d_large_effect(self) -> None:
+        """Known large difference should give |d| > 0.8."""
+        from octonion.baselines._stats import cohen_d
+
+        a = [1.0, 2.0, 3.0, 4.0, 5.0]
+        b = [10.0, 11.0, 12.0, 13.0, 14.0]
+        d = cohen_d(a, b)
+        assert abs(d) > 0.8, f"Cohen's d = {d}, expected |d| > 0.8"
+
+
+class TestHolmBonferroni:
+    """holm_bonferroni correctly controls family-wise error rate."""
+
+    def test_holm_bonferroni_correction(self) -> None:
+        """With p-values [0.01, 0.04, 0.06], verify corrected rejection."""
+        from octonion.baselines._stats import holm_bonferroni
+
+        p_values = [0.01, 0.04, 0.06]
+        results = holm_bonferroni(p_values, alpha=0.05)
+
+        assert len(results) == 3
+        # First p-value (0.01) should be rejected (0.01 * 3 = 0.03 < 0.05)
+        assert results[0]["rejected"] is True
+        # Second p-value (0.04) should NOT be rejected (0.04 * 2 = 0.08 > 0.05)
+        assert results[1]["rejected"] is False
+        # Third p-value (0.06) should NOT be rejected
+        assert results[2]["rejected"] is False
+
+        # All should have original_p and adjusted_p keys
+        for r in results:
+            assert "original_p" in r
+            assert "adjusted_p" in r
+            assert "rejected" in r
+
+
+class TestConfidenceInterval:
+    """confidence_interval returns correct bounds."""
+
+    def test_confidence_interval_contains_mean(self) -> None:
+        """95% CI should contain the sample mean."""
+        from octonion.baselines._stats import confidence_interval
+
+        data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        lower, upper = confidence_interval(data, confidence=0.95)
+        mean = sum(data) / len(data)
+
+        assert lower < mean < upper, (
+            f"CI [{lower}, {upper}] does not contain mean {mean}"
+        )
+        # CI should be non-degenerate
+        assert lower < upper
+
+
+class TestPlotConvergence:
+    """plot_convergence creates a PNG file."""
+
+    def test_plot_convergence_creates_file(self, tmp_path: Path) -> None:
+        from octonion.baselines._plotting import plot_convergence
+
+        metrics = {
+            "train_losses": [1.5, 1.2, 1.0, 0.8, 0.7],
+            "val_losses": [1.6, 1.3, 1.1, 0.9, 0.85],
+            "val_accuracies": [0.3, 0.4, 0.5, 0.6, 0.65],
+        }
+        output_path = str(tmp_path / "convergence.png")
+        plot_convergence(metrics, output_path)
+
+        assert Path(output_path).exists(), f"Plot file not found at {output_path}"
+        assert Path(output_path).stat().st_size > 0
+
+
+class TestPlotComparisonBars:
+    """plot_comparison_bars creates a PNG file."""
+
+    def test_plot_comparison_bars_creates_file(self, tmp_path: Path) -> None:
+        from octonion.baselines._plotting import plot_comparison_bars
+
+        results = {
+            "R": [0.85, 0.87, 0.83, 0.86],
+            "C": [0.88, 0.90, 0.87, 0.89],
+            "H": [0.91, 0.93, 0.90, 0.92],
+            "O": [0.89, 0.91, 0.88, 0.90],
+        }
+        output_path = str(tmp_path / "comparison.png")
+        plot_comparison_bars(results, "Accuracy", output_path)
+
+        assert Path(output_path).exists(), f"Plot file not found at {output_path}"
+        assert Path(output_path).stat().st_size > 0
