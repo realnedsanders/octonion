@@ -20,6 +20,84 @@ from octonion.baselines._algebra_linear import (
 from octonion.baselines._config import AlgebraType
 
 
+class _SimpleAlgebraMLP(nn.Module):
+    """Simple trainable MLP with algebra-specific hidden layers.
+
+    Used for parameter counting AND training in comparison experiments.
+    Handles the reshape between real-valued input/output projections
+    and algebra-valued hidden layers.
+
+    Architecture:
+    - Input projection: nn.Linear(input_dim, hidden * algebra.dim) + reshape
+    - Hidden layers: AlgebraLinear(hidden, hidden) x depth
+    - Output projection: flatten algebra components + nn.Linear to output_dim
+    """
+
+    def __init__(
+        self,
+        algebra: AlgebraType,
+        hidden: int,
+        depth: int,
+        input_dim: int,
+        output_dim: int,
+    ) -> None:
+        super().__init__()
+        self.algebra = algebra
+        self.hidden = hidden
+        self.dim = algebra.dim
+
+        # Select the appropriate linear layer class
+        LayerClass: type[nn.Module]
+        if algebra == AlgebraType.REAL:
+            LayerClass = RealLinear
+        elif algebra == AlgebraType.COMPLEX:
+            LayerClass = ComplexLinear
+        elif algebra == AlgebraType.QUATERNION:
+            LayerClass = QuaternionLinear
+        elif algebra == AlgebraType.OCTONION:
+            LayerClass = OctonionDenseLinear
+        else:
+            raise ValueError(f"Unknown algebra: {algebra}")
+
+        # Input projection: real -> algebra
+        self.input_proj = nn.Linear(input_dim, hidden * algebra.dim)
+
+        # Hidden layers
+        self.hidden_layers = nn.ModuleList()
+        for _ in range(depth):
+            self.hidden_layers.append(LayerClass(hidden, hidden))
+
+        # Output projection: algebra -> real
+        self.output_proj = nn.Linear(hidden * algebra.dim, output_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass with proper reshape between projections and algebra layers.
+
+        Args:
+            x: [B, input_dim] real-valued input.
+
+        Returns:
+            [B, output_dim] real-valued output.
+        """
+        # Input projection: [B, input_dim] -> [B, hidden * dim]
+        h = self.input_proj(x)
+
+        # Reshape to algebra-valued: [B, hidden, dim] (skip reshape for real)
+        if self.dim > 1:
+            h = h.view(h.shape[0], self.hidden, self.dim)
+
+        # Hidden layers
+        for layer in self.hidden_layers:
+            h = layer(h)
+
+        # Flatten back to real: [B, hidden * dim] or [B, hidden]
+        if self.dim > 1:
+            h = h.reshape(h.shape[0], -1)
+
+        # Output projection: [B, hidden * dim] -> [B, output_dim]
+        return self.output_proj(h)
+
+
 def _build_simple_mlp(
     algebra: AlgebraType,
     hidden: int,
@@ -27,12 +105,15 @@ def _build_simple_mlp(
     input_dim: int,
     output_dim: int,
 ) -> nn.Module:
-    """Build a simple MLP with algebra-specific hidden layers.
+    """Build a simple trainable MLP with algebra-specific hidden layers.
 
     Architecture:
     - Input projection: nn.Linear(input_dim, hidden * algebra.dim) + reshape
     - Hidden layers: AlgebraLinear(hidden, hidden) x depth
     - Output projection: flatten algebra components + nn.Linear to output_dim
+
+    This model is used both for parameter counting in find_matched_width
+    and for actual training in run_comparison.
 
     Args:
         algebra: Which algebra to use for hidden layers.
@@ -42,34 +123,15 @@ def _build_simple_mlp(
         output_dim: Real-valued output dimension.
 
     Returns:
-        nn.Sequential model.
+        Trainable _SimpleAlgebraMLP model.
     """
-    # Select the appropriate linear layer class
-    LayerClass: type[nn.Module]
-    if algebra == AlgebraType.REAL:
-        LayerClass = RealLinear
-    elif algebra == AlgebraType.COMPLEX:
-        LayerClass = ComplexLinear
-    elif algebra == AlgebraType.QUATERNION:
-        LayerClass = QuaternionLinear
-    elif algebra == AlgebraType.OCTONION:
-        LayerClass = OctonionDenseLinear
-    else:
-        raise ValueError(f"Unknown algebra: {algebra}")
-
-    layers: list[nn.Module] = []
-
-    # Input projection: real -> algebra
-    layers.append(nn.Linear(input_dim, hidden * algebra.dim))
-
-    # Hidden layers
-    for _ in range(depth):
-        layers.append(LayerClass(hidden, hidden))
-
-    # Output projection: algebra -> real
-    layers.append(nn.Linear(hidden * algebra.dim, output_dim))
-
-    return nn.Sequential(*layers)
+    return _SimpleAlgebraMLP(
+        algebra=algebra,
+        hidden=hidden,
+        depth=depth,
+        input_dim=input_dim,
+        output_dim=output_dim,
+    )
 
 
 def find_matched_width(
