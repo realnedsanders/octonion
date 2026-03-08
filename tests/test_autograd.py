@@ -204,17 +204,14 @@ class TestAutogradBackward:
     def test_inner_product_backward(self) -> None:
         a = torch.randn(8, dtype=torch.float64, requires_grad=True)
         b = torch.randn(8, dtype=torch.float64, requires_grad=True)
-        grad_out = torch.randn(1, dtype=torch.float64)
 
         result = OctonionInnerProductFunction.apply(a, b)
-        result.backward(grad_out)
+        # result is scalar (shape []), so backward with no grad_out argument
+        result.backward()
 
-        J_a, J_b = jacobian_inner_product(a.detach(), b.detach())
-        expected_grad_a = torch.einsum("ki,k->i", J_a, grad_out)
-        expected_grad_b = torch.einsum("kj,k->j", J_b, grad_out)
-
-        assert torch.allclose(a.grad, expected_grad_a, atol=1e-14)
-        assert torch.allclose(b.grad, expected_grad_b, atol=1e-14)
+        # For inner_product, grad_a = b, grad_b = a (grad_output = 1 scalar)
+        assert torch.allclose(a.grad, b.detach(), atol=1e-14)
+        assert torch.allclose(b.grad, a.detach(), atol=1e-14)
 
     def test_cross_product_backward(self) -> None:
         a = torch.randn(8, dtype=torch.float64, requires_grad=True)
@@ -395,7 +392,7 @@ class TestBatchedAutograd:
         assert b.grad is not None and b.grad.shape == (3, 8)
 
     def test_exp_batched(self) -> None:
-        o = torch.randn(3, 8, dtype=torch.float64, requires_grad=True) * 0.5
+        o = (torch.randn(3, 8, dtype=torch.float64) * 0.5).requires_grad_(True)
         result = OctonionExpFunction.apply(o)
         assert result.shape == (3, 8)
         loss = result.sum()
