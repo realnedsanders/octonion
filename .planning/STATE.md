@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-08T22:13:57.148Z"
-last_activity: 2026-03-08 -- Completed 02-04 analyticity conditions, LR scaling, GPU parity (SC-4), complete API
+status: in_progress
+stopped_at: Completed 03-01 algebra linear layers
+last_updated: "2026-03-08T23:08:24Z"
+last_activity: 2026-03-08 -- Completed 03-01 algebra linear layers, param matching, FLOP reporting
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 16
+  completed_plans: 11
+  percent: 69
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Determine empirically whether octonionic representations provide measurable advantages over quaternionic, complex, and real-valued alternatives for geometric reasoning in ML
-**Current focus:** Phase 2: GHR Calculus
+**Current focus:** Phase 3: Baseline Implementations
 
 ## Current Position
 
-Phase: 2 of 9 (GHR Calculus)
-Plan: 4 of 4 in current phase
-Status: Phase Complete
-Last activity: 2026-03-08 -- Completed 02-04 analyticity conditions, LR scaling, GPU parity (SC-4), complete API
+Phase: 3 of 9 (Baseline Implementations)
+Plan: 2 of 6 in current phase
+Status: In Progress
+Last activity: 2026-03-08 -- Completed 03-01 algebra linear layers, param matching, FLOP reporting
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 69%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 11
 - Average duration: 8min
-- Total execution time: 1.32 hours
+- Total execution time: 1.52 hours
 
 **By Phase:**
 
@@ -53,12 +53,13 @@ Progress: [██████████] 100%
 | 02-02 | 1 | 8min | 8min |
 | 02-04 | 1 | 7min | 7min |
 
+| 03-01 | 1 | 12min | 12min |
+
 **Recent Trend:**
-- Last 5 plans: 01-05 (5min), 02-01 (12min), 02-02 (8min), 02-04 (7min)
-- Trend: Analyticity/LR/GPU plan (7min) continues efficient execution
+- Last 5 plans: 02-01 (12min), 02-02 (8min), 02-04 (7min), 02-03 (13min), 03-01 (12min)
+- Trend: Baseline linear layers plan (12min) consistent with typical execution
 
 *Updated after each plan completion*
-| Phase 02-03 P03 | 13min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,9 @@ Recent decisions affecting current work:
 - [Phase 02-03]: evaluate_tree dispatches to autograd Functions (not raw octonion_mul) for correct parenthesization-aware backward
 - [Phase 02-03]: Naive chain rule defined as always-left-to-right association baseline
 - [Phase 02-03]: compose_jacobians uses analytic jacobian_mul (not numeric) for bottom-up tree Jacobian composition
+- [Phase 03-01]: OctonionDenseLinear uses W*x ordering: C[i,j,k] * F.linear(x_j, W_i) matching octonion_mul convention
+- [Phase 03-01]: Nonzero structure constant entries precomputed at init time; F.linear results cached per (i,j) pair
+- [Phase 03-01]: Parameter matching tests use target=500000 with input_dim=32 to ensure per-unit jumps <1% of total
 
 ### Pending Todos
 
@@ -117,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-08T22:13:57.146Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-baseline-implementations/03-CONTEXT.md
+Last session: 2026-03-08T23:08:24Z
+Stopped at: Completed 03-01 algebra linear layers
+Resume file: .planning/phases/03-baseline-implementations/03-01-SUMMARY.md

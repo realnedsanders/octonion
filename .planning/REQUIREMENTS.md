@@ -16,9 +16,9 @@ Requirements for initial research validation. Each maps to roadmap phases.
 
 ### Baselines & Comparison
 
-- [ ] **BASE-01**: Real-valued baseline neural network implemented with structurally identical architecture to octonionic network, using 8x the units to match total real parameter count
-- [ ] **BASE-02**: Complex-valued baseline neural network implemented with structurally identical architecture, using 4x the units to match total real parameter count, verified to reproduce published results on a known benchmark
-- [ ] **BASE-03**: Quaternionic baseline neural network implemented with structurally identical architecture, using 2x the units to match total real parameter count, verified to reproduce published results on a known benchmark
+- [ ] **BASE-01**: Real-valued baseline neural network implemented with structurally identical architecture to octonionic network, using 8x the units to match total real parameter count *(03-01: RealLinear layer + param matching done; network skeleton in 03-03)*
+- [ ] **BASE-02**: Complex-valued baseline neural network implemented with structurally identical architecture, using 4x the units to match total real parameter count, verified to reproduce published results on a known benchmark *(03-01: ComplexLinear layer done; reproduction in 03-06)*
+- [ ] **BASE-03**: Quaternionic baseline neural network implemented with structurally identical architecture, using 2x the units to match total real parameter count, verified to reproduce published results on a known benchmark *(03-01: QuaternionLinear layer done; reproduction in 03-06)*
 - [ ] **BASE-04**: Matched-parameter density comparison across all 4 algebras (R, C, H, O) on at least 3 tasks (synthetic pattern recognition, time series, classification) measuring accuracy, convergence speed, and sample efficiency with statistical significance testing
 
 ### Core Claims
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-02 | Phase 2: GHR Calculus | Complete |
 | FOUND-03 | Phase 4: Numerical Stability | Pending |
 | FOUND-04 | Phase 5: Optimization Landscape (GO/NO-GO) | Pending |
-| BASE-01 | Phase 3: Baseline Implementations | Pending |
-| BASE-02 | Phase 3: Baseline Implementations | Pending |
-| BASE-03 | Phase 3: Baseline Implementations | Pending |
+| BASE-01 | Phase 3: Baseline Implementations | In Progress (03-01: linear layer + param matching) |
+| BASE-02 | Phase 3: Baseline Implementations | In Progress (03-01: ComplexLinear layer) |
+| BASE-03 | Phase 3: Baseline Implementations | In Progress (03-01: QuaternionLinear layer) |
 | BASE-04 | Phase 7: Density & Geometric Claims | Pending |
 | CLAIM-01 | Phase 6: Reversibility Claim | Pending |
 | CLAIM-02 | Phase 7: Density & Geometric Claims | Pending |
@@ -89,4 +89,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Last updated: 2026-03-08 after 03-01 completion*
