@@ -5,12 +5,15 @@ Covers:
 - Learnable parameters a, b of shape [8]
 - Forward pass is differentiable (gradients flow)
 - Optimizer step changes output
+- Default dtype is float32 (PyTorch convention)
+- Mixed dtype multiplication via promotion
 """
 
 import torch
 import torch.nn as nn
 
 from octonion._linear import OctonionLinear
+from octonion._multiplication import octonion_mul
 
 
 class TestOctonionLinear:
@@ -84,3 +87,41 @@ class TestOctonionLinear:
         b_norm = torch.linalg.norm(layer.b.data)
         assert torch.allclose(a_norm, torch.tensor(1.0, dtype=torch.float64), atol=1e-6)
         assert torch.allclose(b_norm, torch.tensor(1.0, dtype=torch.float64), atol=1e-6)
+
+
+class TestDtypePromotion:
+    """Tests for dtype promotion and float32 default."""
+
+    def test_default_dtype_is_float32(self) -> None:
+        """OctonionLinear() creates parameters with float32 dtype by default."""
+        layer = OctonionLinear()
+        assert layer.a.dtype == torch.float32, f"Expected float32, got {layer.a.dtype}"
+        assert layer.b.dtype == torch.float32, f"Expected float32, got {layer.b.dtype}"
+
+    def test_forward_with_float32_input(self) -> None:
+        """OctonionLinear()(torch.randn(4, 8)) produces shape [4, 8] without error."""
+        layer = OctonionLinear()
+        x = torch.randn(4, 8)  # default float32
+        y = layer(x)
+        assert y.shape == (4, 8), f"Expected shape (4, 8), got {y.shape}"
+
+    def test_forward_with_float32_gradients(self) -> None:
+        """OctonionLinear()(torch.randn(4, 8)).requires_grad is True."""
+        layer = OctonionLinear()
+        x = torch.randn(4, 8)
+        y = layer(x)
+        assert y.requires_grad, "Output should require gradients"
+
+    def test_mixed_dtype_mul_succeeds(self) -> None:
+        """octonion_mul(float32_tensor, float64_tensor) succeeds without RuntimeError."""
+        a = torch.randn(8, dtype=torch.float32)
+        b = torch.randn(8, dtype=torch.float64)
+        result = octonion_mul(a, b)
+        assert result.shape == (8,), f"Expected shape (8,), got {result.shape}"
+
+    def test_mixed_dtype_mul_promotes(self) -> None:
+        """octonion_mul(float32_tensor, float64_tensor) returns float64 (promoted dtype)."""
+        a = torch.randn(8, dtype=torch.float32)
+        b = torch.randn(8, dtype=torch.float64)
+        result = octonion_mul(a, b)
+        assert result.dtype == torch.float64, f"Expected float64, got {result.dtype}"
