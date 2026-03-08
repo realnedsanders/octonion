@@ -265,10 +265,16 @@ class OctonionDenseLinear(nn.Module):
 
         octonion_init(list(self.weights), criterion="glorot")
 
-        # Cache structure constants for forward pass
-        self.register_buffer(
-            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
-        )
+        # Precompute nonzero structure constant entries for efficient forward
+        # Each entry: (i, j, k, coefficient) where C[i,j,k] != 0
+        C = STRUCTURE_CONSTANTS
+        self._nonzero_entries: list[tuple[int, int, int, float]] = []
+        for i in range(8):
+            for j in range(8):
+                for k in range(8):
+                    c = C[i, j, k].item()
+                    if c != 0.0:
+                        self._nonzero_entries.append((i, j, k, c))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: full octonionic matrix-vector product.
@@ -282,21 +288,22 @@ class OctonionDenseLinear(nn.Module):
         # Octonionic product: (W * x)_k = sum_{i,j} C[i,j,k] * W_i * x_j
         # W_i are weight matrices [out_features, in_features], one per basis
         # x[..., j] are input components [..., in_features]
-        # F.linear(x_j, W_i) computes W_i @ x_j -> [..., out_features]
 
-        C = self._C  # [8, 8, 8]
         batch_shape = x.shape[:-2]
-        out_components = []
 
-        for k in range(8):
-            # out_k = sum_{i,j} C[i,j,k] * F.linear(x[..., j], W_i)
-            acc = torch.zeros(*batch_shape, self.out_features, dtype=x.dtype, device=x.device)
-            for i in range(8):
-                for j in range(8):
-                    c_ijk = C[i, j, k].item()
-                    if c_ijk != 0.0:
-                        acc = acc + c_ijk * F.linear(x[..., j], self.weights[i])
-            out_components.append(acc)
+        # Cache F.linear results: linear_cache[(i, j)] = F.linear(x_j, W_i)
+        # Many (i,j) pairs contribute to multiple output components k
+        linear_cache: dict[tuple[int, int], torch.Tensor] = {}
+        out_components = [
+            torch.zeros(*batch_shape, self.out_features, dtype=x.dtype, device=x.device)
+            for _ in range(8)
+        ]
+
+        for i, j, k, c in self._nonzero_entries:
+            key = (i, j)
+            if key not in linear_cache:
+                linear_cache[key] = F.linear(x[..., j], self.weights[i])
+            out_components[k] = out_components[k] + c * linear_cache[key]
 
         result = torch.stack(out_components, dim=-1)  # [..., out_features, 8]
 
