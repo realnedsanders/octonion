@@ -57,6 +57,14 @@ from octonion.baselines._param_matching import (
     flop_report,
     param_report,
 )
+from octonion.baselines._benchmarks import (
+    PUBLISHED_RESULTS,
+    build_cifar10_data,
+    build_cifar100_data,
+    cifar_network_config,
+    cifar_train_config,
+    reproduction_report,
+)
 from octonion.baselines._comparison import (
     ComparisonReport,
     run_comparison,
@@ -137,6 +145,13 @@ __all__ = [
     "cohen_d",
     "holm_bonferroni",
     "confidence_interval",
+    # Benchmarks
+    "PUBLISHED_RESULTS",
+    "build_cifar10_data",
+    "build_cifar100_data",
+    "cifar_network_config",
+    "cifar_train_config",
+    "reproduction_report",
     # Comparison
     "run_comparison",
     "ComparisonReport",
