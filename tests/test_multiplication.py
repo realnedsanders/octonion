@@ -257,27 +257,41 @@ class TestStructureConstants:
 class TestDistributivity:
     """Multiplication distributes over addition: a*(b+c) = a*b + a*c."""
 
-    @given(a=octonions(), b=octonions(), c=octonions())
+    @given(
+        a=octonions(min_value=-1e3, max_value=1e3),
+        b=octonions(min_value=-1e3, max_value=1e3),
+        c=octonions(min_value=-1e3, max_value=1e3),
+    )
     @settings(max_examples=200)
     def test_left_distributivity(self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor) -> None:
+        """a*(b+c) = a*b + a*c within float64 precision.
+
+        Uses moderate-magnitude inputs (1e3) to keep products in a range
+        where float64 rounding errors remain below 1e-6.
+        """
         from octonion import octonion_mul
 
         lhs = octonion_mul(a, b + c)
         rhs = octonion_mul(a, b) + octonion_mul(a, c)
-        assert torch.allclose(lhs, rhs, atol=1e-8), (
+        assert torch.allclose(lhs, rhs, rtol=1e-9, atol=1e-9), (
             f"Left distributivity failed: max diff = {(lhs - rhs).abs().max().item()}"
         )
 
-    @given(a=octonions(), b=octonions(), c=octonions())
+    @given(
+        a=octonions(min_value=-1e3, max_value=1e3),
+        b=octonions(min_value=-1e3, max_value=1e3),
+        c=octonions(min_value=-1e3, max_value=1e3),
+    )
     @settings(max_examples=200)
     def test_right_distributivity(
         self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
     ) -> None:
+        """(b+c)*a = b*a + c*a within float64 precision."""
         from octonion import octonion_mul
 
         lhs = octonion_mul(b + c, a)
         rhs = octonion_mul(b, a) + octonion_mul(c, a)
-        assert torch.allclose(lhs, rhs, atol=1e-8), (
+        assert torch.allclose(lhs, rhs, rtol=1e-9, atol=1e-9), (
             f"Right distributivity failed: max diff = {(lhs - rhs).abs().max().item()}"
         )
 
