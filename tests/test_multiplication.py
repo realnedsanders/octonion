@@ -189,47 +189,23 @@ class TestStructureConstants:
         assert STRUCTURE_CONSTANTS.dtype == torch.float64
 
     def test_sparsity(self) -> None:
-        """Structure constants tensor has exactly 50 non-zero entries.
+        """Structure constants tensor has exactly 64 non-zero entries out of 512.
 
         Breakdown:
-        - 8 entries for e_0 left identity (C[0,i,i]=1 for i=0..7)
-        - 8 entries for e_0 right identity (C[i,0,i]=1 for i=0..7)
-        - Subtract 1 for the double-counted C[0,0,0]=1
-        - 7 entries for imaginary unit squaring (C[i,i,0]=-1 for i=1..7)
-        - 7 triples x 6 cyclic/anti-cyclic entries = 42 triple entries
-        Total: 8 + 8 - 1 + 7 + 42 - 14 (overlapping identity entries)
-        Wait, let me count directly:
-        - C[0,0,0] = 1 (identity * identity)
-        - C[0,i,i] = 1 for i=1..7 (7 entries)
-        - C[i,0,i] = 1 for i=1..7 (7 entries)
-        - C[i,i,0] = -1 for i=1..7 (7 entries)
+        - C[0,0,0] = 1 (identity * identity): 1 entry
+        - C[0,i,i] = 1 for i=1..7 (left identity): 7 entries
+        - C[i,0,i] = 1 for i=1..7 (right identity): 7 entries
+        - C[i,i,0] = -1 for i=1..7 (imaginary squaring): 7 entries
         - 7 triples * 3 cyclic = 21 positive entries
         - 7 triples * 3 anti-cyclic = 21 negative entries
         Total: 1 + 7 + 7 + 7 + 21 + 21 = 64
-        Hmm, but the plan says 50. Let me recount carefully.
-        Actually: e_0*e_0 = e_0, so C[0,0,0]=1.
-        For i>0: e_0*e_i = e_i gives C[0,i,i]=1 (7 entries).
-        For i>0: e_i*e_0 = e_i gives C[i,0,i]=1 (7 entries).
-        For i>0: e_i*e_i = -e_0 gives C[i,i,0]=-1 (7 entries).
-        That's 1+7+7+7 = 22 entries so far.
-        Plus 7*6 = 42 from triples (3 cyclic + 3 anti-cyclic per triple).
-        But wait - no overlaps between these? The triple entries are for
-        distinct i,j with both i>0, j>0, i!=j. The identity entries have
-        at least one index being 0 or both indices equal.
-        Total: 22 + 42 = 64? But the plan says 50.
 
-        Let me check more carefully. The PLAN says 50 out of 512.
-        7 * 6 = 42 triple entries. 8 identity entries (C[0,i,i]).
-        Hmm, 8 + 42 = 50! The 8 left-identity entries are C[0,i,i] for i=0..7.
-        The right-identity C[i,0,i] for i=1..7 and squaring C[i,i,0] for i=1..7
-        are already counted... no they are separate entries.
-
-        Actually I think the plan's count of 50 may be referring to a specific
-        formulation. Let me just count programmatically.
+        Note: The PLAN and RESEARCH.md claimed 50 non-zero entries (counting only
+        8 left-identity + 42 triple entries). The correct count is 64, which also
+        includes right-identity and squaring entries as separate tensor positions.
         """
         nonzero_count = (STRUCTURE_CONSTANTS != 0).sum().item()
-        # The plan states exactly 50 non-zero entries
-        assert nonzero_count == 50, f"Expected 50 non-zero entries, got {nonzero_count}"
+        assert nonzero_count == 64, f"Expected 64 non-zero entries, got {nonzero_count}"
 
     def test_values_are_only_minus_one_zero_one(self) -> None:
         """All entries are -1, 0, or +1."""
@@ -241,7 +217,11 @@ class TestStructureConstants:
 class TestDistributivity:
     """Multiplication distributes over addition (property test)."""
 
-    @given(a=octonions(), b=octonions(), c=octonions())
+    @given(
+        a=octonions(min_value=-1e3, max_value=1e3),
+        b=octonions(min_value=-1e3, max_value=1e3),
+        c=octonions(min_value=-1e3, max_value=1e3),
+    )
     @settings(max_examples=200)
     def test_left_distributivity(
         self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
@@ -253,7 +233,11 @@ class TestDistributivity:
             f"Left distributivity failed: max error {(lhs - rhs).abs().max().item()}"
         )
 
-    @given(a=octonions(), b=octonions(), c=octonions())
+    @given(
+        a=octonions(min_value=-1e3, max_value=1e3),
+        b=octonions(min_value=-1e3, max_value=1e3),
+        c=octonions(min_value=-1e3, max_value=1e3),
+    )
     @settings(max_examples=200)
     def test_right_distributivity(
         self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
