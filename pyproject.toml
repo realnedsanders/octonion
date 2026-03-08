@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "octonion"
+version = "0.1.0"
+description = "PyTorch-native octonionic algebra for ML research"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "hypothesis>=6.0",
+    "hypothesis-torch",
+    "numpy>=1.26",
+    "ruff",
+    "mypy",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/octonion"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-x --tb=short"
+
+[tool.hypothesis]
+database_backend = "directory"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
