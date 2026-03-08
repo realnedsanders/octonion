@@ -10,7 +10,7 @@ Requirements for initial research validation. Each maps to roadmap phases.
 ### Foundation
 
 - [x] **FOUND-01**: Core octonionic algebra library implements multiplication, conjugation, norm, inverse, and associator with property-based tests verifying Moufang identities, norm preservation (|ab| = |a||b|), alternativity, Fano plane multiplication table correctness, and Cayley-Dickson construction cross-check
-- [ ] **FOUND-02**: GHR calculus gradient implementation computes octonionic backpropagation gradients that match finite-difference approximation to within numerical precision, with explicit parenthesization-aware chain rule handling non-associativity
+- [x] **FOUND-02**: GHR calculus gradient implementation computes octonionic backpropagation gradients that match finite-difference approximation to within numerical precision, with explicit parenthesization-aware chain rule handling non-associativity
 - [ ] **FOUND-03**: Numerical stability analysis characterizes precision degradation across forward pass depths (10, 50, 100, 500 layers), measures condition numbers of octonionic operations, compares float32 vs float64 convergence, and identifies mitigation strategies
 - [ ] **FOUND-04**: Optimization landscape characterization measures gradient variance, Hessian eigenspectrum, saddle point vs local minima frequency, and training stability across random seeds for octonionic networks on synthetic tasks with known optima, compared against real/complex/quaternion baselines — serves as explicit go/no-go gate
 
@@ -68,7 +68,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUND-01 | Phase 1: Octonionic Algebra | Complete (Plans 01+02: all 5 success criteria verified) |
-| FOUND-02 | Phase 2: GHR Calculus | Pending |
+| FOUND-02 | Phase 2: GHR Calculus | Complete |
 | FOUND-03 | Phase 4: Numerical Stability | Pending |
 | FOUND-04 | Phase 5: Optimization Landscape (GO/NO-GO) | Pending |
 | BASE-01 | Phase 3: Baseline Implementations | Pending |
