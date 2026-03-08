@@ -6,6 +6,7 @@ The ``octonion.calculus`` submodule provides GHR differentiation tools::
     from octonion.calculus import ghr_derivative, jacobian_mul, octonion_gradcheck
 """
 
+from octonion import baselines  # noqa: F401
 from octonion._cayley_dickson import cayley_dickson_mul
 from octonion._fano import FANO_PLANE, FanoPlane
 from octonion._linear import OctonionLinear
@@ -24,6 +25,8 @@ from octonion._tower import Complex, Quaternion, Real
 from octonion._types import NormedDivisionAlgebra
 
 __all__ = [
+    # Subpackages
+    "baselines",
     # Core types
     "Octonion",
     "UnitOctonion",

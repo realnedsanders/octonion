@@ -1,8 +1,8 @@
 """Baseline comparison infrastructure for algebra-specific neural networks.
 
 Provides per-algebra linear layers, convolutional layers, normalization,
-activation functions, parameter matching utilities, and configuration
-dataclasses for fair R/C/H/O comparisons.
+activation functions, parameter matching utilities, training infrastructure,
+statistical testing, and comparison runner for fair R/C/H/O comparisons.
 """
 
 from octonion.baselines._activation import (
@@ -56,6 +56,10 @@ from octonion.baselines._param_matching import (
     find_matched_width,
     flop_report,
     param_report,
+)
+from octonion.baselines._comparison import (
+    ComparisonReport,
+    run_comparison,
 )
 from octonion.baselines._plotting import (
     plot_comparison_bars,
@@ -133,6 +137,9 @@ __all__ = [
     "cohen_d",
     "holm_bonferroni",
     "confidence_interval",
+    # Comparison
+    "run_comparison",
+    "ComparisonReport",
     # Plotting
     "plot_convergence",
     "plot_comparison_bars",
