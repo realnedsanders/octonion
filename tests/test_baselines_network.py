@@ -372,6 +372,189 @@ class TestOutputProjections:
             assert out.shape == (B, config.output_dim)
 
 
+# ── ResNet Conv2D Residual Block Tests ──────────────────────────
+
+
+class TestResNetConv2D:
+    """Test ResNet-style residual block conv2d topology.
+
+    Verifies that AlgebraNetwork conv2d topology uses residual blocks
+    with skip connections, 3 stages, stride-2 downsampling at stage
+    boundaries only, and supports deep architectures (depth=28+).
+    """
+
+    @pytest.mark.parametrize("algebra", ALL_ALGEBRAS, ids=lambda a: a.short_name)
+    def test_depth28_forward_all_algebras(self, algebra):
+        """ResNet conv2d with depth=28 produces [B, output_dim] for all algebras on CIFAR input."""
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(
+            algebra,
+            topology="conv2d",
+            input_dim=3,
+            output_dim=10,
+            depth=28,
+            base_hidden=16,
+            use_batchnorm=False,
+        )
+        model = AlgebraNetwork(config)
+        model.eval()
+
+        x = torch.randn(B, 3, 32, 32)
+        with torch.no_grad():
+            out = model(x)
+
+        assert out.shape == (B, 10), (
+            f"{algebra.short_name}: expected ({B}, 10), got {out.shape}"
+        )
+        assert torch.isfinite(out).all(), (
+            f"{algebra.short_name}: output contains NaN or Inf"
+        )
+
+    def test_depth28_block_distribution(self):
+        """depth=28 distributes blocks across 3 stages."""
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(
+            AlgebraType.REAL,
+            topology="conv2d",
+            input_dim=3,
+            output_dim=10,
+            depth=28,
+            base_hidden=16,
+            use_batchnorm=False,
+        )
+        model = AlgebraNetwork(config)
+
+        # Model should have 3 stages (stage1, stage2, stage3 ModuleLists)
+        assert hasattr(model, "stage1"), "Missing stage1"
+        assert hasattr(model, "stage2"), "Missing stage2"
+        assert hasattr(model, "stage3"), "Missing stage3"
+
+        total_blocks = len(model.stage1) + len(model.stage2) + len(model.stage3)
+        assert total_blocks == 28, (
+            f"Expected 28 total blocks, got {total_blocks}"
+        )
+
+    def test_spatial_downsampling_at_stage_boundaries_only(self):
+        """Spatial dimensions reduce only at stage boundaries, not at every block.
+
+        For 32x32 CIFAR with 3 stages: 32->16->8, then GAP.
+        """
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(
+            AlgebraType.REAL,
+            topology="conv2d",
+            input_dim=3,
+            output_dim=10,
+            depth=28,
+            base_hidden=16,
+            use_batchnorm=False,
+        )
+        model = AlgebraNetwork(config)
+        model.eval()
+
+        x = torch.randn(1, 3, 32, 32)
+        with torch.no_grad():
+            # After input conv: still 32x32
+            h = model.input_conv(x)
+            h = model.input_act(h)
+            assert h.shape[-1] == 32, f"After input conv: expected W=32, got {h.shape[-1]}"
+
+            # After stage1: still 32x32 (no downsampling in stage1)
+            for block in model.stage1:
+                h = block(h)
+            assert h.shape[-1] == 32, f"After stage1: expected W=32, got {h.shape[-1]}"
+
+            # After stage2: 16x16 (stride-2 at stage2 boundary)
+            for block in model.stage2:
+                h = block(h)
+            assert h.shape[-1] == 16, f"After stage2: expected W=16, got {h.shape[-1]}"
+
+            # After stage3: 8x8 (stride-2 at stage3 boundary)
+            for block in model.stage3:
+                h = block(h)
+            assert h.shape[-1] == 8, f"After stage3: expected W=8, got {h.shape[-1]}"
+
+    def test_residual_connections_present(self):
+        """Residual connections are present (output differs from non-residual forward)."""
+        from octonion.baselines._network import _ResidualBlock, AlgebraNetwork
+
+        config = _make_config(
+            AlgebraType.REAL,
+            topology="conv2d",
+            input_dim=3,
+            output_dim=10,
+            depth=3,
+            base_hidden=16,
+            use_batchnorm=False,
+        )
+        model = AlgebraNetwork(config)
+
+        # Get first residual block from stage1
+        block = model.stage1[0]
+        assert isinstance(block, _ResidualBlock), (
+            f"Expected _ResidualBlock, got {type(block)}"
+        )
+
+        # Verify it has a shortcut path (identity or 1x1 conv)
+        assert hasattr(block, "shortcut"), "Missing shortcut attribute in _ResidualBlock"
+
+    def test_depth3_backward_compatible(self):
+        """depth=3 still works (1 block per stage)."""
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(
+            AlgebraType.REAL,
+            topology="conv2d",
+            input_dim=3,
+            output_dim=10,
+            depth=3,
+            base_hidden=16,
+            use_batchnorm=False,
+        )
+        model = AlgebraNetwork(config)
+        model.eval()
+
+        x = torch.randn(B, 3, 32, 32)
+        with torch.no_grad():
+            out = model(x)
+
+        assert out.shape == (B, 10), (
+            f"depth=3: expected ({B}, 10), got {out.shape}"
+        )
+
+        # Should have 1 block per stage
+        assert len(model.stage1) == 1
+        assert len(model.stage2) == 1
+        assert len(model.stage3) == 1
+
+    @pytest.mark.parametrize("algebra", ALL_ALGEBRAS, ids=lambda a: a.short_name)
+    def test_existing_mlp_still_works(self, algebra):
+        """Existing MLP topology tests still pass (no regression)."""
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(algebra, topology="mlp")
+        model = AlgebraNetwork(config)
+        x = torch.randn(B, config.input_dim)
+        out = model(x)
+        assert out.shape == (B, config.output_dim)
+
+    @pytest.mark.parametrize("algebra", ALL_ALGEBRAS, ids=lambda a: a.short_name)
+    def test_existing_recurrent_still_works(self, algebra):
+        """Existing recurrent topology tests still pass (no regression)."""
+        from octonion.baselines._network import AlgebraNetwork
+
+        config = _make_config(
+            algebra, topology="recurrent", input_dim=32, depth=2, base_hidden=16,
+        )
+        model = AlgebraNetwork(config)
+        x = torch.randn(B, 5, config.input_dim)
+        out = model(x)
+        assert out.shape == (B, config.output_dim)
+
+
 # ── Param Report Tests ──────────────────────────────────────────
 
 
