@@ -134,6 +134,48 @@ def _build_simple_mlp(
     )
 
 
+def _build_conv_model(
+    algebra: AlgebraType,
+    base_hidden: int,
+    depth: int,
+    input_dim: int,
+    output_dim: int,
+    **kwargs: object,
+) -> nn.Module:
+    """Build an AlgebraNetwork with conv2d topology for param counting.
+
+    This is the conv2d analog of _build_simple_mlp. Used both for
+    parameter counting in find_matched_width and for model building
+    in run_comparison.
+
+    Args:
+        algebra: Which algebra to use.
+        base_hidden: Base filter count (before algebra multiplier scaling).
+        depth: Number of residual blocks (distributed across 3 stages).
+        input_dim: Number of input channels (e.g. 3 for RGB).
+        output_dim: Number of output classes.
+        **kwargs: Optional overrides for activation, output_projection, use_batchnorm.
+
+    Returns:
+        AlgebraNetwork with conv2d topology.
+    """
+    from octonion.baselines._config import NetworkConfig
+    from octonion.baselines._network import AlgebraNetwork
+
+    config = NetworkConfig(
+        algebra=algebra,
+        topology="conv2d",
+        depth=depth,
+        base_hidden=base_hidden,
+        input_dim=input_dim,
+        output_dim=output_dim,
+        activation=str(kwargs.get("activation", "split_relu")),
+        output_projection=str(kwargs.get("output_projection", "flatten")),
+        use_batchnorm=bool(kwargs.get("use_batchnorm", True)),
+    )
+    return AlgebraNetwork(config)
+
+
 def find_matched_width(
     target_params: int,
     algebra: AlgebraType,
@@ -149,40 +191,50 @@ def find_matched_width(
     Builds temporary models at candidate widths and counts all trainable
     parameters. Converges to a width where |actual - target| / target <= tolerance.
 
+    For MLP topology, returns the algebra-unit hidden width (passed to _SimpleAlgebraMLP).
+    For conv2d topology, returns the base_hidden value (base filter count for NetworkConfig).
+
     Args:
         target_params: Target number of trainable parameters.
         algebra: Which algebra to use.
-        topology: Network topology ("mlp" supported).
+        topology: Network topology ("mlp" or "conv2d").
         depth: Number of hidden layers.
         tolerance: Acceptable relative error (default 1%).
         input_dim: Input feature dimension.
         output_dim: Output feature dimension.
-        **kwargs: Additional keyword arguments (reserved for future topologies).
+        **kwargs: Additional keyword arguments (e.g. activation, output_projection
+            for conv2d topology).
 
     Returns:
         Hidden width (int) achieving target within tolerance.
 
     Raises:
         ValueError: If no width can match the target within tolerance.
+        NotImplementedError: If topology is not "mlp" or "conv2d".
     """
-    if topology != "mlp":
+    if topology == "mlp":
+        lo, hi = 1, 4096  # generous upper bound
+        build_fn = lambda w: _build_simple_mlp(
+            algebra=algebra, hidden=w, depth=depth,
+            input_dim=input_dim, output_dim=output_dim,
+        )
+    elif topology == "conv2d":
+        lo, hi = 1, 512  # base_hidden for conv is typically smaller
+        build_fn = lambda w: _build_conv_model(
+            algebra=algebra, base_hidden=w, depth=depth,
+            input_dim=input_dim, output_dim=output_dim, **kwargs,
+        )
+    else:
         raise NotImplementedError(
-            f"Topology {topology!r} not yet supported for param matching. "
-            f"Only 'mlp' is currently implemented."
+            f"Topology {topology!r} not supported for param matching. "
+            f"Supported: 'mlp', 'conv2d'."
         )
 
-    lo, hi = 1, 4096  # generous upper bound
     best_width, best_diff = lo, float("inf")
 
     while lo <= hi:
         mid = (lo + hi) // 2
-        model = _build_simple_mlp(
-            algebra=algebra,
-            hidden=mid,
-            depth=depth,
-            input_dim=input_dim,
-            output_dim=output_dim,
-        )
+        model = build_fn(mid)
         count = sum(p.numel() for p in model.parameters() if p.requires_grad)
         diff = abs(count - target_params) / target_params
 
