@@ -256,6 +256,133 @@ class TestPlots:
                 assert conv_path.exists(), f"Convergence plot {conv_path} not found"
 
 
+class TestConv2dParamMatching:
+    """Verify find_matched_width supports conv2d topology."""
+
+    def test_conv2d_matching_returns_valid_width_all_algebras(self) -> None:
+        """find_matched_width with topology='conv2d' returns valid base_hidden for all 4 algebras."""
+        from octonion.baselines._config import AlgebraType, NetworkConfig
+        from octonion.baselines._network import AlgebraNetwork
+        from octonion.baselines._param_matching import find_matched_width
+
+        # Build a reference model to get target param count
+        ref_config = NetworkConfig(
+            algebra=AlgebraType.REAL,
+            topology="conv2d",
+            depth=6,
+            base_hidden=8,
+            input_dim=3,
+            output_dim=10,
+            activation="split_relu",
+            output_projection="flatten",
+            use_batchnorm=True,
+        )
+        ref_model = AlgebraNetwork(ref_config)
+        target_params = sum(p.numel() for p in ref_model.parameters())
+
+        for algebra in AlgebraType:
+            width = find_matched_width(
+                target_params=target_params,
+                algebra=algebra,
+                topology="conv2d",
+                depth=6,
+                tolerance=0.01,
+                input_dim=3,
+                output_dim=10,
+            )
+            assert isinstance(width, int)
+            assert width >= 1, f"{algebra.short_name}: width must be >= 1"
+
+    def test_conv2d_matched_models_within_tolerance(self) -> None:
+        """Models built with matched width have param counts within 1% of target."""
+        from octonion.baselines._config import AlgebraType, NetworkConfig
+        from octonion.baselines._network import AlgebraNetwork
+        from octonion.baselines._param_matching import find_matched_width
+
+        ref_config = NetworkConfig(
+            algebra=AlgebraType.REAL,
+            topology="conv2d",
+            depth=6,
+            base_hidden=8,
+            input_dim=3,
+            output_dim=10,
+            activation="split_relu",
+            output_projection="flatten",
+            use_batchnorm=True,
+        )
+        ref_model = AlgebraNetwork(ref_config)
+        target_params = sum(p.numel() for p in ref_model.parameters())
+
+        for algebra in AlgebraType:
+            width = find_matched_width(
+                target_params=target_params,
+                algebra=algebra,
+                topology="conv2d",
+                depth=6,
+                tolerance=0.01,
+                input_dim=3,
+                output_dim=10,
+            )
+            # Build model with the returned width
+            config = NetworkConfig(
+                algebra=algebra,
+                topology="conv2d",
+                depth=6,
+                base_hidden=width,
+                input_dim=3,
+                output_dim=10,
+                activation="split_relu",
+                output_projection="flatten",
+                use_batchnorm=True,
+            )
+            model = AlgebraNetwork(config)
+            actual = sum(p.numel() for p in model.parameters())
+            diff = abs(actual - target_params) / target_params
+            assert diff <= 0.01, (
+                f"{algebra.short_name}: param diff {diff * 100:.2f}% > 1% "
+                f"(target={target_params}, actual={actual}, width={width})"
+            )
+
+    def test_mlp_matching_still_works(self) -> None:
+        """topology='mlp' backward compatibility -- still works as before."""
+        from octonion.baselines._config import AlgebraType
+        from octonion.baselines._param_matching import (
+            _build_simple_mlp,
+            find_matched_width,
+        )
+
+        ref = _build_simple_mlp(AlgebraType.REAL, hidden=20, depth=1, input_dim=32, output_dim=2)
+        target = sum(p.numel() for p in ref.parameters())
+
+        width = find_matched_width(
+            target_params=target,
+            algebra=AlgebraType.COMPLEX,
+            topology="mlp",
+            depth=1,
+            tolerance=0.01,
+            input_dim=32,
+            output_dim=2,
+        )
+        assert isinstance(width, int)
+        assert width >= 1
+
+    def test_conv2d_matching_raises_on_impossible_target(self) -> None:
+        """find_matched_width raises ValueError when no width can match target."""
+        from octonion.baselines._config import AlgebraType
+        from octonion.baselines._param_matching import find_matched_width
+
+        with pytest.raises(ValueError, match="Cannot match"):
+            find_matched_width(
+                target_params=1,  # impossibly small
+                algebra=AlgebraType.REAL,
+                topology="conv2d",
+                depth=6,
+                tolerance=0.001,  # very tight
+                input_dim=3,
+                output_dim=10,
+            )
+
+
 class TestConfigAndMetrics:
     """Verify per-experiment config and metrics JSON files."""
 
