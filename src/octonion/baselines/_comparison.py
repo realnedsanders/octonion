@@ -30,6 +30,7 @@ from octonion.baselines._config import (
     TrainConfig,
 )
 from octonion.baselines._param_matching import (
+    _build_conv_model,
     _build_simple_mlp,
     find_matched_width,
     param_report,
@@ -206,9 +207,8 @@ def run_comparison(
     nc_overrides = network_config_overrides or {}
     depth = nc_overrides.get("depth", 1)
     topology = nc_overrides.get("topology", "mlp")
-    # ref_hidden is the algebra-unit hidden width for the reference algebra
-    # (first algebra in the list). This width is passed directly to
-    # _build_simple_mlp, so it represents algebra units, not real units.
+    # ref_hidden: For MLP, algebra-unit hidden width passed to _build_simple_mlp.
+    # For conv2d, base_hidden (base filter count) passed to _build_conv_model.
     ref_hidden = nc_overrides.get("ref_hidden", 20)
 
     # Build data to get dimensions
@@ -216,58 +216,80 @@ def run_comparison(
         build_data_fn(config.train_config.batch_size)
     )
 
+    # ── Topology-aware model builder ──
+    # Determines which builder function to use based on topology.
+    is_conv2d = topology == "conv2d"
+
+    # For conv2d, input_dim from build_data_fn is number of channels (e.g. 3 for CIFAR).
+    # For MLP, input_dim is the flat feature dimension (e.g. 784 for MNIST).
+    # Both use the same variable; the model builder interprets it correctly.
+
+    def _build_model(algebra: AlgebraType, width: int) -> "torch.nn.Module":
+        """Build a model using the appropriate topology builder."""
+        if is_conv2d:
+            return _build_conv_model(
+                algebra=algebra,
+                base_hidden=width,
+                depth=depth,
+                input_dim=input_dim,
+                output_dim=output_dim,
+                activation=nc_overrides.get("activation", "split_relu"),
+                output_projection=nc_overrides.get("output_projection", "flatten"),
+                use_batchnorm=nc_overrides.get("use_batchnorm", True),
+            )
+        else:
+            return _build_simple_mlp(
+                algebra=algebra,
+                hidden=width,
+                depth=depth,
+                input_dim=input_dim,
+                output_dim=output_dim,
+            )
+
     # ── Step 1: Build reference model to get target param count ──
     # Use the first algebra in the list as reference
     ref_algebra = config.algebras[0]
-    ref_model = _build_simple_mlp(
-        algebra=ref_algebra,
-        hidden=ref_hidden,
-        depth=depth,
-        input_dim=input_dim,
-        output_dim=output_dim,
-    )
+    ref_model = _build_model(ref_algebra, ref_hidden)
     target_params = sum(p.numel() for p in ref_model.parameters())
     logger.info(
         f"Reference: {ref_algebra.short_name} hidden={ref_hidden} "
-        f"target={target_params} params"
+        f"target={target_params} params (topology={topology})"
     )
 
     # ── Step 2: Find matched widths for each algebra ──
     matched_widths: dict[str, int] = {}
     param_counts: dict[str, int] = {}
 
+    # Conv2d has coarser granularity due to multiplier scaling.
+    # Use 10% tolerance for conv2d, 1% for MLP.
+    param_tolerance = 0.10 if is_conv2d else 0.01
+
     for algebra in config.algebras:
         width = find_matched_width(
             target_params=target_params,
             algebra=algebra,
-            topology="mlp",
+            topology=topology,
             depth=depth,
-            tolerance=0.01,
+            tolerance=param_tolerance,
             input_dim=input_dim,
             output_dim=output_dim,
         )
         matched_widths[algebra.short_name] = width
 
         # Verify actual param count
-        test_model = _build_simple_mlp(
-            algebra=algebra,
-            hidden=width,
-            depth=depth,
-            input_dim=input_dim,
-            output_dim=output_dim,
-        )
+        test_model = _build_model(algebra, width)
         actual = sum(p.numel() for p in test_model.parameters())
         param_counts[algebra.short_name] = actual
 
-    # ── Step 3: Verify param counts within 1% tolerance ──
+    # ── Step 3: Verify param counts within tolerance ──
     ref_count = param_counts[ref_algebra.short_name]
     for alg_name, count in param_counts.items():
-        relative_diff = abs(count - ref_count) / ref_count
-        if relative_diff > 0.01:
+        relative_diff = abs(count - ref_count) / ref_count if ref_count > 0 else 0.0
+        if relative_diff > param_tolerance:
             raise ValueError(
                 f"Parameter count mismatch: {alg_name} has {count} params "
                 f"({relative_diff * 100:.2f}% from reference {ref_count}). "
-                f"All algebras must be within 1%."
+                f"All algebras must be within {param_tolerance * 100:.0f}%."
             )
 
     logger.info(f"Parameter counts: {param_counts}")
@@ -282,17 +304,21 @@ def run_comparison(
             import torchinfo
 
             width = matched_widths[alg_name]
-            summary_model = _build_simple_mlp(
-                algebra=algebra,
-                hidden=width,
-                depth=depth,
-                input_dim=input_dim,
-                output_dim=output_dim,
-            )
+            summary_model = _build_model(algebra, width)
+
+            # Input size depends on topology
+            if is_conv2d:
+                # Conv2d expects [B, C, H, W]; infer spatial dims from data
+                sample_batch = next(iter(train_loader))
+                sample_input = sample_batch[0][:1]  # [1, C, H, W]
+                input_size = tuple(sample_input.shape)
+            else:
+                input_size = (1, input_dim)
+
             summary_str = str(
                 torchinfo.summary(
                     summary_model,
-                    input_size=(1, input_dim),
+                    input_size=input_size,
                     device="cpu",
                     verbose=0,
                 )
@@ -318,14 +344,8 @@ def run_comparison(
                 config.train_config.batch_size
             )
 
-            # Build model using _build_simple_mlp for consistent param matching
-            model = _build_simple_mlp(
-                algebra=algebra,
-                hidden=width,
-                depth=depth,
-                input_dim=input_dim,
-                output_dim=output_dim,
-            )
+            # Build model using topology-aware builder
+            model = _build_model(algebra, width)
 
             # Create experiment directory
             experiment_dir = task_dir / algebra.name / str(seed_idx)
@@ -429,13 +449,7 @@ def run_comparison(
     for algebra in config.algebras:
         alg_name = algebra.short_name
         width = matched_widths[alg_name]
-        model = _build_simple_mlp(
-            algebra=algebra,
-            hidden=width,
-            depth=depth,
-            input_dim=input_dim,
-            output_dim=output_dim,
-        )
+        model = _build_model(algebra, width)
         param_reports[alg_name] = param_report(model)
 
     plot_param_table(param_reports, str(task_dir / "param_table.png"))
