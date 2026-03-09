@@ -39,6 +39,9 @@ packages = ["src/octonion"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-x --tb=short"
+markers = [
+    "slow: marks tests as slow (hours-long GPU training runs)",
+]
 
 [tool.hypothesis]
 database_backend = "directory"
