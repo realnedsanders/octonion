@@ -269,12 +269,14 @@ def cifar_network_config(
 ) -> NetworkConfig:
     """Build Conv2D network config matching published CIFAR architectures.
 
-    Inspired by architectures from Gaudet & Maida 2018 and Trabelsi et al. 2018.
-    Uses a Conv2D config with depth=3 (compatible with AlgebraNetwork's per-block
-    pooling on 32x32 CIFAR images), base_hidden=16 (standard CIFAR initial
-    filters), and split_relu activation. The published papers use deeper
-    ResNet-style architectures with skip connections, but AlgebraNetwork
-    currently provides plain convolutions with pooling at every block.
+    Uses a ResNet-style Conv2D architecture matching Gaudet & Maida 2018 and
+    Trabelsi et al. 2018. AlgebraNetwork's conv2d topology provides residual
+    blocks with skip connections across 3 stages, stride-2 downsampling at
+    stage boundaries only:
+
+    - depth=28 residual blocks distributed across 3 stages (9+9+10)
+    - Stage filters: 16 -> 32 -> 64 (scaled by algebra multiplier)
+    - Spatial: 32x32 -> 32x32 (stage1) -> 16x16 (stage2) -> 8x8 (stage3) -> GAP
 
     Input encoding per algebra:
     - Real:       standard 3-channel image, no encoding change
@@ -304,18 +306,13 @@ def cifar_network_config(
 
     output_dim = 10 if dataset == "cifar10" else 100
 
-    # AlgebraNetwork's conv2d topology applies MaxPool2d(2,2) at every block.
-    # CIFAR images are 32x32, so maximum depth is 5 (32->16->8->4->2->1).
-    # We use depth=3 (32->16->8->4) which gives a 4x4 spatial map before GAP.
-    # This is compatible with the current AlgebraNetwork architecture.
-    # Note: The published papers use deeper ResNet-style architectures with
-    # skip connections and pooling only at stage boundaries, but AlgebraNetwork
-    # does not have skip connections. Full ResNet reproduction would require
-    # a custom residual network class (deferred to future work).
+    # ResNet-style architecture with 28 residual blocks across 3 stages.
+    # Matches Gaudet & Maida 2018 (10+9+9 residual block architecture)
+    # with stride-2 downsampling only at stage boundaries.
     return NetworkConfig(
         algebra=algebra,
         topology="conv2d",
-        depth=3,
+        depth=28,
         base_hidden=16,
         activation="split_relu",
         output_projection="flatten",

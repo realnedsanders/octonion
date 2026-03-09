@@ -26,6 +26,7 @@ exclude-dependencies = ["torch", "triton"]
 [dependency-groups]
 dev = [
     "pytest",
+    "pytest-timeout",
     "hypothesis>=6.0",
     "hypothesis-torch",
     "numpy>=1.26",
