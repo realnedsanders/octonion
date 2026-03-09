@@ -396,6 +396,137 @@ class TestConv2dParamMatching:
             )
 
 
+class TestConv2dComparison:
+    """Verify run_comparison with topology='conv2d' dispatches correctly."""
+
+    def _build_conv2d_data(self, batch_size: int = 8):
+        """Build tiny CIFAR-like synthetic dataset: [B, 3, 8, 8] images.
+
+        Returns (train_loader, val_loader, test_loader, input_dim=3, output_dim=2, input_channels=3).
+        """
+        torch.manual_seed(0)
+        n_train, n_val, n_test = 32, 16, 16
+
+        def _make_loader(n: int) -> DataLoader:
+            x = torch.randn(n, 3, 8, 8)
+            y = torch.randint(0, 2, (n,))
+            return DataLoader(TensorDataset(x, y), batch_size=batch_size, shuffle=False)
+
+        return _make_loader(n_train), _make_loader(n_val), _make_loader(n_test), 3, 2, 3
+
+    def test_conv2d_comparison_trains_successfully(self, tmp_path: Path) -> None:
+        """run_comparison with topology='conv2d' builds AlgebraNetwork and trains."""
+        from octonion.baselines._comparison import run_comparison
+
+        config = ComparisonConfig(
+            task="conv2d_test",
+            algebras=[AlgebraType.REAL, AlgebraType.QUATERNION],
+            seeds=1,
+            train_config=_make_train_config(),
+            output_dir=str(tmp_path / "experiments"),
+        )
+
+        report = run_comparison(
+            task_name="conv2d_test",
+            build_data_fn=self._build_conv2d_data,
+            config=config,
+            device="cpu",
+            network_config_overrides={
+                "topology": "conv2d",
+                "depth": 6,
+                "ref_hidden": 4,
+            },
+        )
+
+        assert len(report.per_run) == 2  # 2 algebras x 1 seed
+        for run in report.per_run:
+            assert "best_val_acc" in run["metrics"]
+
+    def test_mlp_comparison_still_works(self, tmp_path: Path) -> None:
+        """run_comparison with topology='mlp' (default) still builds _SimpleAlgebraMLP."""
+        config = ComparisonConfig(
+            task="mlp_test",
+            algebras=[AlgebraType.REAL, AlgebraType.COMPLEX],
+            seeds=1,
+            train_config=_make_train_config(),
+            output_dir=str(tmp_path / "experiments"),
+        )
+
+        report = _run(config, task_name="mlp_test")
+        assert len(report.per_run) == 2
+
+    def test_conv2d_cifar_shape_no_crash(self) -> None:
+        """CIFAR-shaped data [B, 3, 32, 32] flows through conv2d without shape mismatch."""
+        from octonion.baselines._config import NetworkConfig
+        from octonion.baselines._network import AlgebraNetwork
+        from octonion.baselines._param_matching import _build_conv_model
+
+        for algebra in [AlgebraType.REAL, AlgebraType.QUATERNION]:
+            model = _build_conv_model(
+                algebra=algebra,
+                base_hidden=4,
+                depth=6,
+                input_dim=3,
+                output_dim=10,
+            )
+            model.eval()
+            x = torch.randn(2, 3, 32, 32)
+            with torch.no_grad():
+                out = model(x)
+            assert out.shape == (2, 10), (
+                f"{algebra.short_name}: output shape {out.shape}, expected (2, 10)"
+            )
+
+    def test_conv2d_config_json_records_topology(self, tmp_path: Path) -> None:
+        """Per-run config.json records correct topology='conv2d'."""
+        from octonion.baselines._comparison import run_comparison
+
+        config = ComparisonConfig(
+            task="topo_test",
+            algebras=[AlgebraType.REAL],
+            seeds=1,
+            train_config=_make_train_config(),
+            output_dir=str(tmp_path / "experiments"),
+        )
+
+        run_comparison(
+            task_name="topo_test",
+            build_data_fn=self._build_conv2d_data,
+            config=config,
+            device="cpu",
+            network_config_overrides={
+                "topology": "conv2d",
+                "depth": 6,
+                "ref_hidden": 4,
+            },
+        )
+
+        config_path = tmp_path / "experiments" / "topo_test" / "REAL" / "0" / "config.json"
+        with open(config_path) as f:
+            saved = json.load(f)
+        assert saved["network_config"]["topology"] == "conv2d"
+
+    def test_conv2d_forward_pass_produces_correct_output_shape(self) -> None:
+        """Forward pass on [B, 3, 32, 32] through conv2d network produces [B, 10]."""
+        from octonion.baselines._param_matching import _build_conv_model
+
+        for algebra in list(AlgebraType):
+            model = _build_conv_model(
+                algebra=algebra,
+                base_hidden=4,
+                depth=6,
+                input_dim=3,
+                output_dim=10,
+            )
+            model.eval()
+            x = torch.randn(2, 3, 32, 32)
+            with torch.no_grad():
+                out = model(x)
+            assert out.shape == (2, 10), (
+                f"{algebra.short_name}: output {out.shape}, expected (2, 10)"
+            )
+
+
 class TestConfigAndMetrics:
     """Verify per-experiment config and metrics JSON files."""
 
