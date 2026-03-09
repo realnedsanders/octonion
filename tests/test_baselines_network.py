@@ -139,8 +139,8 @@ class TestSkeletonIdentity:
         """Count the number of hidden blocks in the model."""
         if hasattr(model, "hidden_blocks"):
             return len(model.hidden_blocks)
-        if hasattr(model, "conv_blocks"):
-            return len(model.conv_blocks)
+        if hasattr(model, "stage1"):
+            return len(model.stage1) + len(model.stage2) + len(model.stage3)
         if hasattr(model, "rnn_cells"):
             return len(model.rnn_cells)
         return 0

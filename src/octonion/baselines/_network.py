@@ -50,6 +50,122 @@ from octonion.baselines._normalization import (
 )
 
 
+def _apply_conv_bn(
+    h: torch.Tensor, bn: nn.Module, algebra_dim: int,
+) -> torch.Tensor:
+    """Apply batch normalization to conv feature maps with correct reshaping.
+
+    BN layers expect [batch, features] (real) or [batch, features, dim]
+    (hypercomplex), but conv outputs are [B, ch, H, W] (real) or
+    [B, ch, dim, H, W] (hypercomplex). This helper handles the permute/reshape.
+
+    Args:
+        h: Conv output tensor.
+        bn: Batch normalization module.
+        algebra_dim: Algebra dimension (1 for real, 2/4/8 for hypercomplex).
+
+    Returns:
+        Normalized tensor with same shape as input.
+    """
+    if algebra_dim == 1:
+        # Real: [B, ch, H, W] -> reshape for BN -> back
+        b, ch, hh, ww = h.shape
+        h = h.permute(0, 2, 3, 1).reshape(-1, ch)
+        h = bn(h)
+        h = h.reshape(b, hh, ww, ch).permute(0, 3, 1, 2)
+    else:
+        # Hypercomplex: [B, ch, dim, H, W] -> reshape for BN -> back
+        b, ch, d, hh, ww = h.shape
+        h = h.permute(0, 3, 4, 1, 2).reshape(-1, ch, d)
+        h = bn(h)
+        h = h.reshape(b, hh, ww, ch, d).permute(0, 3, 4, 1, 2)
+    return h
+
+
+class _ResidualBlock(nn.Module):
+    """ResNet-style residual block for algebra-valued conv networks.
+
+    Each block: conv3x3 -> BN -> activation -> conv3x3 -> BN -> (+skip) -> activation
+
+    The shortcut is identity when dimensions match, or 1x1 conv + BN when
+    channel count or spatial dimensions change (stride > 1).
+
+    Args:
+        network: Parent AlgebraNetwork providing factory methods.
+        in_channels: Number of input channels (algebra units).
+        out_channels: Number of output channels (algebra units).
+        stride: Stride for the first conv (1 for same-size, 2 for downsampling).
+    """
+
+    def __init__(
+        self,
+        network: "AlgebraNetwork",
+        in_channels: int,
+        out_channels: int,
+        stride: int = 1,
+    ) -> None:
+        super().__init__()
+        self._algebra_dim = network.algebra_dim
+
+        # Two conv layers: conv1 (potentially strided), conv2
+        self.conv1 = network._get_conv2d(
+            in_channels, out_channels, kernel=3, padding=1, stride=stride,
+        )
+        self.bn1 = network._get_bn(out_channels) if network.config.use_batchnorm else None
+        self.act1 = network._get_activation()
+
+        self.conv2 = network._get_conv2d(
+            out_channels, out_channels, kernel=3, padding=1, stride=1,
+        )
+        self.bn2 = network._get_bn(out_channels) if network.config.use_batchnorm else None
+        self.act2 = network._get_activation()
+
+        # Shortcut: identity if dims match, else 1x1 conv + BN
+        self.shortcut: nn.Module | None = None
+        self.shortcut_bn: nn.Module | None = None
+        if stride != 1 or in_channels != out_channels:
+            self.shortcut = network._get_conv2d(
+                in_channels, out_channels, kernel=1, padding=0, stride=stride,
+            )
+            if network.config.use_batchnorm:
+                self.shortcut_bn = network._get_bn(out_channels)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward with residual connection.
+
+        Args:
+            x: Conv feature map. Real: [B, ch, H, W], Hypercomplex: [B, ch, dim, H, W].
+
+        Returns:
+            Output with same layout but potentially different channels/spatial size.
+        """
+        dim = self._algebra_dim
+
+        # Shortcut path
+        if self.shortcut is not None:
+            residual = self.shortcut(x)
+            if self.shortcut_bn is not None:
+                residual = _apply_conv_bn(residual, self.shortcut_bn, dim)
+        else:
+            residual = x
+
+        # Main path
+        out = self.conv1(x)
+        if self.bn1 is not None:
+            out = _apply_conv_bn(out, self.bn1, dim)
+        out = self.act1(out)
+
+        out = self.conv2(out)
+        if self.bn2 is not None:
+            out = _apply_conv_bn(out, self.bn2, dim)
+
+        # Add residual and activate
+        out = out + residual
+        out = self.act2(out)
+
+        return out
+
+
 class AlgebraNetwork(nn.Module):
     """Algebra-agnostic neural network with configurable topology.
 
@@ -98,17 +214,18 @@ class AlgebraNetwork(nn.Module):
 
     def _get_conv2d(
         self, in_ch: int, out_ch: int, kernel: int, padding: int = 0,
+        stride: int = 1,
     ) -> nn.Module:
         """Return algebra-specific 2D conv layer."""
         algebra = self.config.algebra
         if algebra == AlgebraType.REAL:
-            return RealConv2d(in_ch, out_ch, kernel, padding=padding)
+            return RealConv2d(in_ch, out_ch, kernel, stride=stride, padding=padding)
         elif algebra == AlgebraType.COMPLEX:
-            return ComplexConv2d(in_ch, out_ch, kernel, padding=padding)
+            return ComplexConv2d(in_ch, out_ch, kernel, stride=stride, padding=padding)
         elif algebra == AlgebraType.QUATERNION:
-            return QuaternionConv2d(in_ch, out_ch, kernel, padding=padding)
+            return QuaternionConv2d(in_ch, out_ch, kernel, stride=stride, padding=padding)
         elif algebra == AlgebraType.OCTONION:
-            return OctonionConv2d(in_ch, out_ch, kernel, padding=padding)
+            return OctonionConv2d(in_ch, out_ch, kernel, stride=stride, padding=padding)
         raise ValueError(f"Unknown algebra: {algebra}")
 
     def _get_bn(self, features: int) -> nn.Module:
@@ -172,43 +289,74 @@ class AlgebraNetwork(nn.Module):
             self.hidden_blocks.append(block)
 
     def _build_conv(self, config: NetworkConfig) -> None:
-        """Build Conv2D topology: input_conv -> conv blocks -> GAP -> fc.
+        """Build ResNet-style Conv2D topology with residual blocks.
+
+        Architecture (following Gaudet/Maida 2018 and standard CIFAR ResNets):
+        - Initial conv3x3 to base_filters
+        - 3 stages with increasing filter counts (1x, 2x, 4x base_filters)
+        - Each stage has N = depth // 3 residual blocks (distributed evenly)
+        - Stride-2 downsampling on first block of stages 2 and 3 only
+        - Global average pooling -> fc_hidden -> activation -> output projection
 
         Input: [B, C, H, W] (real-valued image)
-        Hidden: algebra-specific conv layout
+        Hidden: algebra-specific conv layout with residual connections
         """
-        dim = self.algebra_dim
         base_filters = config.base_hidden * config.algebra.multiplier
 
-        # Initial conv block: map input channels to algebra-valued features
-        # For non-real algebras, we project input channels into algebra-valued space
+        # Distribute depth across 3 stages
+        blocks_per_stage = [
+            config.depth // 3,
+            config.depth // 3,
+            config.depth - 2 * (config.depth // 3),
+        ]
+
+        # Stage filter counts: base_filters, 2x, 4x
+        stage_filters = [base_filters, base_filters * 2, base_filters * 4]
+
+        # Initial conv: map input channels to base_filters
         self.input_conv = self._get_conv2d(
             config.input_dim, base_filters, kernel=3, padding=1,
         )
         self.input_bn = self._get_bn(base_filters) if config.use_batchnorm else None
         self.input_act = self._get_activation()
 
-        # Conv blocks with stage boundaries
-        self.conv_blocks = nn.ModuleList()
-        in_filters = base_filters
-        out_filters = base_filters
-        for i in range(config.depth):
-            block = nn.ModuleDict()
-            block["conv"] = self._get_conv2d(
-                in_filters, out_filters, kernel=3, padding=1,
-            )
-            if config.use_batchnorm:
-                block["bn"] = self._get_bn(out_filters)
-            block["activation"] = self._get_activation()
-            # Pool at each stage to reduce spatial dims
-            block["pool"] = nn.MaxPool2d(2, 2)
-            self.conv_blocks.append(block)
-            in_filters = out_filters
+        # Build 3 stages of residual blocks
+        in_ch = base_filters
 
-        # Final fc layers
-        self._conv_final_filters = out_filters
-        self.fc_hidden = self._get_linear(out_filters, out_filters)
+        # Stage 1: no downsampling (stride=1 on all blocks)
+        self.stage1 = nn.ModuleList()
+        for i in range(blocks_per_stage[0]):
+            stride = 1
+            self.stage1.append(
+                _ResidualBlock(self, in_ch, stage_filters[0], stride=stride)
+            )
+            in_ch = stage_filters[0]
+
+        # Stage 2: stride=2 on first block
+        self.stage2 = nn.ModuleList()
+        for i in range(blocks_per_stage[1]):
+            stride = 2 if i == 0 else 1
+            self.stage2.append(
+                _ResidualBlock(self, in_ch, stage_filters[1], stride=stride)
+            )
+            in_ch = stage_filters[1]
+
+        # Stage 3: stride=2 on first block
+        self.stage3 = nn.ModuleList()
+        for i in range(blocks_per_stage[2]):
+            stride = 2 if i == 0 else 1
+            self.stage3.append(
+                _ResidualBlock(self, in_ch, stage_filters[2], stride=stride)
+            )
+            in_ch = stage_filters[2]
+
+        # Final fc layers after GAP
+        self._conv_final_filters = stage_filters[2]
+        self.fc_hidden = self._get_linear(stage_filters[2], stage_filters[2])
         self.fc_act = self._get_activation()
+
+        # Update self.hidden so output projection uses correct feature size
+        self.hidden = stage_filters[2]
 
     def _build_recurrent(self, config: NetworkConfig) -> None:
         """Build Recurrent topology: input_proj -> RNN cells -> (output via projection).
@@ -334,65 +482,35 @@ class AlgebraNetwork(nn.Module):
         return self._apply_output_projection(h)
 
     def _forward_conv(self, x: torch.Tensor) -> torch.Tensor:
-        """Conv2D forward: input_conv -> conv blocks -> GAP -> fc -> output.
+        """ResNet-style Conv2D forward with residual blocks.
+
+        input_conv -> input_bn -> input_act
+        -> stage1 blocks -> stage2 blocks (stride-2) -> stage3 blocks (stride-2)
+        -> global average pooling -> fc_hidden -> fc_act -> output projection
 
         Args:
             x: [B, C, H, W]
         """
         dim = self.algebra_dim
 
-        # For non-real algebras, we need to expand input channels into algebra dims
+        # For non-real algebras, expand input channels into algebra dims
         # Conv layout: Real=[B, ch, H, W], others=[B, ch, dim, H, W]
         if dim > 1:
-            # Replicate input across algebra dimensions
-            # [B, C, H, W] -> [B, C, dim, H, W]
             x = x.unsqueeze(2).expand(-1, -1, dim, -1, -1)
 
         # Initial conv
         h = self.input_conv(x)
         if self.input_bn is not None:
-            if dim == 1:
-                # RealBatchNorm expects [B, features] but conv gives [B, ch, H, W]
-                # Use a pass-through for conv shapes
-                b, ch, hh, ww = h.shape
-                h = h.permute(0, 2, 3, 1).reshape(-1, ch)
-                h = self.input_bn(h)
-                h = h.reshape(b, hh, ww, ch).permute(0, 3, 1, 2)
-            else:
-                # Hypercomplex BN expects [B, features, dim]
-                # Conv output: [B, ch, dim, H, W]
-                b, ch, d, hh, ww = h.shape
-                h = h.permute(0, 3, 4, 1, 2).reshape(-1, ch, d)
-                h = self.input_bn(h)
-                h = h.reshape(b, hh, ww, ch, d).permute(0, 3, 4, 1, 2)
+            h = _apply_conv_bn(h, self.input_bn, dim)
         h = self.input_act(h)
 
-        # Conv blocks
-        for block in self.conv_blocks:
-            h = block["conv"](h)
-            if "bn" in block:
-                if dim == 1:
-                    b, ch, hh, ww = h.shape
-                    h = h.permute(0, 2, 3, 1).reshape(-1, ch)
-                    h = block["bn"](h)
-                    h = h.reshape(b, hh, ww, ch).permute(0, 3, 1, 2)
-                else:
-                    b, ch, d, hh, ww = h.shape
-                    h = h.permute(0, 3, 4, 1, 2).reshape(-1, ch, d)
-                    h = block["bn"](h)
-                    h = h.reshape(b, hh, ww, ch, d).permute(0, 3, 4, 1, 2)
-            h = block["activation"](h)
-            # Pool: need to handle algebra dim correctly
-            if dim == 1:
-                h = block["pool"](h)
-            else:
-                # Pool over spatial dims only, keeping algebra dim
-                # [B, ch, dim, H, W] -> pool over H, W
-                b, ch, d, hh, ww = h.shape
-                h = h.reshape(b * ch * d, 1, hh, ww)
-                h = block["pool"](h)
-                hh2, ww2 = h.shape[2], h.shape[3]
-                h = h.reshape(b, ch, d, hh2, ww2)
+        # Residual stages
+        for block in self.stage1:
+            h = block(h)
+        for block in self.stage2:
+            h = block(h)
+        for block in self.stage3:
+            h = block(h)
 
         # Global average pooling over spatial dims
         if dim == 1:
