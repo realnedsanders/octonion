@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-07-PLAN.md
-last_updated: "2026-03-09T00:50:28.949Z"
-last_activity: 2026-03-09 -- Completed 03-07 ResNet residual blocks and pytest-timeout
+stopped_at: Completed 03-08-PLAN.md
+last_updated: "2026-03-09T01:17:50Z"
+last_activity: 2026-03-09 -- Completed 03-08 Topology-aware comparison runner
 progress:
   total_phases: 9
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 18
-  completed_plans: 16
-  percent: 88
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 3 of 9 (Baseline Implementations)
-Plan: 8 of 8 in current phase
-Status: In Progress
-Last activity: 2026-03-09 -- Completed 03-07 ResNet residual blocks and pytest-timeout
+Phase: 3 of 9 (Baseline Implementations) -- COMPLETE
+Plan: 8 of 8 in current phase -- COMPLETE
+Status: Phase Complete
+Last activity: 2026-03-09 -- Completed 03-08 Topology-aware comparison runner
 
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [█████████░] 88%
 *Updated after each plan completion*
 | Phase 03 P03 | 10min | 2 tasks | 5 files |
 | Phase 03 P07 | 5min | 2 tasks | 4 files |
+| Phase 03 P08 | 26min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,9 @@ Recent decisions affecting current work:
 - [Phase 03]: ResidualBlock uses parent network factory methods (_get_conv2d, _get_bn, _get_activation) for algebra-specific layers
 - [Phase 03]: BN reshape logic factored into _apply_conv_bn helper for reuse across ResidualBlock and forward pass
 - [Phase 03]: 3 stages with 1x/2x/4x base_filters and stride-2 at stages 2 and 3 matching standard CIFAR ResNet
+- [Phase 03-08]: Conv2d param matching uses 10% tolerance (not 1%) due to coarse base_hidden granularity from multiplier scaling
+- [Phase 03-08]: _build_conv_model helper parallels _build_simple_mlp for conv2d topology model building
+- [Phase 03-08]: run_comparison uses topology-aware _build_model closure dispatching to correct builder
 
 ### Pending Todos
 
@@ -144,6 +148,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T00:50:28.948Z
-Stopped at: Completed 03-07-PLAN.md
+Last session: 2026-03-09T01:17:50Z
+Stopped at: Completed 03-08-PLAN.md
 Resume file: None

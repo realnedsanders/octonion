@@ -79,8 +79,8 @@ Plans:
 - [x] 03-04-PLAN.md — Training utility with full observability, statistical testing, plotting
 - [x] 03-05-PLAN.md — Comparison runner with experiment management and API finalization
 - [ ] 03-06-PLAN.md — CIFAR benchmark reproduction and verification (C/H published results)
-- [ ] 03-07-PLAN.md — [GAP CLOSURE] ResNet-style residual blocks in AlgebraNetwork conv2d topology, pytest-timeout
-- [ ] 03-08-PLAN.md — [GAP CLOSURE] Topology-aware run_comparison with conv2d model dispatch
+- [x] 03-07-PLAN.md — [GAP CLOSURE] ResNet-style residual blocks in AlgebraNetwork conv2d topology, pytest-timeout
+- [x] 03-08-PLAN.md — [GAP CLOSURE] Topology-aware run_comparison with conv2d model dispatch
 
 ### Phase 4: Numerical Stability
 **Goal**: Precision characteristics of octonionic operations are quantified so that architecture decisions (depth, float width, mitigations) are evidence-based
