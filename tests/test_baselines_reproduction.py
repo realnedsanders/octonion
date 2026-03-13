@@ -310,7 +310,7 @@ class TestQuaternionCIFAR10Reproduction:
             network_config_overrides={
                 "topology": "conv2d",
                 "depth": 28,
-                "ref_hidden": 16,
+                "ref_hidden": 4,
             },
         )
 
@@ -356,7 +356,7 @@ class TestComplexCIFAR100Reproduction:
             network_config_overrides={
                 "topology": "conv2d",
                 "depth": 28,
-                "ref_hidden": 16,
+                "ref_hidden": 4,
             },
         )
 
@@ -400,7 +400,7 @@ class TestQuaternionCIFAR100Reproduction:
             network_config_overrides={
                 "topology": "conv2d",
                 "depth": 28,
-                "ref_hidden": 16,
+                "ref_hidden": 4,
             },
         )
 
@@ -445,7 +445,7 @@ class TestRealCIFAR10Reproduction:
             network_config_overrides={
                 "topology": "conv2d",
                 "depth": 28,
-                "ref_hidden": 16,
+                "ref_hidden": 4,
             },
         )
 
