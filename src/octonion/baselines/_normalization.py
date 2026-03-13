@@ -269,6 +269,7 @@ class QuaternionBatchNorm(nn.Module):
         # Condition number monitoring (updated each forward pass during training)
         self.register_buffer("last_cond", torch.tensor(1.0))
 
+    @torch.compiler.disable
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
@@ -290,12 +291,18 @@ class QuaternionBatchNorm(nn.Module):
         torch.compile compatibility (no graph breaks) and per-feature
         failure detection via the info tensor.
 
+        @torch.compiler.disable: This function contains inescapable Python
+        control flow (per-feature fallback logic, logging) that cannot be
+        traced by torch.compile. The decorator tells Dynamo to execute this
+        function eagerly, eliminating graph breaks and recompilation storms.
+        The outer network (conv, linear, residual) still gets compiled.
+
         Args:
-            x_centered: [batch, features, dim] centered input.
-            cov: [features, dim, dim] covariance matrix.
+            x_centered: [batch, features, dim] centered input (float32).
+            cov: [features, dim, dim] covariance matrix (float32).
 
         Returns:
-            Whitened tensor [batch, features, dim] in original dtype.
+            Whitened tensor [batch, features, dim] in float32.
         """
         # Disable autocast for numerically sensitive Cholesky/solve_triangular.
         # When AMP is enabled, inputs may arrive as float16 but Cholesky needs
@@ -359,7 +366,7 @@ class QuaternionBatchNorm(nn.Module):
                     per_feature_cond = (
                         diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                     )
-                    self.last_cond.fill_(per_feature_cond.max().item())
+                    self.last_cond.copy_(per_feature_cond.max())
 
             # Compute L_inv once: [features, dim, dim]
             # Only `features` number of dim×dim inversions (not features × batch).
@@ -379,34 +386,31 @@ class QuaternionBatchNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: quaternion batch normalization.
 
+        Always computes in float32 and casts back to input dtype on exit.
+        This ensures AMP safety: mean, cov, whitening, and the gamma/beta
+        affine transform all run in float32 regardless of autocast state.
+
         Args:
             x: Input tensor of shape [batch, features, 4].
 
         Returns:
             Normalized tensor of shape [batch, features, 4].
         """
+        input_dtype = x.dtype
+        x = x.float()  # entire BN forward in float32 for numerical stability
+
         if self.training:
             mean = x.mean(dim=0)
             x_centered = x - mean
-
-            # Force float32 for covariance computation: accumulation over batch
-            # can lose precision in float16 for large batches under AMP.
-            x_centered_f32 = x_centered.float()
-            cov = torch.einsum(
-                "bfi, bfj -> fij", x_centered_f32, x_centered_f32
-            ) / x.shape[0]
+            cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
 
             with torch.no_grad():
-                self.running_mean.mul_(1 - self.momentum).add_(
-                    self.momentum * mean.float()
-                )
-                self.running_cov.mul_(1 - self.momentum).add_(
-                    self.momentum * cov
-                )
+                self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+                self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
                 self.num_batches_tracked += 1
         else:
             mean = self.running_mean
-            x_centered = x - mean.to(x.dtype)
+            x_centered = x - mean
             cov = self.running_cov
 
         x_whitened = self._whiten(x_centered, cov)
@@ -416,7 +420,7 @@ class QuaternionBatchNorm(nn.Module):
         out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
         out = out + self.beta
 
-        return out
+        return out.to(input_dtype)
 
 
 class OctonionBatchNorm(nn.Module):
@@ -478,21 +482,22 @@ class OctonionBatchNorm(nn.Module):
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         self.register_buffer("last_cond", torch.tensor(1.0))
 
+    @torch.compiler.disable
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
         """Whiten using Cholesky decomposition with AMP float32 protection.
 
         Same precomputed-inverse strategy as QuaternionBatchNorm._whiten.
-        See that method's docstring for rationale on AMP protection and
-        cholesky_ex usage.
+        See that method's docstring for rationale on AMP protection,
+        cholesky_ex usage, and @torch.compiler.disable.
 
         Args:
-            x_centered: [batch, features, dim] centered input.
-            cov: [features, dim, dim] covariance matrix.
+            x_centered: [batch, features, dim] centered input (float32).
+            cov: [features, dim, dim] covariance matrix (float32).
 
         Returns:
-            Whitened tensor [batch, features, dim] in original dtype.
+            Whitened tensor [batch, features, dim] in float32.
         """
         # Disable autocast for numerically sensitive Cholesky/solve_triangular.
         # When AMP is enabled, inputs may arrive as float16 but Cholesky needs
@@ -555,7 +560,7 @@ class OctonionBatchNorm(nn.Module):
                     per_feature_cond = (
                         diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                     )
-                    self.last_cond.fill_(per_feature_cond.max().item())
+                    self.last_cond.copy_(per_feature_cond.max())
 
             identity = eye.expand_as(L)
             L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
@@ -569,34 +574,31 @@ class OctonionBatchNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: octonion batch normalization.
 
+        Always computes in float32 and casts back to input dtype on exit.
+        This ensures AMP safety: mean, cov, whitening, and the gamma/beta
+        affine transform all run in float32 regardless of autocast state.
+
         Args:
             x: Input tensor of shape [batch, features, 8].
 
         Returns:
             Normalized tensor of shape [batch, features, 8].
         """
+        input_dtype = x.dtype
+        x = x.float()  # entire BN forward in float32 for numerical stability
+
         if self.training:
             mean = x.mean(dim=0)
             x_centered = x - mean
-
-            # Force float32 for covariance computation: accumulation over batch
-            # can lose precision in float16 for large batches under AMP.
-            x_centered_f32 = x_centered.float()
-            cov = torch.einsum(
-                "bfi, bfj -> fij", x_centered_f32, x_centered_f32
-            ) / x.shape[0]
+            cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
 
             with torch.no_grad():
-                self.running_mean.mul_(1 - self.momentum).add_(
-                    self.momentum * mean.float()
-                )
-                self.running_cov.mul_(1 - self.momentum).add_(
-                    self.momentum * cov
-                )
+                self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+                self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
                 self.num_batches_tracked += 1
         else:
             mean = self.running_mean
-            x_centered = x - mean.to(x.dtype)
+            x_centered = x - mean
             cov = self.running_cov
 
         x_whitened = self._whiten(x_centered, cov)
@@ -605,4 +607,4 @@ class OctonionBatchNorm(nn.Module):
         out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
         out = out + self.beta
 
-        return out
+        return out.to(input_dtype)
