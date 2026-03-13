@@ -265,6 +265,12 @@ def train_model(
     model = model.to(device)
     loss_fn = loss_fn.to(device)
 
+    # Enable cuDNN autotuner for fixed-size inputs (CIFAR batch_size=128, drop_last=True).
+    # Safe because input sizes are constant throughout training.
+    # Per project policy: "seed-controlled but not CUDA deterministic".
+    if str(device).startswith("cuda"):
+        torch.backends.cudnn.benchmark = True
+
     # Build optimizer and scheduler
     optimizer = _build_optimizer(model, config)
     scheduler = _build_scheduler(optimizer, config)
@@ -337,9 +343,10 @@ def train_model(
             n_batches = 0
 
             for batch in train_loader:
-                inputs, targets = batch[0].to(device), batch[1].to(device)
+                inputs = batch[0].to(device, non_blocking=True)
+                targets = batch[1].to(device, non_blocking=True)
 
-                optimizer.zero_grad()
+                optimizer.zero_grad(set_to_none=True)
 
                 amp_device_type = "cuda" if str(device).startswith("cuda") else "cpu"
                 with torch.amp.autocast(amp_device_type, enabled=use_amp):

@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 def _tril_to_symmetric(tril_flat: torch.Tensor, dim: int) -> torch.Tensor:
     """Convert flat lower-triangular entries to a symmetric matrix.
 
+    Vectorized via torch.tril_indices: no Python-level loops.
+    The index computation is a fast C++ call returning a small tensor
+    (dim*(dim+1)/2 elements), so overhead is negligible versus the
+    eliminated Python loop.
+
     Args:
         tril_flat: [..., dim*(dim+1)/2] flat lower-triangular entries.
         dim: Matrix dimension.
@@ -30,18 +35,14 @@ def _tril_to_symmetric(tril_flat: torch.Tensor, dim: int) -> torch.Tensor:
     Returns:
         [..., dim, dim] symmetric matrix.
     """
-    # Build lower-triangular index mapping
     batch_shape = tril_flat.shape[:-1]
+    rows, cols = torch.tril_indices(dim, dim, device=tril_flat.device)
     mat = torch.zeros(
         *batch_shape, dim, dim,
         device=tril_flat.device, dtype=tril_flat.dtype,
     )
-    idx = 0
-    for i in range(dim):
-        for j in range(i + 1):
-            mat[..., i, j] = tril_flat[..., idx]
-            mat[..., j, i] = tril_flat[..., idx]
-            idx += 1
+    mat[..., rows, cols] = tril_flat
+    mat[..., cols, rows] = tril_flat
     return mat
 
 
