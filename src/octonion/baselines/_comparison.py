@@ -174,9 +174,9 @@ def run_comparison(
 ) -> ComparisonReport:
     """Orchestrate a full multi-algebra multi-seed comparison experiment.
 
-    Trains parameter-matched networks for each algebra across multiple
-    seeds, computes pairwise statistical significance, generates plots,
-    and manages experiment provenance.
+    Trains networks for each algebra across multiple seeds, computes
+    pairwise statistical significance, generates plots, and manages
+    experiment provenance.
 
     Args:
         task_name: Experiment name (e.g., "cifar10_conv2d").
@@ -185,16 +185,23 @@ def run_comparison(
             Accepts batch_size as first argument.
         config: ComparisonConfig with algebras, seeds, train_config, output_dir.
         device: "cuda" or "cpu".
-        network_config_overrides: Optional overrides for NetworkConfig fields
-            (e.g., depth, topology, base_hidden, ref_hidden).
-            ref_hidden: algebra-unit hidden width for the reference model
-            (default 20, used to compute target param count).
+        network_config_overrides: Optional overrides for NetworkConfig fields.
+            Keys: depth, topology, ref_hidden, activation, output_projection,
+            use_batchnorm, match_params.
+            ref_hidden: base hidden width for the reference model (default 20).
+            match_params: If True (default), binary-search matched widths so
+                all algebras have ~equal param count. If False, use same-width
+                mode where all algebras get the same effective base_filters
+                (ref_hidden), matching the protocol in Gaudet & Maida 2018 /
+                Trabelsi et al. 2018. In same-width mode, ref_hidden must be
+                divisible by the largest algebra multiplier.
 
     Returns:
         ComparisonReport with all experiment results.
 
     Raises:
-        ValueError: If parameter counts differ by more than 1% across algebras.
+        ValueError: If parameter counts differ by more than tolerance (matched)
+            or if ref_hidden is not divisible by max multiplier (same-width).
     """
     task_dir = Path(config.output_dir) / task_name
     task_dir.mkdir(parents=True, exist_ok=True)
@@ -207,9 +214,8 @@ def run_comparison(
     nc_overrides = network_config_overrides or {}
     depth = nc_overrides.get("depth", 1)
     topology = nc_overrides.get("topology", "mlp")
-    # ref_hidden: For MLP, algebra-unit hidden width passed to _build_simple_mlp.
-    # For conv2d, base_hidden (base filter count) passed to _build_conv_model.
     ref_hidden = nc_overrides.get("ref_hidden", 20)
+    match_params = nc_overrides.get("match_params", True)
 
     # Build data to get dimensions
     train_loader, val_loader, test_loader, input_dim, output_dim, input_channels = (
@@ -246,59 +252,78 @@ def run_comparison(
                 output_dim=output_dim,
             )
 
-    # ── Step 1: Build reference model to get target param count ──
-    # Use the first algebra in the list as reference
-    ref_algebra = config.algebras[0]
-    ref_model = _build_model(ref_algebra, ref_hidden)
-    target_params = sum(p.numel() for p in ref_model.parameters())
-    logger.info(
-        f"Reference: {ref_algebra.short_name} hidden={ref_hidden} "
-        f"target={target_params} params (topology={topology})"
-    )
-
-    # ── Step 2: Find matched widths for each algebra ──
+    # ── Width determination: matched-params vs same-width ──
     matched_widths: dict[str, int] = {}
     param_counts: dict[str, int] = {}
 
-    # Conv2d has coarser granularity due to multiplier scaling.
-    # Use 15% tolerance for conv2d (discrete base_hidden steps scaled by
-    # algebra multiplier 1-8x create large param jumps -- 10% proved
-    # insufficient for 4-algebra matching at practical model sizes),
-    # 1% for MLP.
-    param_tolerance = 0.15 if is_conv2d else 0.01
+    if match_params:
+        # ── Matched-params mode: binary search for equal param counts ──
+        ref_algebra = config.algebras[0]
+        ref_model = _build_model(ref_algebra, ref_hidden)
+        target_params = sum(p.numel() for p in ref_model.parameters())
+        logger.info(
+            f"Reference: {ref_algebra.short_name} hidden={ref_hidden} "
+            f"target={target_params} params (topology={topology})"
+        )
 
-    for algebra in config.algebras:
-        if algebra == ref_algebra:
-            # Reference algebra: use ref_hidden directly (no search needed)
-            matched_widths[algebra.short_name] = ref_hidden
-            param_counts[algebra.short_name] = target_params
-        else:
-            width = find_matched_width(
-                target_params=target_params,
-                algebra=algebra,
-                topology=topology,
-                depth=depth,
-                tolerance=param_tolerance,
-                input_dim=input_dim,
-                output_dim=output_dim,
-            )
-            matched_widths[algebra.short_name] = width
+        # Conv2d has coarser granularity due to multiplier scaling.
+        param_tolerance = 0.15 if is_conv2d else 0.01
 
-            # Verify actual param count
-            test_model = _build_model(algebra, width)
-            actual = sum(p.numel() for p in test_model.parameters())
-            param_counts[algebra.short_name] = actual
+        for algebra in config.algebras:
+            if algebra == ref_algebra:
+                matched_widths[algebra.short_name] = ref_hidden
+                param_counts[algebra.short_name] = target_params
+            else:
+                width = find_matched_width(
+                    target_params=target_params,
+                    algebra=algebra,
+                    topology=topology,
+                    depth=depth,
+                    tolerance=param_tolerance,
+                    input_dim=input_dim,
+                    output_dim=output_dim,
+                )
+                matched_widths[algebra.short_name] = width
 
-    # ── Step 3: Verify param counts within tolerance ──
-    ref_count = param_counts[ref_algebra.short_name]
-    for alg_name, count in param_counts.items():
-        relative_diff = abs(count - ref_count) / ref_count if ref_count > 0 else 0.0
-        if relative_diff > param_tolerance:
+                test_model = _build_model(algebra, width)
+                actual = sum(p.numel() for p in test_model.parameters())
+                param_counts[algebra.short_name] = actual
+
+        # Verify param counts within tolerance
+        ref_count = param_counts[ref_algebra.short_name]
+        for alg_name, count in param_counts.items():
+            relative_diff = abs(count - ref_count) / ref_count if ref_count > 0 else 0.0
+            if relative_diff > param_tolerance:
+                raise ValueError(
+                    f"Parameter count mismatch: {alg_name} has {count} params "
+                    f"({relative_diff * 100:.2f}% from reference {ref_count}). "
+                    f"All algebras must be within {param_tolerance * 100:.0f}%."
+                )
+    else:
+        # ── Same-width mode: all algebras get same effective base_filters ──
+        # ref_hidden = target base_filters for all algebras.
+        # Pass base_hidden = ref_hidden // multiplier so that
+        # AlgebraNetwork computes base_filters = base_hidden * multiplier = ref_hidden.
+        max_mult = max(a.multiplier for a in config.algebras)
+        if ref_hidden % max_mult != 0:
             raise ValueError(
-                f"Parameter count mismatch: {alg_name} has {count} params "
-                f"({relative_diff * 100:.2f}% from reference {ref_count}). "
-                f"All algebras must be within {param_tolerance * 100:.0f}%."
+                f"In same-width mode (match_params=False), ref_hidden ({ref_hidden}) "
+                f"must be divisible by the largest multiplier ({max_mult}) across "
+                f"selected algebras. Try ref_hidden="
+                f"{ref_hidden + (max_mult - ref_hidden % max_mult)}."
             )
+
+        for algebra in config.algebras:
+            base_hidden = ref_hidden // algebra.multiplier
+            matched_widths[algebra.short_name] = base_hidden
+            model = _build_model(algebra, base_hidden)
+            param_counts[algebra.short_name] = sum(
+                p.numel() for p in model.parameters()
+            )
+
+        logger.info(
+            f"Same-width mode: target base_filters={ref_hidden} for all algebras"
+        )
 
     logger.info(f"Parameter counts: {param_counts}")
 

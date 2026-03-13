@@ -453,13 +453,14 @@ class QuaternionConv2d(nn.Module):
 
 
 class OctonionConv1d(nn.Module):
-    """Octonion-valued 1D convolution via structure constants.
+    """Octonion-valued 1D convolution using fused structure constant weight matrix.
 
     Input shape: [B, in_ch, 8, L]
     Output shape: [B, out_ch, 8, L']
 
-    Uses STRUCTURE_CONSTANTS for the full octonionic convolution product
-    with precomputed nonzero entries for efficiency.
+    Builds an 8x8 block weight matrix via einsum with structure constants,
+    then performs a single F.conv1d call (mirroring QuaternionConv1d's
+    Hamilton product fusion pattern).
     """
 
     def __init__(
@@ -497,18 +498,11 @@ class OctonionConv1d(nn.Module):
             criterion="glorot",
         )
 
-        # Precompute nonzero structure constant entries
-        C = STRUCTURE_CONSTANTS
-        self._nonzero_entries: list[tuple[int, int, int, float]] = []
-        for i in range(8):
-            for j in range(8):
-                for k in range(8):
-                    c = C[i, j, k].item()
-                    if c != 0.0:
-                        self._nonzero_entries.append((i, j, k, c))
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: octonionic 1D convolution.
+        """Forward pass: fused octonionic 1D convolution (single-kernel).
+
+        Constructs the structure constant weight matrix and performs a single
+        F.conv1d instead of ~64 separate calls.
 
         Args:
             x: [B, in_ch, 8, L]
@@ -516,34 +510,27 @@ class OctonionConv1d(nn.Module):
         Returns:
             [B, out_ch, 8, L']
         """
-        B = x.shape[0]
-        L = x.shape[-1]
+        B, in_ch, _, L = x.shape
+        out_ch = self.out_channels
 
-        # Compute conv results and accumulate using structure constants
-        conv_cache: dict[tuple[int, int], torch.Tensor] = {}
+        # Flatten algebra dim into channel dim: [B, in_ch, 8, L] -> [B, 8*in_ch, L]
+        x_cat = x.permute(0, 2, 1, 3).reshape(B, 8 * in_ch, L)
 
-        # Determine output spatial size from a trial convolution
-        trial = F.conv1d(
-            x[:, :, 0, :], self.weights[0],
-            stride=self.stride, padding=self.padding,
+        # Build fused 8x8 block weight matrix via structure constants
+        W_stack = torch.stack(list(self.weights))  # [8, oc, ic, K]
+        C = STRUCTURE_CONSTANTS.to(device=W_stack.device, dtype=W_stack.dtype)
+        # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, K]
+        fused_blocks = torch.einsum("ijk, iocl -> kjocl", C, W_stack)
+        # Reshape to [8*oc, 8*ic, K]
+        fused = fused_blocks.permute(0, 2, 1, 3, 4).reshape(
+            8 * out_ch, 8 * in_ch, W_stack.shape[-1]
         )
-        L_out = trial.shape[-1]
 
-        out_components = [
-            torch.zeros(B, self.out_channels, L_out, dtype=x.dtype, device=x.device)
-            for _ in range(8)
-        ]
+        # Single fused convolution
+        out_cat = F.conv1d(x_cat, fused, stride=self.stride, padding=self.padding)
 
-        for i, j, k, c in self._nonzero_entries:
-            key = (i, j)
-            if key not in conv_cache:
-                conv_cache[key] = F.conv1d(
-                    x[:, :, j, :], self.weights[i],
-                    stride=self.stride, padding=self.padding,
-                )
-            out_components[k] = out_components[k] + c * conv_cache[key]
-
-        result = torch.stack(out_components, dim=2)  # [B, out_ch, 8, L']
+        # Reshape back: [B, 8*oc, L'] -> [B, 8, oc, L'] -> [B, oc, 8, L']
+        result = out_cat.reshape(B, 8, out_ch, -1).permute(0, 2, 1, 3)
 
         if self.bias is not None:
             result = result + self.bias.unsqueeze(0).unsqueeze(-1)
@@ -552,10 +539,14 @@ class OctonionConv1d(nn.Module):
 
 
 class OctonionConv2d(nn.Module):
-    """Octonion-valued 2D convolution via structure constants.
+    """Octonion-valued 2D convolution using fused structure constant weight matrix.
 
     Input shape: [B, in_ch, 8, H, W]
     Output shape: [B, out_ch, 8, H', W']
+
+    Builds an 8x8 block weight matrix via einsum with structure constants,
+    then performs a single F.conv2d call (mirroring QuaternionConv2d's
+    Hamilton product fusion pattern).
     """
 
     def __init__(
@@ -599,17 +590,12 @@ class OctonionConv2d(nn.Module):
             criterion="glorot",
         )
 
-        C = STRUCTURE_CONSTANTS
-        self._nonzero_entries: list[tuple[int, int, int, float]] = []
-        for i in range(8):
-            for j in range(8):
-                for k in range(8):
-                    c = C[i, j, k].item()
-                    if c != 0.0:
-                        self._nonzero_entries.append((i, j, k, c))
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: octonionic 2D convolution.
+        """Forward pass: fused octonionic 2D convolution (single-kernel).
+
+        Constructs the structure constant weight matrix and performs a single
+        F.conv2d instead of ~64 separate calls, reducing GPU kernel launch
+        overhead by ~64x.
 
         Args:
             x: [B, in_ch, 8, H, W]
@@ -617,34 +603,27 @@ class OctonionConv2d(nn.Module):
         Returns:
             [B, out_ch, 8, H', W']
         """
-        B = x.shape[0]
+        B, in_ch, _, H, W = x.shape
+        out_ch = self.out_channels
 
-        conv_cache: dict[tuple[int, int], torch.Tensor] = {}
+        # Flatten algebra dim into channel dim: [B, in_ch, 8, H, W] -> [B, 8*in_ch, H, W]
+        x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 8 * in_ch, H, W)
 
-        trial = F.conv2d(
-            x[:, :, 0, :, :], self.weights[0],
-            stride=self.stride, padding=self.padding,
+        # Build fused 8x8 block weight matrix via structure constants
+        W_stack = torch.stack(list(self.weights))  # [8, oc, ic, kH, kW]
+        C = STRUCTURE_CONSTANTS.to(device=W_stack.device, dtype=W_stack.dtype)
+        # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, kH, kW]
+        fused_blocks = torch.einsum("ijk, iochw -> kjochw", C, W_stack)
+        # Reshape to [8*oc, 8*ic, kH, kW]
+        fused = fused_blocks.permute(0, 2, 1, 3, 4, 5).reshape(
+            8 * out_ch, 8 * in_ch, *self._kernel_size
         )
-        spatial_shape = trial.shape[2:]  # (H', W')
 
-        out_components = [
-            torch.zeros(
-                B, self.out_channels, *spatial_shape,
-                dtype=x.dtype, device=x.device,
-            )
-            for _ in range(8)
-        ]
+        # Single fused convolution
+        out_cat = F.conv2d(x_cat, fused, stride=self.stride, padding=self.padding)
 
-        for i, j, k, c in self._nonzero_entries:
-            key = (i, j)
-            if key not in conv_cache:
-                conv_cache[key] = F.conv2d(
-                    x[:, :, j, :, :], self.weights[i],
-                    stride=self.stride, padding=self.padding,
-                )
-            out_components[k] = out_components[k] + c * conv_cache[key]
-
-        result = torch.stack(out_components, dim=2)  # [B, out_ch, 8, H', W']
+        # Reshape back: [B, 8*oc, H', W'] -> [B, 8, oc, H', W'] -> [B, oc, 8, H', W']
+        result = out_cat.reshape(B, 8, out_ch, *out_cat.shape[2:]).permute(0, 2, 1, 3, 4)
 
         if self.bias is not None:
             result = result + self.bias.view(1, -1, 8, 1, 1)

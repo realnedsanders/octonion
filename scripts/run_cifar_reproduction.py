@@ -124,6 +124,14 @@ def parse_args() -> argparse.Namespace:
         default=28,
         help="ResNet depth (number of residual blocks)",
     )
+    parser.add_argument(
+        "--no-match-params",
+        action="store_true",
+        default=False,
+        help="Use same-width mode (all algebras get same base_filters). "
+             "Matches the protocol in Gaudet & Maida 2018 / Trabelsi et al. 2018 "
+             "where H had fewer params but same architecture width as R.",
+    )
     return parser.parse_args()
 
 
@@ -186,6 +194,7 @@ def main() -> None:
         "topology": "conv2d",
         "depth": args.depth,
         "ref_hidden": args.ref_hidden,
+        "match_params": not args.no_match_params,
     }
 
     logger.info("=" * 60)
@@ -200,6 +209,7 @@ def main() -> None:
     logger.info(f"Scheduler: {train_config.scheduler}")
     logger.info(f"Batch size: {train_config.batch_size}")
     logger.info(f"Ref hidden: {args.ref_hidden}")
+    logger.info(f"Match params: {not args.no_match_params}")
     logger.info(f"Data dir: {args.data_dir}")
     logger.info(f"Output dir: {args.output_dir}")
     logger.info("=" * 60)

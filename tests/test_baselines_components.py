@@ -406,3 +406,143 @@ class TestConvNonZeroOutput:
         with torch.no_grad():
             out = layer(x)
         assert out.abs().max().item() > 0.0
+
+
+class TestOctonionConvFusedEquivalence:
+    """Verify fused OctonionConv produces identical output to unfused reference."""
+
+    @staticmethod
+    def _unfused_forward_2d(
+        layer: "torch.nn.Module", x: torch.Tensor,
+    ) -> torch.Tensor:
+        """Reference unfused implementation for numerical comparison."""
+        from octonion._multiplication import STRUCTURE_CONSTANTS as C
+
+        B = x.shape[0]
+        C_local = C.to(device=x.device, dtype=x.dtype)
+
+        nonzero_entries = []
+        for i in range(8):
+            for j in range(8):
+                for k in range(8):
+                    c = C_local[i, j, k].item()
+                    if c != 0.0:
+                        nonzero_entries.append((i, j, k, c))
+
+        conv_cache: dict[tuple[int, int], torch.Tensor] = {}
+        trial = torch.nn.functional.conv2d(
+            x[:, :, 0, :, :], layer.weights[0],
+            stride=layer.stride, padding=layer.padding,
+        )
+        spatial = trial.shape[2:]
+
+        out_comps = [
+            torch.zeros(B, layer.out_channels, *spatial, dtype=x.dtype, device=x.device)
+            for _ in range(8)
+        ]
+
+        for i, j, k, c in nonzero_entries:
+            key = (i, j)
+            if key not in conv_cache:
+                conv_cache[key] = torch.nn.functional.conv2d(
+                    x[:, :, j, :, :], layer.weights[i],
+                    stride=layer.stride, padding=layer.padding,
+                )
+            out_comps[k] = out_comps[k] + c * conv_cache[key]
+
+        result = torch.stack(out_comps, dim=2)
+        if layer.bias is not None:
+            result = result + layer.bias.view(1, -1, 8, 1, 1)
+        return result
+
+    @staticmethod
+    def _unfused_forward_1d(
+        layer: "torch.nn.Module", x: torch.Tensor,
+    ) -> torch.Tensor:
+        """Reference unfused implementation for 1D."""
+        from octonion._multiplication import STRUCTURE_CONSTANTS as C
+
+        B = x.shape[0]
+        C_local = C.to(device=x.device, dtype=x.dtype)
+
+        nonzero_entries = []
+        for i in range(8):
+            for j in range(8):
+                for k in range(8):
+                    c = C_local[i, j, k].item()
+                    if c != 0.0:
+                        nonzero_entries.append((i, j, k, c))
+
+        conv_cache: dict[tuple[int, int], torch.Tensor] = {}
+        trial = torch.nn.functional.conv1d(
+            x[:, :, 0, :], layer.weights[0],
+            stride=layer.stride, padding=layer.padding,
+        )
+        L_out = trial.shape[-1]
+
+        out_comps = [
+            torch.zeros(B, layer.out_channels, L_out, dtype=x.dtype, device=x.device)
+            for _ in range(8)
+        ]
+
+        for i, j, k, c in nonzero_entries:
+            key = (i, j)
+            if key not in conv_cache:
+                conv_cache[key] = torch.nn.functional.conv1d(
+                    x[:, :, j, :], layer.weights[i],
+                    stride=layer.stride, padding=layer.padding,
+                )
+            out_comps[k] = out_comps[k] + c * conv_cache[key]
+
+        result = torch.stack(out_comps, dim=2)
+        if layer.bias is not None:
+            result = result + layer.bias.unsqueeze(0).unsqueeze(-1)
+        return result
+
+    def test_octonion_conv2d_fused_matches_unfused(self) -> None:
+        """Fused OctonionConv2d output matches unfused reference."""
+        from octonion.baselines._algebra_conv import OctonionConv2d
+
+        torch.manual_seed(42)
+        layer = OctonionConv2d(3, 8, kernel_size=3, padding=1, bias=True)
+        layer.eval()
+
+        x = torch.randn(2, 3, 8, 8, 8)
+
+        with torch.no_grad():
+            fused_out = layer(x)
+            unfused_out = self._unfused_forward_2d(layer, x)
+
+        torch.testing.assert_close(fused_out, unfused_out, atol=1e-5, rtol=1e-5)
+
+    def test_octonion_conv1d_fused_matches_unfused(self) -> None:
+        """Fused OctonionConv1d output matches unfused reference."""
+        from octonion.baselines._algebra_conv import OctonionConv1d
+
+        torch.manual_seed(42)
+        layer = OctonionConv1d(3, 8, kernel_size=3, padding=1, bias=True)
+        layer.eval()
+
+        x = torch.randn(2, 3, 8, 10)
+
+        with torch.no_grad():
+            fused_out = layer(x)
+            unfused_out = self._unfused_forward_1d(layer, x)
+
+        torch.testing.assert_close(fused_out, unfused_out, atol=1e-5, rtol=1e-5)
+
+    def test_octonion_conv2d_fused_no_bias(self) -> None:
+        """Fused OctonionConv2d without bias also matches."""
+        from octonion.baselines._algebra_conv import OctonionConv2d
+
+        torch.manual_seed(123)
+        layer = OctonionConv2d(4, 6, kernel_size=3, padding=1, bias=False)
+        layer.eval()
+
+        x = torch.randn(1, 4, 8, 6, 6)
+
+        with torch.no_grad():
+            fused_out = layer(x)
+            unfused_out = self._unfused_forward_2d(layer, x)
+
+        torch.testing.assert_close(fused_out, unfused_out, atol=1e-5, rtol=1e-5)
