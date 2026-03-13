@@ -109,10 +109,16 @@ def _build_nonzero_entries(C: torch.Tensor) -> list[tuple[int, int, int, float]]
 # ── Imports ──────────────────────────────────────────────────────────
 
 try:
-    from octonion.baselines._normalization import _tril_to_symmetric
+    from octonion.baselines._normalization import (
+        _tril_to_symmetric,
+        QuaternionBatchNorm,
+        OctonionBatchNorm,
+    )
     _NORMALIZATION_AVAILABLE = True
 except ImportError:
     _tril_to_symmetric = None  # type: ignore[assignment]
+    QuaternionBatchNorm = None  # type: ignore[assignment, misc]
+    OctonionBatchNorm = None  # type: ignore[assignment, misc]
     _NORMALIZATION_AVAILABLE = False
 
 try:
@@ -547,4 +553,163 @@ class TestQuaternionConv2dEvalCache:
         layer = self._make_layer()
         assert layer._fused_cache is None, (
             "_fused_cache should be None at initialization"
+        )
+
+
+# ── Tier 3: AMP BN float32 protection and cholesky_ex ─────────────────
+
+@pytest.mark.skipif(
+    not _NORMALIZATION_AVAILABLE,
+    reason="BN classes not importable from octonion.baselines._normalization",
+)
+class TestBNAMPProtection:
+    """Tests for AMP float32 protection in BN whitening.
+
+    Verifies that:
+    - BN whitening works correctly under AMP autocast (no NaN, correct shape)
+    - Cholesky operations remain in float32 regardless of autocast state
+    - Per-feature cholesky_ex fallback: only degenerate features get extra
+      regularization, others are unaffected
+    - CPU path still works with the autocast(enabled=False) wrapper (no-op on CPU)
+    """
+
+    @pytest.mark.skipif(
+        not torch.cuda.is_available(),
+        reason="AMP requires CUDA",
+    )
+    def test_quaternion_bn_amp_safe(self) -> None:
+        """QuaternionBatchNorm produces valid output (no NaN) under AMP autocast.
+
+        We compare two fresh BN instances (same init state) to isolate AMP
+        effects from running-stat differences between calls.
+        """
+        torch.manual_seed(42)
+        bn_fp32 = QuaternionBatchNorm(16).cuda()
+        bn_amp = QuaternionBatchNorm(16).cuda()
+        # Copy weights to ensure identical initial state
+        bn_amp.load_state_dict(bn_fp32.state_dict())
+
+        x = torch.randn(8, 16, 4, device="cuda")
+
+        # Non-AMP reference
+        bn_fp32.train()
+        out_fp32 = bn_fp32(x)
+
+        # AMP forward: same initial state, same x, but inside autocast
+        bn_amp.train()
+        with torch.amp.autocast("cuda", enabled=True):
+            out_amp = bn_amp(x)
+
+        assert not torch.isnan(out_amp).any(), "AMP BN produced NaN"
+        assert out_amp.shape == (8, 16, 4), f"Unexpected shape: {out_amp.shape}"
+        # atol=5e-3: float16 gamma/beta arithmetic introduces ~1e-3 rounding
+        # vs the pure fp32 path; 5e-3 covers worst-case half precision error.
+        assert torch.allclose(
+            out_fp32, out_amp.float(), atol=5e-3
+        ), f"AMP BN diverged from fp32: max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+
+    @pytest.mark.skipif(
+        not torch.cuda.is_available(),
+        reason="AMP requires CUDA",
+    )
+    def test_octonion_bn_amp_safe(self) -> None:
+        """OctonionBatchNorm produces valid output (no NaN) under AMP autocast."""
+        torch.manual_seed(42)
+        bn_fp32 = OctonionBatchNorm(8).cuda()
+        bn_amp = OctonionBatchNorm(8).cuda()
+        bn_amp.load_state_dict(bn_fp32.state_dict())
+
+        # Use batch size >> feature dim to ensure well-conditioned covariance
+        x = torch.randn(64, 8, 8, device="cuda")
+
+        bn_fp32.train()
+        out_fp32 = bn_fp32(x)
+
+        bn_amp.train()
+        with torch.amp.autocast("cuda", enabled=True):
+            out_amp = bn_amp(x)
+
+        assert not torch.isnan(out_amp).any(), "AMP OctonionBN produced NaN"
+        assert out_amp.shape == (64, 8, 8), f"Unexpected shape: {out_amp.shape}"
+        # atol=5e-3: float16 gamma/beta arithmetic introduces ~1e-3 rounding
+        # vs the pure fp32 path; 5e-3 covers worst-case half precision error.
+        assert torch.allclose(
+            out_fp32, out_amp.float(), atol=5e-3
+        ), f"AMP OctonionBN diverged from fp32: max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+
+    def test_quaternion_bn_cpu_no_error(self) -> None:
+        """QuaternionBatchNorm forward works on CPU (autocast disable is no-op)."""
+        bn = QuaternionBatchNorm(4)
+        x = torch.randn(8, 4, 4)
+        bn.train()
+        out = bn(x)
+        assert not torch.isnan(out).any(), "CPU BN produced NaN"
+        assert out.shape == (8, 4, 4), f"Unexpected shape: {out.shape}"
+
+    def test_octonion_bn_cpu_no_error(self) -> None:
+        """OctonionBatchNorm forward works on CPU (autocast disable is no-op)."""
+        bn = OctonionBatchNorm(4)
+        x = torch.randn(8, 4, 8)
+        bn.train()
+        out = bn(x)
+        assert not torch.isnan(out).any(), "CPU OctonionBN produced NaN"
+        assert out.shape == (8, 4, 8), f"Unexpected shape: {out.shape}"
+
+    def test_cholesky_ex_per_feature_fallback_quaternion(self) -> None:
+        """Per-feature cholesky_ex fallback: degenerate feature gets extra regularization,
+        healthy features are unaffected."""
+        bn = QuaternionBatchNorm(4)
+        # Create covariance where feature 0 is near-singular, features 1-3 are healthy
+        cov = torch.eye(4).unsqueeze(0).expand(4, -1, -1).clone()
+        # Make feature 0 nearly singular (near-zero matrix)
+        cov[0] = torch.zeros(4, 4)
+        cov[0, 0, 0] = 1e-12  # Near-zero diagonal, zero off-diagonal
+
+        x_centered = torch.randn(8, 4, 4)
+        result = bn._whiten(x_centered, cov)
+        assert not torch.isnan(result).any(), "Per-feature fallback produced NaN"
+        assert result.shape == (8, 4, 4), f"Unexpected shape: {result.shape}"
+
+    def test_cholesky_ex_per_feature_fallback_octonion(self) -> None:
+        """Per-feature cholesky_ex fallback for OctonionBatchNorm."""
+        bn = OctonionBatchNorm(4)
+        # Create covariance where feature 0 is near-singular, features 1-3 are healthy
+        cov = torch.eye(8).unsqueeze(0).expand(4, -1, -1).clone()
+        # Make feature 0 nearly singular
+        cov[0] = torch.zeros(8, 8)
+        cov[0, 0, 0] = 1e-12
+
+        x_centered = torch.randn(8, 4, 8)
+        result = bn._whiten(x_centered, cov)
+        assert not torch.isnan(result).any(), "OctonionBN per-feature fallback produced NaN"
+        assert result.shape == (8, 4, 8), f"Unexpected shape: {result.shape}"
+
+    def test_no_try_except_in_whiten_quaternion(self) -> None:
+        """QuaternionBatchNorm._whiten must not contain try/except around cholesky.
+
+        Verifies torch.compile compatibility: try/except causes graph breaks.
+        We verify this by inspecting the source code.
+        """
+        import inspect
+        source = inspect.getsource(QuaternionBatchNorm._whiten)
+        # Must NOT contain try/except
+        assert "try:" not in source, (
+            "QuaternionBatchNorm._whiten contains try/except around cholesky "
+            "(causes torch.compile graph breaks). Use cholesky_ex instead."
+        )
+        # MUST use cholesky_ex
+        assert "cholesky_ex" in source, (
+            "QuaternionBatchNorm._whiten must use cholesky_ex (not cholesky)"
+        )
+
+    def test_no_try_except_in_whiten_octonion(self) -> None:
+        """OctonionBatchNorm._whiten must not contain try/except around cholesky."""
+        import inspect
+        source = inspect.getsource(OctonionBatchNorm._whiten)
+        assert "try:" not in source, (
+            "OctonionBatchNorm._whiten contains try/except around cholesky "
+            "(causes torch.compile graph breaks). Use cholesky_ex instead."
+        )
+        assert "cholesky_ex" in source, (
+            "OctonionBatchNorm._whiten must use cholesky_ex (not cholesky)"
         )
