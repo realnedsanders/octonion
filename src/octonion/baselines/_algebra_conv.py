@@ -498,6 +498,13 @@ class OctonionConv1d(nn.Module):
             criterion="glorot",
         )
 
+        # Register structure constants as a non-persistent buffer so it
+        # automatically migrates with .to(device/dtype) but is NOT saved
+        # in state_dict (avoids bloating checkpoints with a constant).
+        self.register_buffer(
+            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
+        )
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: fused octonionic 1D convolution (single-kernel).
 
@@ -518,9 +525,8 @@ class OctonionConv1d(nn.Module):
 
         # Build fused 8x8 block weight matrix via structure constants
         W_stack = torch.stack(list(self.weights))  # [8, oc, ic, K]
-        C = STRUCTURE_CONSTANTS.to(device=W_stack.device, dtype=W_stack.dtype)
         # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, K]
-        fused_blocks = torch.einsum("ijk, iocl -> kjocl", C, W_stack)
+        fused_blocks = torch.einsum("ijk, iocl -> kjocl", self._C, W_stack)
         # Reshape to [8*oc, 8*ic, K]
         fused = fused_blocks.permute(0, 2, 1, 3, 4).reshape(
             8 * out_ch, 8 * in_ch, W_stack.shape[-1]
@@ -590,6 +596,13 @@ class OctonionConv2d(nn.Module):
             criterion="glorot",
         )
 
+        # Register structure constants as a non-persistent buffer so it
+        # automatically migrates with .to(device/dtype) but is NOT saved
+        # in state_dict (avoids bloating checkpoints with a constant).
+        self.register_buffer(
+            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
+        )
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: fused octonionic 2D convolution (single-kernel).
 
@@ -611,9 +624,8 @@ class OctonionConv2d(nn.Module):
 
         # Build fused 8x8 block weight matrix via structure constants
         W_stack = torch.stack(list(self.weights))  # [8, oc, ic, kH, kW]
-        C = STRUCTURE_CONSTANTS.to(device=W_stack.device, dtype=W_stack.dtype)
         # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, kH, kW]
-        fused_blocks = torch.einsum("ijk, iochw -> kjochw", C, W_stack)
+        fused_blocks = torch.einsum("ijk, iochw -> kjochw", self._C, W_stack)
         # Reshape to [8*oc, 8*ic, kH, kW]
         fused = fused_blocks.permute(0, 2, 1, 3, 4, 5).reshape(
             8 * out_ch, 8 * in_ch, *self._kernel_size

@@ -265,19 +265,28 @@ class OctonionDenseLinear(nn.Module):
 
         octonion_init(list(self.weights), criterion="glorot")
 
-        # Precompute nonzero structure constant entries for efficient forward
-        # Each entry: (i, j, k, coefficient) where C[i,j,k] != 0
-        C = STRUCTURE_CONSTANTS
-        self._nonzero_entries: list[tuple[int, int, int, float]] = []
-        for i in range(8):
-            for j in range(8):
-                for k in range(8):
-                    c = C[i, j, k].item()
-                    if c != 0.0:
-                        self._nonzero_entries.append((i, j, k, c))
+        # Register structure constants as a non-persistent buffer so it
+        # automatically migrates with .to(device/dtype) but is NOT saved
+        # in state_dict (avoids bloating checkpoints with a constant).
+        self.register_buffer(
+            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: full octonionic matrix-vector product.
+        """Forward pass: fused octonionic matrix-vector product via einsum.
+
+        Replaces the 64-iteration Python loop with a single einsum +
+        F.linear call. Mathematically identical but faster: the loop
+        is O(64) Python iterations; this is O(1) GPU ops.
+
+        Algorithm:
+          1. Stack weights: W_stack[i] = W_i  =>  [8, out_f, in_f]
+          2. Fuse with structure constants:
+               fused[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, out_f, in_f]
+             permuted to [8, out_f, 8, in_f] and reshaped to [8*out_f, 8*in_f]
+          3. Flatten input: [..., in_f, 8] -> [..., 8*in_f]
+          4. Single F.linear: [..., 8*in_f] x [8*out_f, 8*in_f]^T -> [..., 8*out_f]
+          5. Reshape: [..., 8*out_f] -> [..., out_f, 8]
 
         Args:
             x: Input tensor of shape [..., in_features, 8].
@@ -285,27 +294,35 @@ class OctonionDenseLinear(nn.Module):
         Returns:
             Output tensor of shape [..., out_features, 8].
         """
-        # Octonionic product: (W * x)_k = sum_{i,j} C[i,j,k] * W_i * x_j
-        # W_i are weight matrices [out_features, in_features], one per basis
-        # x[..., j] are input components [..., in_features]
-
         batch_shape = x.shape[:-2]
 
-        # Cache F.linear results: linear_cache[(i, j)] = F.linear(x_j, W_i)
-        # Many (i,j) pairs contribute to multiple output components k
-        linear_cache: dict[tuple[int, int], torch.Tensor] = {}
-        out_components = [
-            torch.zeros(*batch_shape, self.out_features, dtype=x.dtype, device=x.device)
-            for _ in range(8)
-        ]
+        # Stack weights: [8, out_f, in_f]
+        W_stack = torch.stack(list(self.weights))
 
-        for i, j, k, c in self._nonzero_entries:
-            key = (i, j)
-            if key not in linear_cache:
-                linear_cache[key] = F.linear(x[..., j], self.weights[i])
-            out_components[k] = out_components[k] + c * linear_cache[key]
+        # Fuse with structure constants: fused[k, j] = sum_i C[i,j,k] * W_i
+        # _C: [8, 8, 8], W_stack: [8, out_f, in_f]
+        # Result shape: [8(k), 8(j), out_f, in_f]
+        fused = torch.einsum("ijk, iof -> kjof", self._C, W_stack)
 
-        result = torch.stack(out_components, dim=-1)  # [..., out_features, 8]
+        # x has shape [..., in_f, 8]. Transpose to [..., 8, in_f] then flatten
+        # to [..., 8*in_f] so that the column ordering matches fused_flat.
+        # After this, x_flat[..., j*in_f + q] = x[..., q, j] = x_component_j[..., q]
+        x_flat = x.transpose(-2, -1).reshape(*batch_shape, 8 * self.in_features)
+
+        # Reshape fused to [8*out_f, 8*in_f]:
+        # fused[:, :, out_f, in_f] has shape [8(k), 8(j), out_f, in_f]
+        # Permute to [k, out_f, j, in_f] = [8, out_f, 8, in_f]
+        # Reshape to [8*out_f, 8*in_f]: row = k*out_f+o, col = j*in_f+q
+        # This matches x_flat[..., j*in_f+q] = x[..., q, j]
+        fused_flat = fused.permute(0, 2, 1, 3).reshape(
+            8 * self.out_features, 8 * self.in_features
+        )
+
+        # Single F.linear call: [..., 8*in_f] x [8*out_f, 8*in_f]^T -> [..., 8*out_f]
+        out_flat = F.linear(x_flat, fused_flat)
+
+        # Reshape: [..., 8*out_f] -> [..., 8, out_f] -> [..., out_f, 8]
+        result = out_flat.reshape(*batch_shape, 8, self.out_features).transpose(-2, -1)
 
         if self.bias is not None:
             result = result + self.bias
