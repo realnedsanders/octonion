@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-08-PLAN.md
-last_updated: "2026-03-09T01:17:50Z"
-last_activity: 2026-03-09 -- Completed 03-08 Topology-aware comparison runner
+stopped_at: Completed 03-06-PLAN.md
+last_updated: "2026-03-13T01:46:42Z"
+last_activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
 progress:
   total_phases: 9
-  completed_phases: 3
-  total_plans: 18
+  completed_phases: 2
+  total_plans: 19
   completed_plans: 18
-  percent: 100
+  percent: 95
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 3 of 9 (Baseline Implementations) -- COMPLETE
-Plan: 8 of 8 in current phase -- COMPLETE
-Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 03-08 Topology-aware comparison runner
+Phase: 3 of 9 (Baseline Implementations) -- In Progress
+Plan: 6 of 9 in current phase -- COMPLETE (03-09 remaining)
+Status: Executing
+Last activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
 
-Progress: [██████████] 100%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [██████████] 100%
 | Phase 03 P03 | 10min | 2 tasks | 5 files |
 | Phase 03 P07 | 5min | 2 tasks | 4 files |
 | Phase 03 P08 | 26min | 2 tasks | 3 files |
+| Phase 03 P06 | 5min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,11 @@ Recent decisions affecting current work:
 - [Phase 03-08]: Conv2d param matching uses 10% tolerance (not 1%) due to coarse base_hidden granularity from multiplier scaling
 - [Phase 03-08]: _build_conv_model helper parallels _build_simple_mlp for conv2d topology model building
 - [Phase 03-08]: run_comparison uses topology-aware _build_model closure dispatching to correct builder
+- [Phase 03-06]: Fused Hamilton product convolution (single kernel vs N^2 separate convs) for 16x fewer GPU kernel launches
+- [Phase 03-06]: BN whitening fix: precompute L_inv instead of expanding to [features, batch, dim, dim] (avoids OOM for conv spatial dims)
+- [Phase 03-06]: ref_hidden=4 for CIFAR reproduction tests to match published ~600K param scale
+- [Phase 03-06]: Full GPU training runs deferred to plan 03-09; this plan validates infrastructure correctness
+- [Phase 03-06]: spawn multiprocessing in CIFAR data loaders to avoid fork+CUDA deadlocks
 
 ### Pending Todos
 
@@ -148,6 +154,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-09T01:17:50Z
-Stopped at: Completed 03-08-PLAN.md
+Last session: 2026-03-13T01:46:42Z
+Stopped at: Completed 03-06-PLAN.md
 Resume file: None

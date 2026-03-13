@@ -78,7 +78,7 @@ Plans:
 - [x] 03-03-PLAN.md — AlgebraNetwork skeleton (MLP/Conv/Recurrent), recurrent cells, skeleton identity tests
 - [x] 03-04-PLAN.md — Training utility with full observability, statistical testing, plotting
 - [x] 03-05-PLAN.md — Comparison runner with experiment management and API finalization
-- [ ] 03-06-PLAN.md — CIFAR benchmark reproduction and verification (C/H published results) [superseded by 03-09]
+- [x] 03-06-PLAN.md — CIFAR benchmark reproduction infrastructure (training deferred to 03-09)
 - [x] 03-07-PLAN.md — [GAP CLOSURE] ResNet-style residual blocks in AlgebraNetwork conv2d topology, pytest-timeout
 - [x] 03-08-PLAN.md — [GAP CLOSURE] Topology-aware run_comparison with conv2d model dispatch
 - [ ] 03-09-PLAN.md — [GAP CLOSURE] Execute CIFAR-10 reproduction training and validate against published results
@@ -186,7 +186,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 7/9 | Gap closure | - |
+| 3. Baseline Implementations | 8/9 | In Progress|  |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |

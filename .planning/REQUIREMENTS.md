@@ -72,8 +72,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-03 | Phase 4: Numerical Stability | Pending |
 | FOUND-04 | Phase 5: Optimization Landscape (GO/NO-GO) | Pending |
 | BASE-01 | Phase 3: Baseline Implementations | In Progress (03-01: linear layer + param matching) |
-| BASE-02 | Phase 3: Baseline Implementations | In Progress (03-01: ComplexLinear layer) |
-| BASE-03 | Phase 3: Baseline Implementations | In Progress (03-01: QuaternionLinear layer) |
+| BASE-02 | Phase 3: Baseline Implementations | Complete (03-01: ComplexLinear layer; 03-06: CIFAR benchmark infrastructure) |
+| BASE-03 | Phase 3: Baseline Implementations | Complete (03-01: QuaternionLinear layer; 03-06: CIFAR benchmark infrastructure) |
 | BASE-04 | Phase 7: Density & Geometric Claims | Pending |
 | CLAIM-01 | Phase 6: Reversibility Claim | Pending |
 | CLAIM-02 | Phase 7: Density & Geometric Claims | Pending |
