@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-12-PLAN.md
-last_updated: "2026-03-13T08:05:57.883Z"
+stopped_at: "03-09: Training launched, awaiting completion"
+last_updated: "2026-03-13T09:23:32.924Z"
 last_activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
 progress:
   total_phases: 9
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
   percent: 95
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 3 of 9 (Baseline Implementations) -- In Progress
-Plan: 6 of 9 in current phase -- COMPLETE (03-09 remaining)
+Plan: 03-09 -- Training in progress (4 algebras x 3 seeds x 200 epochs, ~40-100h remaining)
 Status: Executing
-Last activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
+Last activity: 2026-03-13 -- Launched CIFAR-10 reproduction training (Docker container running)
 
 Progress: [██████████] 95%
 
@@ -71,6 +71,7 @@ Progress: [██████████] 95%
 | Phase 03 P10 | 7min | 2 tasks | 4 files |
 | Phase 03 P11 | 10min | 2 tasks | 3 files |
 | Phase 03 P12 | 9min | 2 tasks | 5 files |
+| Phase 03 P09 | 90min | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 03-12]: AMP tolerance set to atol=5e-3 (float16 gamma/beta arithmetic introduces ~2e-3 rounding vs fp32 path)
 - [Phase 03-12]: cholesky_ex per-feature fallback: only degenerate features get extra regularization (not all-or-nothing try/except)
 - [Phase 03-12]: use_compile try/except retained at trainer level (not in _whiten): acceptable there, graph-break-free in compiled model
+- [Phase 03]: Use --no-match-params --ref-hidden 4 (same-width protocol) due to OOM with match_params=True ref_hidden=16 in OCTONION BN whitening
+- [Phase 03]: AMP disabled for CIFAR reproduction: float16 Cholesky fails at initialization producing NaN loss
+- [Phase 03]: CIFAR training time: 40-100 hours for all 12 runs due to OctonionBN 8D Cholesky overhead (131ms/forward at depth=28)
 
 ### Pending Todos
 
@@ -165,6 +169,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-13T08:05:57.881Z
-Stopped at: Completed 03-12-PLAN.md
+Last session: 2026-03-13T09:23:14.745Z
+Stopped at: 03-09: Training launched, awaiting completion
 Resume file: None

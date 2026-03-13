@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Octonionic Algebra** - Verified core algebra library with property-based tests against Moufang identities
 - [ ] **Phase 2: GHR Calculus** - Octonionic backpropagation gradients validated by finite-difference checks
-- [ ] **Phase 3: Baseline Implementations** - Fair R/C/H comparison networks with matched parameter counts
+- [x] **Phase 3: Baseline Implementations** - Fair R/C/H comparison networks with matched parameter counts (completed 2026-03-13)
 - [ ] **Phase 4: Numerical Stability** - Precision characterization across depths, float widths, and operation chains
 - [ ] **Phase 5: Optimization Landscape (GO/NO-GO)** - Quantitative landscape characterization determining project viability
 - [ ] **Phase 6: Reversibility Claim** - Algebraic inversion quality vs RevNet/INN baselines across depth and noise
@@ -189,7 +189,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 11/12 | In Progress|  |
+| 3. Baseline Implementations | 12/12 | Complete   | 2026-03-13 |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
