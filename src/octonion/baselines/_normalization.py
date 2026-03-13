@@ -269,119 +269,71 @@ class QuaternionBatchNorm(nn.Module):
         # Condition number monitoring (updated each forward pass during training)
         self.register_buffer("last_cond", torch.tensor(1.0))
 
-    @torch.compiler.disable
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
-        """Whiten using Cholesky decomposition with AMP float32 protection.
+        """Whiten using Cholesky decomposition.
 
-        Computes L = cholesky_ex(cov), then L_inv once per feature, then
-        applies via broadcast matmul. This matches the reference approach
-        from Gaudet & Maida 2018 (precompute inverse whitening matrix,
-        multiply) rather than expanding L to [features, batch, dim, dim]
-        for solve_triangular — which is mathematically equivalent but
-        creates pathological memory/compute when batch includes spatial
-        positions from conv layers (batch = B * H * W).
+        Fully torch.compile-compatible: no Python conditionals on tensors,
+        no .item() calls, no autocast context managers. forward() guarantees
+        float32 inputs so no explicit dtype casts are needed here either.
 
-        AMP protection: Cholesky and solve_triangular always run in float32
-        regardless of autocast state. When AMP is disabled, the
-        autocast(enabled=False) context is a no-op.
+        Three-level fallback via unconditional torch.where (no graph breaks):
+          1. Primary: cholesky_ex(cov + eps*I)
+          2. Fallback: cholesky_ex(cov + 0.1*I) for any feature where info > 0
+          3. Last resort: scaled identity for features where fallback also fails
 
-        cholesky_ex: Uses cholesky_ex instead of try/except cholesky for
-        torch.compile compatibility (no graph breaks) and per-feature
-        failure detection via the info tensor.
-
-        @torch.compiler.disable: This function contains inescapable Python
-        control flow (per-feature fallback logic, logging) that cannot be
-        traced by torch.compile. The decorator tells Dynamo to execute this
-        function eagerly, eliminating graph breaks and recompilation storms.
-        The outer network (conv, linear, residual) still gets compiled.
+        if self.training is a Python bool — Dynamo specialises on it.
 
         Args:
-            x_centered: [batch, features, dim] centered input (float32).
-            cov: [features, dim, dim] covariance matrix (float32).
+            x_centered: [batch, features, dim] float32.
+            cov: [features, dim, dim] float32.
 
         Returns:
-            Whitened tensor [batch, features, dim] in float32.
+            Whitened tensor [batch, features, dim] float32.
         """
-        # Disable autocast for numerically sensitive Cholesky/solve_triangular.
-        # When AMP is enabled, inputs may arrive as float16 but Cholesky needs
-        # float32. When AMP is disabled, this context manager is a no-op.
-        with torch.amp.autocast(device_type=x_centered.device.type, enabled=False):
-            # Force float32 for all linalg operations
-            cov_f32 = cov.float()
-            x_f32 = x_centered.float()
+        eye = torch.eye(self.dim, device=cov.device, dtype=torch.float32).unsqueeze(0)
+        cov_reg = cov + self.eps * eye
 
-            eye = torch.eye(
-                self.dim, device=cov_f32.device, dtype=torch.float32
-            ).unsqueeze(0)
-            cov_reg = cov_f32 + self.eps * eye
+        L, info = torch.linalg.cholesky_ex(cov_reg)
+        failed = info > 0  # bool tensor — never used as Python bool
 
-            # Use cholesky_ex instead of try/except cholesky:
-            # - No graph breaks (torch.compile compatible)
-            # - Per-feature failure detection via info tensor
-            # - info[i] == 0 means feature i succeeded, info[i] > 0 means failure
-            L, info = torch.linalg.cholesky_ex(cov_reg)
+        # Fallback: always computed, selected via where
+        cov_fallback = torch.where(
+            failed.unsqueeze(-1).unsqueeze(-1),
+            cov + 1e-1 * eye.squeeze(0),
+            cov_reg,
+        )
+        L_fallback, info_fallback = torch.linalg.cholesky_ex(cov_fallback)
+        L = torch.where(failed.unsqueeze(-1).unsqueeze(-1), L_fallback, L)
 
-            # Per-feature fallback: only re-regularize features that failed
-            failed = info > 0  # [features] boolean mask
-            if failed.any():
-                num_failed = int(failed.sum().item())
-                logger.warning(
-                    "Cholesky failed for %d/%d features in QuaternionBatchNorm, "
-                    "applying per-feature regularization.",
-                    num_failed,
-                    cov_reg.shape[0],
+        # Last resort: scaled identity, always computed, selected via where
+        still_failed = info_fallback > 0
+        scale = (
+            cov.diagonal(dim1=-2, dim2=-1)
+            .abs()
+            .mean(dim=-1)
+            .clamp(min=1.0)
+            .sqrt()
+            .unsqueeze(-1)
+            .unsqueeze(-1)
+        )
+        L = torch.where(
+            still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L
+        )
+
+        if self.training:
+            with torch.no_grad():
+                diag = L.diagonal(dim1=-2, dim2=-1)
+                diag_abs = diag.abs().clamp(min=1e-12)
+                per_feature_cond = (
+                    diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                 )
-                cov_fixed = cov_reg.clone()
-                cov_fixed[failed] = cov_f32[failed] + 1e-1 * eye.squeeze(0)
-                L_fixed, info_fixed = torch.linalg.cholesky_ex(cov_fixed)
-                # Replace only failed features' L factors
-                L = torch.where(failed.unsqueeze(-1).unsqueeze(-1), L_fixed, L)
+                self.last_cond.copy_(per_feature_cond.max())
 
-                still_failed = info_fixed > 0
-                if still_failed.any():
-                    # Last resort: use scaled identity for features that still fail
-                    logger.warning(
-                        "Cholesky still failing for %d features after strong "
-                        "regularization, using scaled identity.",
-                        int(still_failed.sum().item()),
-                    )
-                    scale = (
-                        cov_f32[still_failed]
-                        .diagonal(dim1=-2, dim2=-1)
-                        .abs()
-                        .mean(dim=-1, keepdim=True)
-                        .unsqueeze(-1)
-                        .clamp(min=1.0)
-                        .sqrt()
-                    )
-                    L[still_failed] = eye.squeeze(0) * scale
-
-            # Track condition number (max across features, no grad needed)
-            if self.training:
-                with torch.no_grad():
-                    diag = L.diagonal(dim1=-2, dim2=-1)  # [features, dim]
-                    diag_abs = diag.abs().clamp(min=1e-12)
-                    per_feature_cond = (
-                        diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
-                    )
-                    self.last_cond.copy_(per_feature_cond.max())
-
-            # Compute L_inv once: [features, dim, dim]
-            # Only `features` number of dim×dim inversions (not features × batch).
-            identity = eye.expand_as(L)
-            L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
-
-            # Apply whitening via broadcast matmul:
-            # L_inv: [features, dim, dim] -> [1, features, dim, dim]
-            # x:     [batch, features, dim] -> [batch, features, dim, 1]
-            # result: [batch, features, dim, 1] -> [batch, features, dim]
-            x_col = x_f32.unsqueeze(-1)
-            w = (L_inv.unsqueeze(0) @ x_col).squeeze(-1)
-
-        # Return in original dtype (autocast handles downstream casting)
-        return w.to(x_centered.dtype)
+        identity = eye.expand_as(L)
+        L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
+        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: quaternion batch normalization.
@@ -482,94 +434,61 @@ class OctonionBatchNorm(nn.Module):
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         self.register_buffer("last_cond", torch.tensor(1.0))
 
-    @torch.compiler.disable
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
-        """Whiten using Cholesky decomposition with AMP float32 protection.
+        """Whiten using Cholesky decomposition.
 
-        Same precomputed-inverse strategy as QuaternionBatchNorm._whiten.
-        See that method's docstring for rationale on AMP protection,
-        cholesky_ex usage, and @torch.compiler.disable.
+        Fully torch.compile-compatible. See QuaternionBatchNorm._whiten
+        for full rationale. Identical strategy, dim=8 instead of dim=4.
 
         Args:
-            x_centered: [batch, features, dim] centered input (float32).
-            cov: [features, dim, dim] covariance matrix (float32).
+            x_centered: [batch, features, 8] float32.
+            cov: [features, 8, 8] float32.
 
         Returns:
-            Whitened tensor [batch, features, dim] in float32.
+            Whitened tensor [batch, features, 8] float32.
         """
-        # Disable autocast for numerically sensitive Cholesky/solve_triangular.
-        # When AMP is enabled, inputs may arrive as float16 but Cholesky needs
-        # float32. When AMP is disabled, this context manager is a no-op.
-        with torch.amp.autocast(device_type=x_centered.device.type, enabled=False):
-            # Force float32 for all linalg operations
-            cov_f32 = cov.float()
-            x_f32 = x_centered.float()
+        eye = torch.eye(self.dim, device=cov.device, dtype=torch.float32).unsqueeze(0)
+        cov_reg = cov + self.eps * eye
 
-            eye = torch.eye(
-                self.dim, device=cov_f32.device, dtype=torch.float32
-            ).unsqueeze(0)
-            cov_reg = cov_f32 + self.eps * eye
+        L, info = torch.linalg.cholesky_ex(cov_reg)
+        failed = info > 0
 
-            # Use cholesky_ex instead of try/except cholesky:
-            # - No graph breaks (torch.compile compatible)
-            # - Per-feature failure detection via info tensor
-            # - info[i] == 0 means feature i succeeded, info[i] > 0 means failure
-            L, info = torch.linalg.cholesky_ex(cov_reg)
+        cov_fallback = torch.where(
+            failed.unsqueeze(-1).unsqueeze(-1),
+            cov + 1e-1 * eye.squeeze(0),
+            cov_reg,
+        )
+        L_fallback, info_fallback = torch.linalg.cholesky_ex(cov_fallback)
+        L = torch.where(failed.unsqueeze(-1).unsqueeze(-1), L_fallback, L)
 
-            # Per-feature fallback: only re-regularize features that failed
-            failed = info > 0  # [features] boolean mask
-            if failed.any():
-                num_failed = int(failed.sum().item())
-                logger.warning(
-                    "Cholesky failed for %d/%d features in OctonionBatchNorm, "
-                    "applying per-feature regularization.",
-                    num_failed,
-                    cov_reg.shape[0],
+        still_failed = info_fallback > 0
+        scale = (
+            cov.diagonal(dim1=-2, dim2=-1)
+            .abs()
+            .mean(dim=-1)
+            .clamp(min=1.0)
+            .sqrt()
+            .unsqueeze(-1)
+            .unsqueeze(-1)
+        )
+        L = torch.where(
+            still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L
+        )
+
+        if self.training:
+            with torch.no_grad():
+                diag = L.diagonal(dim1=-2, dim2=-1)
+                diag_abs = diag.abs().clamp(min=1e-12)
+                per_feature_cond = (
+                    diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                 )
-                cov_fixed = cov_reg.clone()
-                cov_fixed[failed] = cov_f32[failed] + 1e-1 * eye.squeeze(0)
-                L_fixed, info_fixed = torch.linalg.cholesky_ex(cov_fixed)
-                # Replace only failed features' L factors
-                L = torch.where(failed.unsqueeze(-1).unsqueeze(-1), L_fixed, L)
+                self.last_cond.copy_(per_feature_cond.max())
 
-                still_failed = info_fixed > 0
-                if still_failed.any():
-                    # Last resort: use scaled identity for features that still fail
-                    logger.warning(
-                        "Cholesky still failing for %d features after strong "
-                        "regularization, using scaled identity.",
-                        int(still_failed.sum().item()),
-                    )
-                    scale = (
-                        cov_f32[still_failed]
-                        .diagonal(dim1=-2, dim2=-1)
-                        .abs()
-                        .mean(dim=-1, keepdim=True)
-                        .unsqueeze(-1)
-                        .clamp(min=1.0)
-                        .sqrt()
-                    )
-                    L[still_failed] = eye.squeeze(0) * scale
-
-            if self.training:
-                with torch.no_grad():
-                    diag = L.diagonal(dim1=-2, dim2=-1)
-                    diag_abs = diag.abs().clamp(min=1e-12)
-                    per_feature_cond = (
-                        diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
-                    )
-                    self.last_cond.copy_(per_feature_cond.max())
-
-            identity = eye.expand_as(L)
-            L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
-
-            x_col = x_f32.unsqueeze(-1)
-            w = (L_inv.unsqueeze(0) @ x_col).squeeze(-1)
-
-        # Return in original dtype (autocast handles downstream casting)
-        return w.to(x_centered.dtype)
+        identity = eye.expand_as(L)
+        L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
+        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: octonion batch normalization.

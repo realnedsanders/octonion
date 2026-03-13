@@ -32,6 +32,11 @@ def cohen_d(a: list[float], b: list[float]) -> float:
     b_arr = np.array(b, dtype=np.float64)
 
     n_a, n_b = len(a_arr), len(b_arr)
+    if n_a < 2 or n_b < 2:
+        # Not enough samples for pooled std; fall back to sign of mean difference.
+        mean_diff = float(np.mean(a_arr) - np.mean(b_arr))
+        return float(np.sign(mean_diff)) if mean_diff != 0.0 else 0.0
+
     var_a = np.var(a_arr, ddof=1)
     var_b = np.var(b_arr, ddof=1)
 
@@ -95,19 +100,28 @@ def paired_comparison(
     diff = a - b
 
     # Paired t-test
-    # Handle case where all differences are zero (identical lists)
+    # Degenerate case 1: all differences are zero (identical lists)
+    # Degenerate case 2: all differences are the same non-zero constant
+    #   (zero variance in diff — scipy ttest_rel emits catastrophic cancellation
+    #   warning because it cannot distinguish signal from rounding error)
+    diff_std = float(np.std(diff, ddof=1)) if len(diff) >= 2 else 0.0
     if np.all(diff == 0):
         t_stat_val, t_p_val = 0.0, 1.0
         w_stat_val, w_p_val = 0.0, 1.0
     else:
-        t_result = stats.ttest_rel(a, b)
-        t_stat_val = float(t_result.statistic)
-        t_p_val = float(t_result.pvalue)
-        # Handle NaN from degenerate cases
-        if np.isnan(t_p_val):
-            t_stat_val, t_p_val = 0.0, 1.0
+        # t-test: guard against zero-variance differences (constant nonzero diff)
+        # which causes catastrophic cancellation in scipy's moment calculation.
+        if diff_std == 0.0:
+            t_stat_val = float("inf") * float(np.sign(np.mean(diff)))
+            t_p_val = 0.0
+        else:
+            t_result = stats.ttest_rel(a, b)
+            t_stat_val = float(t_result.statistic)
+            t_p_val = float(t_result.pvalue)
+            if np.isnan(t_p_val):
+                t_stat_val, t_p_val = 0.0, 1.0
 
-        # Wilcoxon signed-rank test
+        # Wilcoxon signed-rank test (handles constant nonzero diffs correctly)
         try:
             w_result = stats.wilcoxon(diff)
             w_stat_val = float(w_result.statistic)
