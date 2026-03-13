@@ -374,3 +374,177 @@ class TestOctonionDenseLinearFusedForward:
         assert "_C" in named_buffers, "_C should be in named_buffers"
         named_params = dict(layer.named_parameters(recurse=False))
         assert "_C" not in named_params, "_C should not be in named_parameters"
+
+
+# ── Tier 2: OctonionConv2d eval-mode fused weight caching ─────────────
+
+@pytest.mark.skipif(
+    not _CONV_AVAILABLE,
+    reason="OctonionConv2d not importable from octonion.baselines._algebra_conv",
+)
+class TestOctonionConv2dEvalCache:
+    """Eval-mode fused weight caching for OctonionConv2d.
+
+    During evaluation, weights don't change between batches, so the fused
+    weight matrix can be computed once and reused. These tests verify:
+    - Train-mode and eval-mode produce identical outputs (cache correctness)
+    - Multiple eval forward calls produce exactly equal results (cache used)
+    - Cache is invalidated when switching back to train mode
+    - Updated weights after re-entering eval produce updated results
+    """
+
+    def _make_layer(self, seed: int = 42) -> OctonionConv2d:
+        torch.manual_seed(seed)
+        return OctonionConv2d(3, 8, kernel_size=3, padding=1)
+
+    def test_eval_mode_matches_train_mode(self) -> None:
+        """Eval-mode output matches train-mode output (cache correctness)."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 8, 16, 16)
+
+        layer.train()
+        out_train = layer(x)
+
+        layer.eval()
+        out_eval = layer(x)
+
+        assert torch.allclose(out_train, out_eval, atol=1e-6), (
+            f"Train/eval output mismatch: max_diff={(out_train - out_eval).abs().max():.2e}"
+        )
+
+    def test_eval_cache_reuse_exact_equality(self) -> None:
+        """Multiple eval forward calls produce exactly equal results (cached tensor)."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 8, 16, 16)
+
+        layer.eval()
+        out_eval1 = layer(x)
+        out_eval2 = layer(x)  # should use cache
+
+        assert torch.equal(out_eval1, out_eval2), (
+            "Second eval call should use cached fused weight and produce exact same result"
+        )
+
+    def test_cache_invalidated_on_train(self) -> None:
+        """Switching back to train mode invalidates the cache."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 8, 16, 16)
+
+        layer.eval()
+        _ = layer(x)  # populate cache
+
+        layer.train()
+        assert layer._fused_cache is None, (
+            "Cache should be None after calling .train()"
+        )
+
+    def test_updated_weights_reflected_after_retrain_eval(self) -> None:
+        """After modifying weights and re-entering eval, the cache reflects updated weights."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 8, 16, 16)
+
+        # First eval pass
+        layer.eval()
+        out_original = layer(x)
+
+        # Modify weights (simulate training step)
+        layer.train()
+        with torch.no_grad():
+            for w in layer.weights:
+                w.fill_(0.01)  # Set all weights to small constant
+
+        # Re-enter eval - cache must be rebuilt with new weights
+        layer.eval()
+        out_updated = layer(x)
+
+        # Outputs should differ from original (weights changed)
+        assert not torch.allclose(out_original, out_updated, atol=1e-3), (
+            "Output after weight update should differ from original"
+        )
+
+        # But two consecutive eval calls should still produce identical results
+        out_updated2 = layer(x)
+        assert torch.equal(out_updated, out_updated2), (
+            "Consecutive eval calls should produce exact same result"
+        )
+
+    def test_cache_is_none_initially(self) -> None:
+        """Cache starts as None (no pre-computation at init)."""
+        layer = self._make_layer()
+        assert layer._fused_cache is None, (
+            "_fused_cache should be None at initialization"
+        )
+
+    def test_cache_populated_after_eval_forward(self) -> None:
+        """Cache is populated after first eval forward call."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 8, 16, 16)
+
+        layer.eval()
+        _ = layer(x)
+
+        assert layer._fused_cache is not None, (
+            "_fused_cache should be populated after eval forward"
+        )
+
+
+# ── Tier 2: QuaternionConv2d eval-mode fused weight caching ──────────
+
+@pytest.mark.skipif(
+    not _CONV_AVAILABLE,
+    reason="QuaternionConv2d not importable from octonion.baselines._algebra_conv",
+)
+class TestQuaternionConv2dEvalCache:
+    """Eval-mode fused weight caching for QuaternionConv2d."""
+
+    def _make_layer(self, seed: int = 42) -> QuaternionConv2d:
+        torch.manual_seed(seed)
+        return QuaternionConv2d(3, 8, kernel_size=3, padding=1)
+
+    def test_eval_mode_matches_train_mode(self) -> None:
+        """Eval-mode output matches train-mode output."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 4, 16, 16)
+
+        layer.train()
+        out_train = layer(x)
+
+        layer.eval()
+        out_eval = layer(x)
+
+        assert torch.allclose(out_train, out_eval, atol=1e-6), (
+            f"Train/eval output mismatch: max_diff={(out_train - out_eval).abs().max():.2e}"
+        )
+
+    def test_eval_cache_reuse_exact_equality(self) -> None:
+        """Multiple eval forward calls produce exactly equal results."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 4, 16, 16)
+
+        layer.eval()
+        out_eval1 = layer(x)
+        out_eval2 = layer(x)
+
+        assert torch.equal(out_eval1, out_eval2), (
+            "Consecutive eval calls should produce exact same result"
+        )
+
+    def test_cache_invalidated_on_train(self) -> None:
+        """Switching back to train mode invalidates the cache."""
+        layer = self._make_layer()
+        x = torch.randn(2, 3, 4, 16, 16)
+
+        layer.eval()
+        _ = layer(x)  # populate cache
+
+        layer.train()
+        assert layer._fused_cache is None, (
+            "Cache should be None after calling .train()"
+        )
+
+    def test_cache_is_none_initially(self) -> None:
+        """Cache starts as None."""
+        layer = self._make_layer()
+        assert layer._fused_cache is None, (
+            "_fused_cache should be None at initialization"
+        )

@@ -405,6 +405,16 @@ class QuaternionConv2d(nn.Module):
             criterion="glorot",
         )
 
+        # Eval-mode fused weight cache. Invalidated by .train().
+        self._fused_cache: torch.Tensor | None = None
+
+    def train(self, mode: bool = True) -> "QuaternionConv2d":
+        """Override train() to invalidate the fused weight cache."""
+        super().train(mode)
+        if mode:
+            self._fused_cache = None
+        return self
+
     def _conv(self, x: torch.Tensor, w: torch.Tensor) -> torch.Tensor:
         return F.conv2d(x, w, stride=self.stride, padding=self.padding)
 
@@ -414,6 +424,9 @@ class QuaternionConv2d(nn.Module):
         Constructs the Hamilton product weight matrix and performs a single
         F.conv2d instead of 16 separate calls, reducing GPU kernel launch
         overhead by ~16x.
+
+        In eval mode, the fused weight matrix is cached after the first
+        forward call and reused for all subsequent eval calls.
 
         Args:
             x: [B, in_ch, 4, H, W]
@@ -426,15 +439,21 @@ class QuaternionConv2d(nn.Module):
         # Stack input components: [B, in_ch, 4, H, W] -> [B, 4*in_ch, H, W]
         x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 4 * in_ch, H, W)
 
-        # Build Hamilton product weight matrix: [4*out_ch, 4*in_ch, kH, kW]
-        # Rows correspond to output components (r,i,j,k)
-        # Columns correspond to input components (r,i,j,k)
-        W = torch.cat([
-            torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
-            torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
-            torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
-            torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
-        ], dim=0)
+        # Build (or retrieve cached) Hamilton product weight matrix
+        if not self.training and self._fused_cache is not None:
+            W = self._fused_cache
+        else:
+            # Build Hamilton product weight matrix: [4*out_ch, 4*in_ch, kH, kW]
+            # Rows correspond to output components (r,i,j,k)
+            # Columns correspond to input components (r,i,j,k)
+            W = torch.cat([
+                torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
+                torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
+                torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
+                torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
+            ], dim=0)
+            if not self.training:
+                self._fused_cache = W
 
         # Single fused convolution
         out_cat = F.conv2d(x_cat, W, stride=self.stride, padding=self.padding)
@@ -603,12 +622,34 @@ class OctonionConv2d(nn.Module):
             "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
         )
 
+        # Eval-mode fused weight cache. During evaluation, weights don't
+        # change between batches, so the fused weight matrix is computed
+        # once on the first eval forward and reused for all subsequent
+        # eval calls. Invalidated by .train() -> avoids stale cache.
+        self._fused_cache: torch.Tensor | None = None
+
+    def train(self, mode: bool = True) -> "OctonionConv2d":
+        """Override train() to invalidate the fused weight cache.
+
+        When entering train mode, weights may change (gradient updates),
+        so the cached fused weight matrix must be discarded.
+        """
+        super().train(mode)
+        if mode:
+            self._fused_cache = None
+        return self
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: fused octonionic 2D convolution (single-kernel).
 
         Constructs the structure constant weight matrix and performs a single
         F.conv2d instead of ~64 separate calls, reducing GPU kernel launch
         overhead by ~64x.
+
+        In eval mode, the fused weight matrix is cached after the first
+        forward call and reused for all subsequent eval calls. This
+        eliminates redundant torch.stack + torch.einsum + reshape per
+        validation batch.
 
         Args:
             x: [B, in_ch, 8, H, W]
@@ -622,14 +663,19 @@ class OctonionConv2d(nn.Module):
         # Flatten algebra dim into channel dim: [B, in_ch, 8, H, W] -> [B, 8*in_ch, H, W]
         x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 8 * in_ch, H, W)
 
-        # Build fused 8x8 block weight matrix via structure constants
-        W_stack = torch.stack(list(self.weights))  # [8, oc, ic, kH, kW]
-        # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, kH, kW]
-        fused_blocks = torch.einsum("ijk, iochw -> kjochw", self._C, W_stack)
-        # Reshape to [8*oc, 8*ic, kH, kW]
-        fused = fused_blocks.permute(0, 2, 1, 3, 4, 5).reshape(
-            8 * out_ch, 8 * in_ch, *self._kernel_size
-        )
+        # Build (or retrieve cached) fused 8x8 block weight matrix
+        if not self.training and self._fused_cache is not None:
+            fused = self._fused_cache
+        else:
+            W_stack = torch.stack(list(self.weights))  # [8, oc, ic, kH, kW]
+            # fused_blocks[k, j] = sum_i C[i,j,k] * W_i  =>  [8, 8, oc, ic, kH, kW]
+            fused_blocks = torch.einsum("ijk, iochw -> kjochw", self._C, W_stack)
+            # Reshape to [8*oc, 8*ic, kH, kW]
+            fused = fused_blocks.permute(0, 2, 1, 3, 4, 5).reshape(
+                8 * out_ch, 8 * in_ch, *self._kernel_size
+            )
+            if not self.training:
+                self._fused_cache = fused
 
         # Single fused convolution
         out_cat = F.conv2d(x_cat, fused, stride=self.stride, padding=self.padding)
