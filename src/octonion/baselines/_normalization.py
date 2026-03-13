@@ -288,12 +288,23 @@ class QuaternionBatchNorm(nn.Module):
         Returns:
             Whitened tensor [batch, features, dim].
         """
-        cov_reg = cov + self.eps * torch.eye(
+        eye = torch.eye(
             self.dim, device=cov.device, dtype=cov.dtype
         ).unsqueeze(0)
+        cov_reg = cov + self.eps * eye
 
         # L: [features, dim, dim]
-        L = torch.linalg.cholesky(cov_reg)
+        try:
+            L = torch.linalg.cholesky(cov_reg)
+        except torch.linalg.LinAlgError:
+            # Fallback for degenerate covariance (e.g., early training with
+            # zero-padded quaternion input encoding: real=0, imag=RGB)
+            logger.warning(
+                "Cholesky decomposition failed in QuaternionBatchNorm, "
+                "increasing regularization to 1e-1."
+            )
+            cov_reg = cov + 1e-1 * eye
+            L = torch.linalg.cholesky(cov_reg)
 
         # Track condition number (max across features, no grad needed)
         if self.training:
@@ -434,21 +445,32 @@ class OctonionBatchNorm(nn.Module):
         Returns:
             Whitened tensor [batch, features, dim].
         """
-        cov_reg = cov + self.eps * torch.eye(
+        eye = torch.eye(
             self.dim, device=cov.device, dtype=cov.dtype
         ).unsqueeze(0)
+        cov_reg = cov + self.eps * eye
 
         try:
             L = torch.linalg.cholesky(cov_reg)
         except torch.linalg.LinAlgError:
+            # First fallback: moderate regularization
             logger.warning(
                 "Cholesky decomposition failed in OctonionBatchNorm, "
-                "increasing regularization."
+                "increasing regularization to 1e-3."
             )
-            cov_reg = cov + 1e-3 * torch.eye(
-                self.dim, device=cov.device, dtype=cov.dtype
-            ).unsqueeze(0)
-            L = torch.linalg.cholesky(cov_reg)
+            cov_reg = cov + 1e-3 * eye
+            try:
+                L = torch.linalg.cholesky(cov_reg)
+            except torch.linalg.LinAlgError:
+                # Second fallback: strong regularization for degenerate cases
+                # (e.g., early training where octonionic components haven't
+                # diverged yet due to zero-padded input encoding)
+                logger.warning(
+                    "Cholesky still failing, using 1e-1 regularization "
+                    "(degenerate covariance -- early training expected)."
+                )
+                cov_reg = cov + 1e-1 * eye
+                L = torch.linalg.cholesky(cov_reg)
 
         if self.training:
             with torch.no_grad():

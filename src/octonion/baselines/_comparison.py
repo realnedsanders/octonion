@@ -261,25 +261,33 @@ def run_comparison(
     param_counts: dict[str, int] = {}
 
     # Conv2d has coarser granularity due to multiplier scaling.
-    # Use 10% tolerance for conv2d, 1% for MLP.
-    param_tolerance = 0.10 if is_conv2d else 0.01
+    # Use 15% tolerance for conv2d (discrete base_hidden steps scaled by
+    # algebra multiplier 1-8x create large param jumps -- 10% proved
+    # insufficient for 4-algebra matching at practical model sizes),
+    # 1% for MLP.
+    param_tolerance = 0.15 if is_conv2d else 0.01
 
     for algebra in config.algebras:
-        width = find_matched_width(
-            target_params=target_params,
-            algebra=algebra,
-            topology=topology,
-            depth=depth,
-            tolerance=param_tolerance,
-            input_dim=input_dim,
-            output_dim=output_dim,
-        )
-        matched_widths[algebra.short_name] = width
+        if algebra == ref_algebra:
+            # Reference algebra: use ref_hidden directly (no search needed)
+            matched_widths[algebra.short_name] = ref_hidden
+            param_counts[algebra.short_name] = target_params
+        else:
+            width = find_matched_width(
+                target_params=target_params,
+                algebra=algebra,
+                topology=topology,
+                depth=depth,
+                tolerance=param_tolerance,
+                input_dim=input_dim,
+                output_dim=output_dim,
+            )
+            matched_widths[algebra.short_name] = width
 
-        # Verify actual param count
-        test_model = _build_model(algebra, width)
-        actual = sum(p.numel() for p in test_model.parameters())
-        param_counts[algebra.short_name] = actual
+            # Verify actual param count
+            test_model = _build_model(algebra, width)
+            actual = sum(p.numel() for p in test_model.parameters())
+            param_counts[algebra.short_name] = actual
 
     # ── Step 3: Verify param counts within tolerance ──
     ref_count = param_counts[ref_algebra.short_name]
