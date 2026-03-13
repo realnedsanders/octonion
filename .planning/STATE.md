@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-11-PLAN.md
-last_updated: "2026-03-13T07:53:12.393Z"
+stopped_at: Completed 03-12-PLAN.md
+last_updated: "2026-03-13T08:05:57.883Z"
 last_activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 21
   percent: 95
 ---
 
@@ -70,6 +70,7 @@ Progress: [██████████] 95%
 | Phase 03 P06 | 5min | 3 tasks | 7 files |
 | Phase 03 P10 | 7min | 2 tasks | 4 files |
 | Phase 03 P11 | 10min | 2 tasks | 3 files |
+| Phase 03 P12 | 9min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,9 @@ Recent decisions affecting current work:
 - [Phase 03-11]: Fused linear input transpose: x.transpose(-2,-1) needed before reshape to match fused_flat column ordering (j*in_f+q)
 - [Phase 03-11]: Non-persistent buffer _C: register_buffer('_C', STRUCTURE_CONSTANTS, persistent=False) for auto device migration without state_dict pollution
 - [Phase 03-11]: Eval cache pattern: _fused_cache as plain None attribute, invalidated by train() override, populated on first eval forward
+- [Phase 03-12]: AMP tolerance set to atol=5e-3 (float16 gamma/beta arithmetic introduces ~2e-3 rounding vs fp32 path)
+- [Phase 03-12]: cholesky_ex per-feature fallback: only degenerate features get extra regularization (not all-or-nothing try/except)
+- [Phase 03-12]: use_compile try/except retained at trainer level (not in _whiten): acceptable there, graph-break-free in compiled model
 
 ### Pending Todos
 
@@ -161,6 +165,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-13T07:53:12.391Z
-Stopped at: Completed 03-11-PLAN.md
+Last session: 2026-03-13T08:05:57.881Z
+Stopped at: Completed 03-12-PLAN.md
 Resume file: None
