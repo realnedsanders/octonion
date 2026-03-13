@@ -318,7 +318,7 @@ class QuaternionConv1d(nn.Module):
         return F.conv1d(x, w, stride=self.stride, padding=self.padding)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: quaternion 1D convolution.
+        """Forward pass: quaternion 1D convolution (fused single-kernel).
 
         Args:
             x: [B, in_ch, 4, L]
@@ -326,33 +326,25 @@ class QuaternionConv1d(nn.Module):
         Returns:
             [B, out_ch, 4, L']
         """
-        x_r = x[:, :, 0, :]
-        x_i = x[:, :, 1, :]
-        x_j = x[:, :, 2, :]
-        x_k = x[:, :, 3, :]
+        B, in_ch, _, L = x.shape
 
-        # Hamilton product -- 16 terms
-        out_r = (
-            self._conv(x_r, self.W_r) - self._conv(x_i, self.W_i)
-            - self._conv(x_j, self.W_j) - self._conv(x_k, self.W_k)
-        )
-        out_i = (
-            self._conv(x_i, self.W_r) + self._conv(x_r, self.W_i)
-            + self._conv(x_k, self.W_j) - self._conv(x_j, self.W_k)
-        )
-        out_j = (
-            self._conv(x_j, self.W_r) - self._conv(x_k, self.W_i)
-            + self._conv(x_r, self.W_j) + self._conv(x_i, self.W_k)
-        )
-        out_k = (
-            self._conv(x_k, self.W_r) + self._conv(x_j, self.W_i)
-            - self._conv(x_i, self.W_j) + self._conv(x_r, self.W_k)
-        )
+        # Stack input: [B, in_ch, 4, L] -> [B, 4*in_ch, L]
+        x_cat = x.permute(0, 2, 1, 3).reshape(B, 4 * in_ch, L)
 
-        result = torch.stack([out_r, out_i, out_j, out_k], dim=2)
+        # Hamilton product weight matrix: [4*out_ch, 4*in_ch, K]
+        W = torch.cat([
+            torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
+            torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
+            torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
+            torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
+        ], dim=0)
+
+        out_cat = F.conv1d(x_cat, W, stride=self.stride, padding=self.padding)
+
+        out_ch = self.out_channels
+        result = out_cat.reshape(B, 4, out_ch, -1).permute(0, 2, 1, 3)
 
         if self.bias is not None:
-            # bias: [out_ch, 4] -> [1, out_ch, 4, 1]
             result = result + self.bias.unsqueeze(0).unsqueeze(-1)
 
         return result
@@ -417,7 +409,11 @@ class QuaternionConv2d(nn.Module):
         return F.conv2d(x, w, stride=self.stride, padding=self.padding)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: quaternion 2D convolution.
+        """Forward pass: quaternion 2D convolution (fused single-kernel).
+
+        Constructs the Hamilton product weight matrix and performs a single
+        F.conv2d instead of 16 separate calls, reducing GPU kernel launch
+        overhead by ~16x.
 
         Args:
             x: [B, in_ch, 4, H, W]
@@ -425,29 +421,27 @@ class QuaternionConv2d(nn.Module):
         Returns:
             [B, out_ch, 4, H', W']
         """
-        x_r = x[:, :, 0, :, :]
-        x_i = x[:, :, 1, :, :]
-        x_j = x[:, :, 2, :, :]
-        x_k = x[:, :, 3, :, :]
+        B, in_ch, _, H, W = x.shape
 
-        out_r = (
-            self._conv(x_r, self.W_r) - self._conv(x_i, self.W_i)
-            - self._conv(x_j, self.W_j) - self._conv(x_k, self.W_k)
-        )
-        out_i = (
-            self._conv(x_i, self.W_r) + self._conv(x_r, self.W_i)
-            + self._conv(x_k, self.W_j) - self._conv(x_j, self.W_k)
-        )
-        out_j = (
-            self._conv(x_j, self.W_r) - self._conv(x_k, self.W_i)
-            + self._conv(x_r, self.W_j) + self._conv(x_i, self.W_k)
-        )
-        out_k = (
-            self._conv(x_k, self.W_r) + self._conv(x_j, self.W_i)
-            - self._conv(x_i, self.W_j) + self._conv(x_r, self.W_k)
-        )
+        # Stack input components: [B, in_ch, 4, H, W] -> [B, 4*in_ch, H, W]
+        x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 4 * in_ch, H, W)
 
-        result = torch.stack([out_r, out_i, out_j, out_k], dim=2)
+        # Build Hamilton product weight matrix: [4*out_ch, 4*in_ch, kH, kW]
+        # Rows correspond to output components (r,i,j,k)
+        # Columns correspond to input components (r,i,j,k)
+        W = torch.cat([
+            torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
+            torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
+            torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
+            torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
+        ], dim=0)
+
+        # Single fused convolution
+        out_cat = F.conv2d(x_cat, W, stride=self.stride, padding=self.padding)
+
+        # Reshape back: [B, 4*out_ch, H', W'] -> [B, 4, out_ch, H', W'] -> [B, out_ch, 4, H', W']
+        out_ch = self.out_channels
+        result = out_cat.reshape(B, 4, out_ch, *out_cat.shape[2:]).permute(0, 2, 1, 3, 4)
 
         if self.bias is not None:
             result = result + self.bias.view(1, -1, 4, 1, 1)

@@ -265,11 +265,21 @@ class QuaternionBatchNorm(nn.Module):
             .clone(),
         )
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
+        # Condition number monitoring (updated each forward pass during training)
+        self.register_buffer("last_cond", torch.tensor(1.0))
 
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
         """Whiten using Cholesky decomposition.
+
+        Computes L = cholesky(cov), then L_inv once per feature, then
+        applies via broadcast matmul. This matches the reference approach
+        from Gaudet & Maida 2018 (precompute inverse whitening matrix,
+        multiply) rather than expanding L to [features, batch, dim, dim]
+        for solve_triangular — which is mathematically equivalent but
+        creates pathological memory/compute when batch includes spatial
+        positions from conv layers (batch = B * H * W).
 
         Args:
             x_centered: [batch, features, dim] centered input.
@@ -285,18 +295,30 @@ class QuaternionBatchNorm(nn.Module):
         # L: [features, dim, dim]
         L = torch.linalg.cholesky(cov_reg)
 
-        # x_centered: [batch, features, dim]
-        # Solve L @ w = x for each feature independently
-        # Reshape to use batched solve: treat features as batch dim
-        batch_size = x_centered.shape[0]
-        # x_t: [features, batch, dim, 1]
-        x_t = x_centered.permute(1, 0, 2).unsqueeze(-1)
-        # Expand L to [features, batch, dim, dim] for batched solve
-        L_expanded = L.unsqueeze(1).expand(-1, batch_size, -1, -1)
-        w = torch.linalg.solve_triangular(
-            L_expanded, x_t, upper=False
-        ).squeeze(-1)  # [features, batch, dim]
-        return w.permute(1, 0, 2)  # [batch, features, dim]
+        # Track condition number (max across features, no grad needed)
+        if self.training:
+            with torch.no_grad():
+                # Diagonal of L gives sqrt of pivots; ratio of max/min
+                # approximates condition number cheaply.
+                diag = L.diagonal(dim1=-2, dim2=-1)  # [features, dim]
+                diag_abs = diag.abs().clamp(min=1e-12)
+                per_feature_cond = diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
+                self.last_cond.fill_(per_feature_cond.max().item())
+
+        # Compute L_inv once: [features, dim, dim]
+        # Only `features` number of dim×dim inversions (not features × batch).
+        identity = torch.eye(
+            self.dim, device=L.device, dtype=L.dtype
+        ).unsqueeze(0).expand_as(L)
+        L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
+
+        # Apply whitening via broadcast matmul:
+        # L_inv: [features, dim, dim] -> [1, features, dim, dim]
+        # x:     [batch, features, dim] -> [batch, features, dim, 1]
+        # result: [batch, features, dim, 1] -> [batch, features, dim]
+        x_col = x_centered.unsqueeze(-1)
+        w = (L_inv.unsqueeze(0) @ x_col).squeeze(-1)
+        return w
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: quaternion batch normalization.
@@ -395,11 +417,15 @@ class OctonionBatchNorm(nn.Module):
             .clone(),
         )
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
+        self.register_buffer("last_cond", torch.tensor(1.0))
 
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
     ) -> torch.Tensor:
         """Whiten using Cholesky decomposition with fallback.
+
+        Same precomputed-inverse strategy as QuaternionBatchNorm._whiten.
+        See that method's docstring for rationale.
 
         Args:
             x_centered: [batch, features, dim] centered input.
@@ -424,13 +450,21 @@ class OctonionBatchNorm(nn.Module):
             ).unsqueeze(0)
             L = torch.linalg.cholesky(cov_reg)
 
-        batch_size = x_centered.shape[0]
-        x_t = x_centered.permute(1, 0, 2).unsqueeze(-1)
-        L_expanded = L.unsqueeze(1).expand(-1, batch_size, -1, -1)
-        w = torch.linalg.solve_triangular(
-            L_expanded, x_t, upper=False
-        ).squeeze(-1)
-        return w.permute(1, 0, 2)
+        if self.training:
+            with torch.no_grad():
+                diag = L.diagonal(dim1=-2, dim2=-1)
+                diag_abs = diag.abs().clamp(min=1e-12)
+                per_feature_cond = diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
+                self.last_cond.fill_(per_feature_cond.max().item())
+
+        identity = torch.eye(
+            self.dim, device=L.device, dtype=L.dtype
+        ).unsqueeze(0).expand_as(L)
+        L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
+
+        x_col = x_centered.unsqueeze(-1)
+        w = (L_inv.unsqueeze(0) @ x_col).squeeze(-1)
+        return w
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: octonion batch normalization.

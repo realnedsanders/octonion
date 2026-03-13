@@ -332,11 +332,23 @@ def run_comparison(
     # ── Step 5: Train all algebra/seed combinations ──
     per_run: list[dict[str, Any]] = []
 
+    total_runs = len(config.algebras) * config.seeds
+    run_num = 0
+
     for algebra in config.algebras:
         alg_name = algebra.short_name
         width = matched_widths[alg_name]
 
         for seed_idx in range(config.seeds):
+            run_num += 1
+            print(
+                f"\n{'='*60}\n"
+                f"  {task_name}: {alg_name} seed {seed_idx}  "
+                f"[run {run_num}/{total_runs}]  "
+                f"width={width}  params={param_counts[alg_name]:,}\n"
+                f"{'='*60}",
+                flush=True,
+            )
             seed_everything(seed_idx)
 
             # Build fresh data loaders for each run (seeded)

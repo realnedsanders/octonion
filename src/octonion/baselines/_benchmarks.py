@@ -164,17 +164,24 @@ def build_cifar10_data(
     train_subset = Subset(full_train, train_indices)
     val_subset = Subset(val_set_no_aug, val_indices)
 
+    # Use "spawn" multiprocessing to avoid fork+CUDA deadlocks in containers
+    mp_ctx = "spawn" if num_workers > 0 else None
+    persist = num_workers > 0
+
     train_loader = DataLoader(
         train_subset, batch_size=batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True, drop_last=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
     val_loader = DataLoader(
         val_subset, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
     test_loader = DataLoader(
         test_set, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
 
     # input_dim=3 (RGB channels), output_dim=10 (classes), input_channels=3
@@ -244,17 +251,24 @@ def build_cifar100_data(
     train_subset = Subset(full_train, train_indices)
     val_subset = Subset(val_set_no_aug, val_indices)
 
+    # Use "spawn" multiprocessing to avoid fork+CUDA deadlocks in containers
+    mp_ctx = "spawn" if num_workers > 0 else None
+    persist = num_workers > 0
+
     train_loader = DataLoader(
         train_subset, batch_size=batch_size, shuffle=True,
         num_workers=num_workers, pin_memory=True, drop_last=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
     val_loader = DataLoader(
         val_subset, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
     test_loader = DataLoader(
         test_set, batch_size=batch_size, shuffle=False,
         num_workers=num_workers, pin_memory=True,
+        multiprocessing_context=mp_ctx, persistent_workers=persist,
     )
 
     return train_loader, val_loader, test_loader, 3, 100, 3

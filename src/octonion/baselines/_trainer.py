@@ -372,6 +372,21 @@ def train_model(
                 writer.add_scalar("Grad/norm_max", grad_max, epoch)
                 writer.add_scalar("Grad/norm_var", grad_var, epoch)
 
+            # ── BN condition number monitoring ──
+            max_cond = 0.0
+            for name, mod in model.named_modules():
+                if hasattr(mod, "last_cond"):
+                    c = mod.last_cond.item()
+                    if c > max_cond:
+                        max_cond = c
+            if max_cond > 0:
+                writer.add_scalar("BN/max_cond_number", max_cond, epoch)
+                if max_cond > 1e4:
+                    logger.warning(
+                        f"Epoch {epoch}: BN condition number {max_cond:.1f} "
+                        "— whitening may lose precision"
+                    )
+
             # ── VRAM monitoring ──
             if torch.cuda.is_available() and str(device).startswith("cuda"):
                 vram_peak = torch.cuda.max_memory_allocated() / 1e6
@@ -384,6 +399,21 @@ def train_model(
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
+
+            # ── Progress logging (stdout) ──
+            elapsed = time.time() - start_time
+            epoch_time = elapsed / (epoch + 1)
+            remaining = epoch_time * (config.epochs - epoch - 1)
+            remaining_min = remaining / 60
+            err_pct = (1 - val_acc) * 100
+            print(
+                f"[{epoch + 1:3d}/{config.epochs}] "
+                f"train_loss={avg_train_loss:.4f}  "
+                f"val_acc={val_acc:.4f} ({err_pct:.2f}% err)  "
+                f"lr={optimizer.param_groups[0]['lr']:.6f}  "
+                f"~{remaining_min:.0f}min left",
+                flush=True,
+            )
 
             # ── TensorBoard logging ──
             writer.add_scalar("Loss/train", avg_train_loss, epoch)
