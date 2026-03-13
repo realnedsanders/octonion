@@ -70,7 +70,7 @@ Plans:
   2. Complex-valued baseline with 4x units matches octonionic network total parameter count and reproduces a published benchmark result within reported variance
   3. Quaternionic baseline with 2x units matches octonionic network total parameter count and reproduces a published benchmark result within reported variance
   4. All four networks (R, C, H, O) share identical architecture skeleton differing only in algebra module
-**Plans**: 8 plans
+**Plans**: 9 plans
 
 Plans:
 - [x] 03-01-PLAN.md — Config, algebra linear layers (R/C/H/O), initialization, parameter matching
@@ -78,9 +78,10 @@ Plans:
 - [x] 03-03-PLAN.md — AlgebraNetwork skeleton (MLP/Conv/Recurrent), recurrent cells, skeleton identity tests
 - [x] 03-04-PLAN.md — Training utility with full observability, statistical testing, plotting
 - [x] 03-05-PLAN.md — Comparison runner with experiment management and API finalization
-- [ ] 03-06-PLAN.md — CIFAR benchmark reproduction and verification (C/H published results)
+- [ ] 03-06-PLAN.md — CIFAR benchmark reproduction and verification (C/H published results) [superseded by 03-09]
 - [x] 03-07-PLAN.md — [GAP CLOSURE] ResNet-style residual blocks in AlgebraNetwork conv2d topology, pytest-timeout
 - [x] 03-08-PLAN.md — [GAP CLOSURE] Topology-aware run_comparison with conv2d model dispatch
+- [ ] 03-09-PLAN.md — [GAP CLOSURE] Execute CIFAR-10 reproduction training and validate against published results
 
 ### Phase 4: Numerical Stability
 **Goal**: Precision characteristics of octonionic operations are quantified so that architecture decisions (depth, float width, mitigations) are evidence-based
@@ -185,7 +186,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 5/8 | Gap closure | - |
+| 3. Baseline Implementations | 7/9 | Gap closure | - |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
