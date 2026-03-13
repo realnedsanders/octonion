@@ -568,33 +568,35 @@ class TestConfigAndMetrics:
 
 
 class TestSameWidthMode:
-    """Verify same-width mode gives equal base_filters for all algebras."""
+    """Verify same-width mode: same base_hidden, different base_filters."""
 
-    def test_same_width_produces_equal_base_filters(self) -> None:
-        """All algebras get the same effective base_filters in same-width mode."""
-        ref_hidden = 16
+    def test_same_width_real_representational_width(self) -> None:
+        """All algebras get the same real representational width."""
+        ref_hidden = 8
         for algebra in AlgebraType:
-            base_hidden = ref_hidden // algebra.multiplier
-            actual_base_filters = base_hidden * algebra.multiplier
-            assert actual_base_filters == ref_hidden, (
-                f"{algebra.short_name}: base_filters={actual_base_filters}, "
-                f"expected={ref_hidden}"
+            # base_filters = base_hidden * multiplier
+            # real_width = base_filters * dim (for non-real) or base_filters (for real)
+            base_filters = ref_hidden * algebra.multiplier
+            real_width = base_filters * algebra.dim if algebra != AlgebraType.REAL else base_filters
+            # All should have same real width = ref_hidden * multiplier * dim
+            # R: 8*8*1=64, C: 8*4*2=64, H: 8*2*4=64, O: 8*1*8=64
+            assert real_width == ref_hidden * 8, (
+                f"{algebra.short_name}: real_width={real_width}, expected={ref_hidden * 8}"
             )
 
-    def test_same_width_param_counts_differ(self) -> None:
-        """In same-width mode, param counts intentionally differ across algebras."""
+    def test_same_width_r_has_more_params_than_o(self) -> None:
+        """R should have more params than O at same base_hidden (paper protocol)."""
         from octonion.baselines._config import NetworkConfig
         from octonion.baselines._network import AlgebraNetwork
 
-        ref_hidden = 16
+        ref_hidden = 8
         param_counts = {}
         for algebra in AlgebraType:
-            base_hidden = ref_hidden // algebra.multiplier
             config = NetworkConfig(
                 algebra=algebra,
                 topology="conv2d",
                 depth=6,
-                base_hidden=base_hidden,
+                base_hidden=ref_hidden,
                 input_dim=3,
                 output_dim=10,
             )
@@ -603,31 +605,6 @@ class TestSameWidthMode:
                 p.numel() for p in model.parameters()
             )
 
-        # Octonion should have more params than Real at same width
-        assert param_counts["O"] > param_counts["R"]
-        assert param_counts["H"] > param_counts["R"]
-
-    def test_same_width_rejects_indivisible_ref_hidden(self, tmp_path: Path) -> None:
-        """Same-width mode rejects ref_hidden not divisible by max multiplier."""
-        from octonion.baselines._comparison import run_comparison
-
-        config = ComparisonConfig(
-            task="bad_width",
-            algebras=[AlgebraType.REAL, AlgebraType.OCTONION],
-            seeds=1,
-            train_config=TrainConfig(epochs=1, batch_size=32),
-            output_dir=str(tmp_path),
-        )
-
-        with pytest.raises(ValueError, match="divisible"):
-            run_comparison(
-                task_name="bad_width",
-                build_data_fn=_build_synthetic_data,
-                config=config,
-                device="cpu",
-                network_config_overrides={
-                    "ref_hidden": 15,
-                    "depth": 1,
-                    "match_params": False,
-                },
-            )
+        # Real has most params, octonion fewest (algebraic weight sharing)
+        assert param_counts["R"] > param_counts["H"]
+        assert param_counts["H"] > param_counts["O"]

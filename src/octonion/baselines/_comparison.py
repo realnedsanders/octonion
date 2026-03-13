@@ -190,18 +190,17 @@ def run_comparison(
             use_batchnorm, match_params.
             ref_hidden: base hidden width for the reference model (default 20).
             match_params: If True (default), binary-search matched widths so
-                all algebras have ~equal param count. If False, use same-width
-                mode where all algebras get the same effective base_filters
-                (ref_hidden), matching the protocol in Gaudet & Maida 2018 /
-                Trabelsi et al. 2018. In same-width mode, ref_hidden must be
-                divisible by the largest algebra multiplier.
+                all algebras have ~equal param count. If False, all algebras
+                use the same base_hidden (ref_hidden). The multiplier gives
+                each algebra different base_filters but the same real
+                representational width. Param counts naturally differ —
+                this matches Gaudet & Maida 2018 / Trabelsi et al. 2018.
 
     Returns:
         ComparisonReport with all experiment results.
 
     Raises:
-        ValueError: If parameter counts differ by more than tolerance (matched)
-            or if ref_hidden is not divisible by max multiplier (same-width).
+        ValueError: If parameter counts differ by more than tolerance (matched mode).
     """
     task_dir = Path(config.output_dir) / task_name
     task_dir.mkdir(parents=True, exist_ok=True)
@@ -300,29 +299,22 @@ def run_comparison(
                     f"All algebras must be within {param_tolerance * 100:.0f}%."
                 )
     else:
-        # ── Same-width mode: all algebras get same effective base_filters ──
-        # ref_hidden = target base_filters for all algebras.
-        # Pass base_hidden = ref_hidden // multiplier so that
-        # AlgebraNetwork computes base_filters = base_hidden * multiplier = ref_hidden.
-        max_mult = max(a.multiplier for a in config.algebras)
-        if ref_hidden % max_mult != 0:
-            raise ValueError(
-                f"In same-width mode (match_params=False), ref_hidden ({ref_hidden}) "
-                f"must be divisible by the largest multiplier ({max_mult}) across "
-                f"selected algebras. Try ref_hidden="
-                f"{ref_hidden + (max_mult - ref_hidden % max_mult)}."
-            )
-
+        # ── Same-width mode: all algebras use same base_hidden ──
+        # Each algebra's multiplier gives different base_filters, matching
+        # the same real representational width (base_hidden * multiplier * dim
+        # = constant). This is how Gaudet & Maida 2018 / Trabelsi 2018
+        # compared: same architecture, but H/C naturally have fewer params
+        # due to algebraic weight sharing.
         for algebra in config.algebras:
-            base_hidden = ref_hidden // algebra.multiplier
-            matched_widths[algebra.short_name] = base_hidden
-            model = _build_model(algebra, base_hidden)
+            matched_widths[algebra.short_name] = ref_hidden
+            model = _build_model(algebra, ref_hidden)
             param_counts[algebra.short_name] = sum(
                 p.numel() for p in model.parameters()
             )
 
         logger.info(
-            f"Same-width mode: target base_filters={ref_hidden} for all algebras"
+            f"Same-width mode: base_hidden={ref_hidden} for all algebras "
+            f"(param counts differ by design)"
         )
 
     logger.info(f"Parameter counts: {param_counts}")
