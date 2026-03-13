@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-10-PLAN.md
-last_updated: "2026-03-13T07:39:48.002Z"
+stopped_at: Completed 03-11-PLAN.md
+last_updated: "2026-03-13T07:53:12.393Z"
 last_activity: 2026-03-13 -- Completed 03-06 CIFAR benchmark reproduction infrastructure
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 22
-  completed_plans: 19
+  completed_plans: 20
   percent: 95
 ---
 
@@ -69,6 +69,7 @@ Progress: [██████████] 95%
 | Phase 03 P08 | 26min | 2 tasks | 3 files |
 | Phase 03 P06 | 5min | 3 tasks | 7 files |
 | Phase 03 P10 | 7min | 2 tasks | 4 files |
+| Phase 03 P11 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,9 @@ Recent decisions affecting current work:
 - [Phase 03-06]: spawn multiprocessing in CIFAR data loaders to avoid fork+CUDA deadlocks
 - [Phase 03-10]: tril_indices overhead negligible vs eliminated Python loop (36 elements for dim=8, C++ call)
 - [Phase 03-10]: checkpoint_every audited: TrainConfig default=10 (short runs), cifar_train_config=25 (8 checkpoints/200 epochs)
+- [Phase 03-11]: Fused linear input transpose: x.transpose(-2,-1) needed before reshape to match fused_flat column ordering (j*in_f+q)
+- [Phase 03-11]: Non-persistent buffer _C: register_buffer('_C', STRUCTURE_CONSTANTS, persistent=False) for auto device migration without state_dict pollution
+- [Phase 03-11]: Eval cache pattern: _fused_cache as plain None attribute, invalidated by train() override, populated on first eval forward
 
 ### Pending Todos
 
@@ -157,6 +161,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-13T07:39:48.001Z
-Stopped at: Completed 03-10-PLAN.md
+Last session: 2026-03-13T07:53:12.391Z
+Stopped at: Completed 03-11-PLAN.md
 Resume file: None

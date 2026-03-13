@@ -189,7 +189,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 8/12 | In Progress|  |
+| 3. Baseline Implementations | 10/12 | In Progress|  |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
