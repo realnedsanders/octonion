@@ -132,6 +132,21 @@ def parse_args() -> argparse.Namespace:
              "Matches the protocol in Gaudet & Maida 2018 / Trabelsi et al. 2018 "
              "where H had fewer params but same architecture width as R.",
     )
+    parser.add_argument(
+        "--use-amp",
+        action="store_true",
+        default=False,
+        help="Enable automatic mixed precision (AMP) for faster training. "
+             "BN whitening is protected with float32 casting so AMP is safe "
+             "for all four algebras. Default: off (float32 for reproduction fidelity).",
+    )
+    parser.add_argument(
+        "--compile",
+        action="store_true",
+        default=False,
+        help="Enable torch.compile with inductor backend (experimental on ROCm). "
+             "Falls back to eager mode if compilation fails. Default: off.",
+    )
     return parser.parse_args()
 
 
@@ -173,6 +188,10 @@ def main() -> None:
     train_config = cifar_train_config("cifar10")
     if args.epochs is not None:
         train_config.epochs = args.epochs
+    if args.use_amp:
+        train_config.use_amp = True
+    if args.compile:
+        train_config.use_compile = True
 
     config = ComparisonConfig(
         task="cifar10",
@@ -210,6 +229,8 @@ def main() -> None:
     logger.info(f"Batch size: {train_config.batch_size}")
     logger.info(f"Ref hidden: {args.ref_hidden}")
     logger.info(f"Match params: {not args.no_match_params}")
+    logger.info(f"AMP: {train_config.use_amp}")
+    logger.info(f"torch.compile: {getattr(train_config, 'use_compile', False)}")
     logger.info(f"Data dir: {args.data_dir}")
     logger.info(f"Output dir: {args.output_dir}")
     logger.info("=" * 60)

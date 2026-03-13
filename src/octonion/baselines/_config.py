@@ -82,7 +82,12 @@ class TrainConfig:
         weight_decay: L2 regularization weight.
         early_stopping_patience: Epochs to wait before early stopping.
         warmup_epochs: Number of warmup epochs.
-        use_amp: Whether to use automatic mixed precision.
+        use_amp: Whether to use automatic mixed precision. BN whitening is
+            protected with autocast(enabled=False) + explicit float32 casting,
+            so AMP is safe for all four algebras.
+        use_compile: Whether to apply torch.compile with inductor backend
+            (opt-in, experimental on ROCm). Falls back to eager mode if
+            compilation fails. Default: False.
         checkpoint_every: Save checkpoint every N epochs.
         seed: Random seed for reproducibility.
         batch_size: Training batch size.
@@ -98,6 +103,7 @@ class TrainConfig:
     early_stopping_patience: int = 10
     warmup_epochs: int = 5
     use_amp: bool = False
+    use_compile: bool = False  # Opt-in torch.compile (experimental on ROCm)
     checkpoint_every: int = 10
     seed: int = 42
     batch_size: int = 128

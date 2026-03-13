@@ -271,6 +271,16 @@ def train_model(
     if str(device).startswith("cuda"):
         torch.backends.cudnn.benchmark = True
 
+    # Optional torch.compile for potential kernel fusion speedup.
+    # Gated by config flag; only applied on CUDA devices (ROCm support is
+    # experimental and may fail for certain model patterns).
+    if getattr(config, "use_compile", False) and str(device).startswith("cuda"):
+        try:
+            model = torch.compile(model, backend="inductor", mode="default")
+            logger.info("torch.compile enabled (inductor backend)")
+        except Exception as e:
+            logger.warning("torch.compile failed, falling back to eager mode: %s", e)
+
     # Build optimizer and scheduler
     optimizer = _build_optimizer(model, config)
     scheduler = _build_scheduler(optimizer, config)

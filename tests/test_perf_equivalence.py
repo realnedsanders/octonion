@@ -122,6 +122,13 @@ except ImportError:
     _NORMALIZATION_AVAILABLE = False
 
 try:
+    from octonion.baselines._config import TrainConfig
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    TrainConfig = None  # type: ignore[assignment, misc]
+    _CONFIG_AVAILABLE = False
+
+try:
     from octonion.baselines._algebra_linear import OctonionDenseLinear
     from octonion._multiplication import STRUCTURE_CONSTANTS
     _LINEAR_AVAILABLE = True
@@ -712,4 +719,61 @@ class TestBNAMPProtection:
         )
         assert "cholesky_ex" in source, (
             "OctonionBatchNorm._whiten must use cholesky_ex (not cholesky)"
+        )
+
+
+# ── Tier 3: torch.compile config flag and CLI flags ────────────────────
+
+@pytest.mark.skipif(
+    not _CONFIG_AVAILABLE,
+    reason="TrainConfig not importable from octonion.baselines._config",
+)
+class TestTrainConfigCompileFlag:
+    """Tests for TrainConfig.use_compile field and CLI flag pass-through."""
+
+    def test_use_compile_defaults_to_false(self) -> None:
+        """TrainConfig.use_compile defaults to False (opt-in only)."""
+        config = TrainConfig()
+        assert config.use_compile is False, (
+            "use_compile must default to False (opt-in, experimental)"
+        )
+
+    def test_use_compile_can_be_set_true(self) -> None:
+        """TrainConfig(use_compile=True) is a valid config."""
+        config = TrainConfig(use_compile=True)
+        assert config.use_compile is True
+
+    def test_use_compile_and_use_amp_independent(self) -> None:
+        """use_compile and use_amp are independent flags."""
+        config = TrainConfig(use_amp=True, use_compile=False)
+        assert config.use_amp is True
+        assert config.use_compile is False
+
+        config2 = TrainConfig(use_amp=False, use_compile=True)
+        assert config2.use_amp is False
+        assert config2.use_compile is True
+
+    def test_use_amp_still_defaults_to_false(self) -> None:
+        """Adding use_compile field did not change use_amp default."""
+        config = TrainConfig()
+        assert config.use_amp is False
+
+    def test_cifar_script_cli_flags(self) -> None:
+        """--use-amp and --compile CLI flags are recognized by run_cifar_reproduction.py."""
+        import subprocess
+        import sys
+        result = subprocess.run(
+            [sys.executable, "scripts/run_cifar_reproduction.py", "--help"],
+            capture_output=True,
+            text=True,
+            cwd="/workspace",
+        )
+        assert result.returncode == 0, (
+            f"run_cifar_reproduction.py --help failed:\n{result.stderr}"
+        )
+        assert "--use-amp" in result.stdout, (
+            "--use-amp flag not found in --help output"
+        )
+        assert "--compile" in result.stdout, (
+            "--compile flag not found in --help output"
         )
