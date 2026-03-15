@@ -1,0 +1,654 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025/nixos.org) (preloaded format=pdflatex 1980.1.1)  15 MAR 2026 05:44
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**docs/ghr-calculus-octonions.tex --help
+(./docs/ghr-calculus-octonions.tex
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-06-09>
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/base/size11.clo
+File: size11.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count275
+\c@section=\count276
+\c@subsection=\count277
+\c@subsubsection=\count278
+\c@paragraph=\count279
+\c@subparagraph=\count280
+\c@figure=\count281
+\c@table=\count282
+\abovecaptionskip=\skip49
+\belowcaptionskip=\skip50
+\bibindent=\dimen148
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/geometry/geometry.sty
+Package: geometry 2020/01/02 v5.9 Page Geometry
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/graphics/keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks17
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/iftex/ifvtex.sty
+Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/iftex/iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+))
+\Gm@cnth=\count283
+\Gm@cntv=\count284
+\c@Gm@tempcnt=\count285
+\Gm@bindingoffset=\dimen149
+\Gm@wd@mp=\dimen150
+\Gm@odd@mp=\dimen151
+\Gm@even@mp=\dimen152
+\Gm@layoutwidth=\dimen153
+\Gm@layoutheight=\dimen154
+\Gm@layouthoffset=\dimen155
+\Gm@layoutvoffset=\dimen156
+\Gm@dimlist=\toks18
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsmath/amsmath.sty
+Package: amsmath 2025/06/16 v2.17y AMS math features
+\@mathmargin=\skip51
+
+For additional information on amsmath, use the `?' option.
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsmath/amstext.sty
+Package: amstext 2024/11/17 v2.01 AMS text
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks19
+\ex@=\dimen157
+))
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen158
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsmath/amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count286
+LaTeX Info: Redefining \frac on input line 233.
+\uproot@=\count287
+\leftroot@=\count288
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count289
+\DOTSCASE@=\count290
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box53
+\strutbox@=\box54
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen159
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count291
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count292
+\dotsspace@=\muskip17
+\c@parentequation=\count293
+\dspbrk@lvl=\count294
+\tag@help=\toks20
+\row@=\count295
+\column@=\count296
+\maxfields@=\count297
+\andhelp@=\toks21
+\eqnshift@=\dimen160
+\alignsep@=\dimen161
+\tagshift@=\dimen162
+\tagwidth@=\dimen163
+\totwidth@=\dimen164
+\lineht@=\dimen165
+\@envbody=\toks22
+\multlinegap=\skip52
+\multlinetaggap=\skip53
+\mathdisplay@stack=\toks23
+LaTeX Info: Redefining \[ on input line 2949.
+LaTeX Info: Redefining \] on input line 2950.
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amscls/amsthm.sty
+Package: amsthm 2020/05/29 v2.20.6
+\thm@style=\toks24
+\thm@bodyfont=\toks25
+\thm@headfont=\toks26
+\thm@notefont=\toks27
+\thm@headpunct=\toks28
+\thm@preskip=\skip54
+\thm@postskip=\skip55
+\thm@headsep=\skip56
+\dth@everypar=\toks29
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen166
+\lightrulewidth=\dimen167
+\cmidrulewidth=\dimen168
+\belowrulesep=\dimen169
+\belowbottomsep=\dimen170
+\aboverulesep=\dimen171
+\abovetopsep=\dimen172
+\cmidrulesep=\dimen173
+\cmidrulekern=\dimen174
+\defaultaddspace=\dimen175
+\@cmidla=\count298
+\@cmidlb=\count299
+\@aboverulesep=\dimen176
+\@belowrulesep=\dimen177
+\@thisruleclass=\count300
+\@lastruleclass=\count301
+\@thisrulewidth=\dimen178
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hyperref/hyperref.sty
+Package: hyperref 2025-06-21 v7.01n Hypertext links for LaTeX
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+))
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hyperref/nameref.sty
+Package: nameref 2025-06-21 v2.57 Cross-referencing by name of section
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/gettitlestring/gettitlestring.sty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count302
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/etoolbox/etoolbox.sty
+Package: etoolbox 2025/02/11 v2.5l e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count303
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
+)
+)
+\@linkdim=\dimen179
+\Hy@linkcounter=\count304
+\Hy@pagecounter=\count305
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hyperref/pd1enc.def
+File: pd1enc.def 2025-06-21 v7.01n Hyperref: PDFDocEncoding definition (HO)
+Now handling font encoding PD1 ...
+... no UTF-8 mapping file for font encoding PD1
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count306
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hyperref/puenc.def
+File: puenc.def 2025-06-21 v7.01n Hyperref: PDF Unicode definition (HO)
+Now handling font encoding PU ...
+... no UTF-8 mapping file for font encoding PU
+)
+Package hyperref Info: Hyper figures OFF on input line 4181.
+Package hyperref Info: Link nesting OFF on input line 4186.
+Package hyperref Info: Hyper index ON on input line 4189.
+Package hyperref Info: Plain pages OFF on input line 4196.
+Package hyperref Info: Backreferencing OFF on input line 4201.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4448.
+\c@Hy@tempcnt=\count307
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/url/url.sty
+\Urlmuskip=\muskip18
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 4787.
+\XeTeXLinkMargin=\dimen180
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
+)
+))
+\Fld@menulength=\count308
+\Field@Width=\dimen181
+\Fld@charsize=\dimen182
+Package hyperref Info: Hyper figures OFF on input line 6066.
+Package hyperref Info: Link nesting OFF on input line 6071.
+Package hyperref Info: Hyper index ON on input line 6074.
+Package hyperref Info: backreferencing OFF on input line 6081.
+Package hyperref Info: Link coloring OFF on input line 6086.
+Package hyperref Info: Link coloring with OCG OFF on input line 6091.
+Package hyperref Info: PDF/A mode OFF on input line 6096.
+\Hy@abspage=\count309
+\c@Item=\count310
+\c@Hfootnote=\count311
+)
+Package hyperref Info: Driver (autodetected): hpdftex.
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/hyperref/hpdftex.def
+File: hpdftex.def 2025-06-21 v7.01n Hyperref driver for pdfTeX
+\Fld@listcount=\count312
+\c@bookmark@seq@number=\count313
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/rerunfilecheck/rerunfilecheck.sty
+Package: rerunfilecheck 2025-06-21 v1.11 Rerun checks for auxiliary files (HO)
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/gen
+eric/uniquecounter/uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
+84.
+)
+\Hy@SectionHShift=\skip57
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/microtype.sty
+Package: microtype 2025/02/11 v3.2a Micro-typographical refinements (RS)
+\MT@toks=\toks30
+\MT@tempbox=\box55
+\MT@count=\count314
+LaTeX Info: Redefining \noprotrusionifhmode on input line 1087.
+LaTeX Info: Redefining \leftprotrusion on input line 1088.
+\MT@prot@toks=\toks31
+LaTeX Info: Redefining \rightprotrusion on input line 1107.
+LaTeX Info: Redefining \textls on input line 1449.
+\MT@outer@kern=\dimen183
+LaTeX Info: Redefining \microtypecontext on input line 2053.
+LaTeX Info: Redefining \textmicrotypecontext on input line 2070.
+\MT@listname@count=\count315
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/microtype-pdftex.def
+File: microtype-pdftex.def 2025/02/11 v3.2a Definitions specific to pdftex (RS)
+
+LaTeX Info: Redefining \lsstyle on input line 944.
+LaTeX Info: Redefining \lslig on input line 944.
+\MT@outer@space=\skip58
+)
+Package microtype Info: Loading configuration file microtype.cfg.
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/microtype.cfg
+File: microtype.cfg 2025/02/11 v3.2a microtype main configuration file (RS)
+)
+LaTeX Info: Redefining \microtypesetup on input line 3065.
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/parskip/parskip.sty
+Package: parskip 2021-03-14 v2.0h non-zero parskip adjustments
+)
+\c@theorem=\count316
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2025-06-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count317
+) (./ghr-calculus-octonions.aux)
+\openout1 = `ghr-calculus-octonions.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 45.
+LaTeX Font Info:    ... okay on input line 45.
+
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: <default>
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(86.72377pt, 440.84746pt, 86.72377pt)
+* v-part:(T,H,B)=(86.72377pt, 621.52245pt, 86.72377pt)
+* \paperwidth=614.295pt
+* \paperheight=794.96999pt
+* \textwidth=440.84746pt
+* \textheight=621.52245pt
+* \oddsidemargin=14.45378pt
+* \evensidemargin=14.45378pt
+* \topmargin=-22.54622pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=11.0pt
+* \footskip=30.0pt
+* \marginparwidth=59.0pt
+* \marginparsep=10.0pt
+* \columnsep=10.0pt
+* \skip\footins=10.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+Package hyperref Info: Link coloring OFF on input line 45.
+(./ghr-calculus-octonions.out) (./ghr-calculus-octonions.out)
+\@outlinefile=\write3
+\openout3 = `ghr-calculus-octonions.out'.
+
+LaTeX Info: Redefining \microtypecontext on input line 45.
+Package microtype Info: Applying patch `item' on input line 45.
+Package microtype Info: Applying patch `toc' on input line 45.
+Package microtype Info: Applying patch `eqnum' on input line 45.
+Package microtype Info: Applying patch `footnote' on input line 45.
+Package microtype Info: Applying patch `verbatim' on input line 45.
+LaTeX Info: Redefining \microtypesetup on input line 45.
+Package microtype Info: Generating PDF output.
+Package microtype Info: Character protrusion enabled (level 2).
+Package microtype Info: Using default protrusion set `alltext'.
+Package microtype Info: Automatic font expansion enabled (level 2),
+(microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
+Package microtype Info: Using default expansion set `alltext-nott'.
+
+
+LaTeX Warning: Command \showhyphens   has changed.
+               Check if current package is valid.
+
+LaTeX Info: Redefining \showhyphens on input line 45.
+Package microtype Info: No adjustment of tracking.
+Package microtype Info: No adjustment of interword spacing.
+Package microtype Info: No adjustment of character kerning.
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/mt-cmr.cfg
+File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
+(RS)
+)
+Couldn't patch \deferred@thm@head!
+LaTeX Font Info:    Trying to load font information for U+msa on input line 47.
+
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/mt-msa.cfg
+File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 47.
+
+
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+(/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/tex/lat
+ex/microtype/mt-msb.cfg
+File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
+) (./ghr-calculus-octonions.toc)
+\tf@toc=\write4
+\openout4 = `ghr-calculus-octonions.toc'.
+
+
+
+LaTeX Warning: Citation `xu2015ghr' on page 1 undefined on input line 58.
+
+! Undefined control sequence.
+\defeq ->\coloneqq 
+                   
+l.90 $\mathbf{q}_\mu \defeq
+                            \boldsymbol{\mu}\,\mathbf{q}\,\boldsymbol{\mu}^{...
+
+? 
+! Interruption.
+l.90 $\mathbf{q}_\mu \defeq
+                            \boldsymbol{\mu}\,\mathbf{q}\,\boldsymbol{\mu}^{...
+
+? 
+
+
+[1
+
+{/nix/store/vvq87fdwfxg5kmm08r9xwvzkg4221jgk-texlive-2025-env/share/texmf-var/f
+onts/map/pdftex/updmap/pdftex.map}]
+
+LaTeX Warning: Citation `xu2015ghr' on page 2 undefined on input line 112.
+
+! Undefined control sequence.
+\defeq ->\coloneqq 
+                   
+l.141 The GHR rotation $R_\mu(\mathbf{o}) \defeq
+                                                 \boldsymbol{\mu}\,\mathbf{o...
+
+? 
+
+Overfull \hbox (2.3649pt too wide) in paragraph at lines 141--147
+[]\OT1/cmr/m/n/10.95 (-20) The GHR ro-ta-tion $\OML/cmm/m/it/10.95 R[]\OT1/cmr/
+m/n/10.95 (-20) (\OT1/cmr/bx/n/10.95 (-20) o\OT1/cmr/m/n/10.95 (-20) )[] \OT1/c
+mr/bx/n/10.95 (-20) o [][]$ \OT1/cmr/m/n/10.95 (-20) re-quires spec-i-fy-ing a 
+paren-the-siza-tion: $([] \OT1/cmr/bx/n/10.95 (-20) o\OT1/cmr/m/n/10.95 (-20) )
+ [][]$ vs. $[] (\OT1/cmr/bx/n/10.95 (-20) o [][]\OT1/cmr/m/n/10.95 (-20) )$.
+ []
+
+
+
+[2]
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `cmtt' (encoding: OT1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+
+
+[3]
+Overfull \hbox (20.68927pt too wide) in paragraph at lines 301--303
+[]\OT1/cmr/bx/n/10.95 (-20) Autograd Ja-co-bian \OT1/cmr/m/n/10.95 (-20) (colum
+n-wise back-ward passes through the \OT1/cmtt/m/n/10.95 torch.autograd.Function
+
+ []
+
+
+LaTeX Warning: Reference `sec:results' on page 4 undefined on input line 304.
+
+
+
+[4]
+Overfull \hbox (24.7676pt too wide) in paragraph at lines 308--314
+\OT1/cmr/m/n/10.95 (-20) Torch prim-i-tives (\OT1/cmtt/m/n/10.95 einsum\OT1/cmr
+/m/n/10.95 (-20) , \OT1/cmtt/m/n/10.95 exp\OT1/cmr/m/n/10.95 (-20) , \OT1/cmtt/
+m/n/10.95 cos\OT1/cmr/m/n/10.95 (-20) , \OT1/cmtt/m/n/10.95 sin\OT1/cmr/m/n/10.
+95 (-20) , etc.), and \OT1/cmr/m/it/10.95 (-20) only in-puts \OT1/cmr/m/n/10.95
+ (-20) are saved in \OT1/cmtt/m/n/10.95 ctx.save[]for[]backward\OT1/cmr/m/n/10.
+95 (-20) .
+ []
+
+
+
+[5{/nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts
+/enc/dvips/cm-super/cm-super-ts1.enc}]
+
+[6]
+
+[7]
+
+LaTeX Warning: Citation `opr2023' on page 8 undefined on input line 498.
+
+
+LaTeX Warning: Reference `sec:results' on page 8 undefined on input line 546.
+
+
+
+[8]
+
+LaTeX Warning: Citation `xu2015ghr' on page 9 undefined on input line 561.
+
+
+LaTeX Warning: Reference `eq:ghr-full' on page 9 undefined on input line 580.
+
+
+LaTeX Warning: Reference `eq:ghr-conj' on page 9 undefined on input line 581.
+
+
+Overfull \hbox (91.81705pt too wide) in paragraph at lines 576--597
+ [] 
+ []
+
+
+
+[9]
+
+[10] (./ghr-calculus-octonions.aux)
+ ***********
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-06-09>
+ ***********
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `ghr-calculus-octonions.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `ghr-calculus-octonions.out':
+(rerunfilecheck)             Before: B78741248CF331DA1841BDF953562890;554
+(rerunfilecheck)             After:  396EC62702E4519FD7B2E137FA22913C;6587.
+ ) 
+Here is how much of TeX's memory you used:
+ 11687 strings out of 467908
+ 184672 string characters out of 5411346
+ 631923 words of memory out of 5000000
+ 39916 multiletter control sequences out of 15000+600000
+ 641555 words of font info for 139 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 75i,9n,79p,1031b,520s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts
+/type1/public/amsfonts/cm/cmbx10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27j
+x6-texlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></nix/s
+tore/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/pu
+blic/amsfonts/cm/cmbx8.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive
+-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmex10.pfb></nix/store/dysgn
+q50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/amsfo
+nts/cm/cmmi10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env
+-texmfdist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></nix/store/dysgnq50yhpa5g9
+c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmm
+ib10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdis
+t/fonts/type1/public/amsfonts/cm/cmr10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4a
+frk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmr12.pfb></
+nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/typ
+e1/public/amsfonts/cm/cmr17.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-te
+xlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmr6.pfb></nix/store/dy
+sgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/am
+sfonts/cm/cmr8.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-en
+v-texmfdist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></nix/store/dysgnq50yhpa5
+g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/c
+msy8.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdis
+t/fonts/type1/public/amsfonts/cm/cmti10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4
+afrk27jx6-texlive-2025-env-texmfdist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+</nix/store/dysgnq50yhpa5g9c9wkz2i4afrk27jx6-texlive-2025-env-texmfdist/fonts/t
+ype1/public/amsfonts/symbols/msbm10.pfb></nix/store/dysgnq50yhpa5g9c9wkz2i4afrk
+27jx6-texlive-2025-env-texmfdist/fonts/type1/public/cm-super/sfrm1095.pfb>
+Output written on ghr-calculus-octonions.pdf (10 pages, 261343 bytes).
+PDF statistics:
+ 242 PDF objects out of 1000 (max. 8388607)
+ 192 compressed objects within 2 object streams
+ 83 named destinations out of 1000 (max. 500000)
+ 28185 words of extra memory for PDF output out of 29859 (max. 10000000)
+
