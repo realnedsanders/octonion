@@ -70,7 +70,7 @@ Plans:
   2. Complex-valued baseline with 4x units matches octonionic network total parameter count and reproduces a published benchmark result within reported variance
   3. Quaternionic baseline with 2x units matches octonionic network total parameter count and reproduces a published benchmark result within reported variance
   4. All four networks (R, C, H, O) share identical architecture skeleton differing only in algebra module
-**Plans**: 12 plans
+**Plans**: 15 plans
 
 Plans:
 - [x] 03-01-PLAN.md — Config, algebra linear layers (R/C/H/O), initialization, parameter matching
@@ -85,6 +85,9 @@ Plans:
 - [ ] 03-10-PLAN.md — Profiling baseline and Tier 1 zero-risk optimizations (vectorized BN, training loop micro-opts)
 - [ ] 03-11-PLAN.md — Tier 2 optimizations: fused OctonionDenseLinear einsum, eval-mode conv caching, buffer registration
 - [ ] 03-12-PLAN.md — Tier 3 optimizations: AMP BN float32 protection, torch.compile config flag
+- [ ] 03-13-PLAN.md — [UAT GAP CLOSURE] Commit working-tree test fix for _tril_to_symmetric 4-arg signature
+- [ ] 03-14-PLAN.md — [UAT GAP CLOSURE] Add base_filters to NetworkConfig; fix profile_baseline.py param explosion
+- [ ] 03-15-PLAN.md — [UAT GAP CLOSURE] Re-verify AMP-safe BN with correct BN.__name__ invocation
 
 ### Phase 4: Numerical Stability
 **Goal**: Precision characteristics of octonionic operations are quantified so that architecture decisions (depth, float width, mitigations) are evidence-based
@@ -189,7 +192,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 |-------|----------------|--------|-----------|
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 12/12 | Complete   | 2026-03-13 |
+| 3. Baseline Implementations | 12/15 | UAT gap closure | - |
 | 4. Numerical Stability | 0/? | Not started | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
