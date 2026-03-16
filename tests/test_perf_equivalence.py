@@ -167,8 +167,9 @@ class TestDim2:
     def test_float32_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float32 inputs."""
         flat = _random_tril_flat(batch_shape, dim=2, dtype=torch.float32)
+        rows, cols = torch.tril_indices(2, 2)
         ref = _tril_to_symmetric_reference(flat, dim=2)
-        out = _tril_to_symmetric(flat, dim=2)
+        out = _tril_to_symmetric(flat, dim=2, rows=rows, cols=cols)
         assert out.shape == ref.shape, f"Shape mismatch: {out.shape} vs {ref.shape}"
         assert torch.equal(out, ref), "Outputs differ (float32, dim=2)"
 
@@ -176,8 +177,9 @@ class TestDim2:
     def test_float64_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float64 inputs."""
         flat = _random_tril_flat(batch_shape, dim=2, dtype=torch.float64)
+        rows, cols = torch.tril_indices(2, 2)
         ref = _tril_to_symmetric_reference(flat, dim=2)
-        out = _tril_to_symmetric(flat, dim=2)
+        out = _tril_to_symmetric(flat, dim=2, rows=rows, cols=cols)
         assert out.shape == ref.shape
         assert torch.equal(out, ref), "Outputs differ (float64, dim=2)"
 
@@ -195,8 +197,9 @@ class TestDim4:
     def test_float32_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float32 inputs."""
         flat = _random_tril_flat(batch_shape, dim=4, dtype=torch.float32)
+        rows, cols = torch.tril_indices(4, 4)
         ref = _tril_to_symmetric_reference(flat, dim=4)
-        out = _tril_to_symmetric(flat, dim=4)
+        out = _tril_to_symmetric(flat, dim=4, rows=rows, cols=cols)
         assert out.shape == ref.shape
         assert torch.equal(out, ref), "Outputs differ (float32, dim=4)"
 
@@ -204,15 +207,17 @@ class TestDim4:
     def test_float64_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float64 inputs."""
         flat = _random_tril_flat(batch_shape, dim=4, dtype=torch.float64)
+        rows, cols = torch.tril_indices(4, 4)
         ref = _tril_to_symmetric_reference(flat, dim=4)
-        out = _tril_to_symmetric(flat, dim=4)
+        out = _tril_to_symmetric(flat, dim=4, rows=rows, cols=cols)
         assert out.shape == ref.shape
         assert torch.equal(out, ref), "Outputs differ (float64, dim=4)"
 
     def test_symmetric_property(self) -> None:
         """Output is always symmetric: M[i,j] == M[j,i]."""
         flat = _random_tril_flat((5,), dim=4, dtype=torch.float32)
-        out = _tril_to_symmetric(flat, dim=4)
+        rows, cols = torch.tril_indices(4, 4)
+        out = _tril_to_symmetric(flat, dim=4, rows=rows, cols=cols)
         # out: [5, 4, 4]
         assert torch.equal(out, out.transpose(-2, -1)), "Output is not symmetric"
 
@@ -222,8 +227,9 @@ class TestDim4:
         dim = 4
         tril_size = dim * (dim + 1) // 2
         flat = torch.arange(tril_size, dtype=torch.float32).unsqueeze(0)  # [1, 10]
+        rows, cols = torch.tril_indices(4, 4)
         ref = _tril_to_symmetric_reference(flat, dim=4)
-        out = _tril_to_symmetric(flat, dim=4)
+        out = _tril_to_symmetric(flat, dim=4, rows=rows, cols=cols)
         assert torch.equal(out, ref), "Entry placement differs from reference"
 
 
@@ -240,8 +246,9 @@ class TestDim8:
     def test_float32_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float32 inputs."""
         flat = _random_tril_flat(batch_shape, dim=8, dtype=torch.float32)
+        rows, cols = torch.tril_indices(8, 8)
         ref = _tril_to_symmetric_reference(flat, dim=8)
-        out = _tril_to_symmetric(flat, dim=8)
+        out = _tril_to_symmetric(flat, dim=8, rows=rows, cols=cols)
         assert out.shape == ref.shape
         assert torch.equal(out, ref), "Outputs differ (float32, dim=8)"
 
@@ -249,15 +256,17 @@ class TestDim8:
     def test_float64_equivalence(self, batch_shape: tuple[int, ...]) -> None:
         """Vectorized output matches reference for float64 inputs."""
         flat = _random_tril_flat(batch_shape, dim=8, dtype=torch.float64)
+        rows, cols = torch.tril_indices(8, 8)
         ref = _tril_to_symmetric_reference(flat, dim=8)
-        out = _tril_to_symmetric(flat, dim=8)
+        out = _tril_to_symmetric(flat, dim=8, rows=rows, cols=cols)
         assert out.shape == ref.shape
         assert torch.equal(out, ref), "Outputs differ (float64, dim=8)"
 
     def test_symmetric_property(self) -> None:
         """Output is always symmetric: M[i,j] == M[j,i]."""
         flat = _random_tril_flat((5,), dim=8, dtype=torch.float32)
-        out = _tril_to_symmetric(flat, dim=8)
+        rows, cols = torch.tril_indices(8, 8)
+        out = _tril_to_symmetric(flat, dim=8, rows=rows, cols=cols)
         # out: [5, 8, 8]
         assert torch.equal(out, out.transpose(-2, -1)), "Output is not symmetric"
 
@@ -266,15 +275,17 @@ class TestDim8:
         dim = 8
         tril_size = dim * (dim + 1) // 2
         flat = torch.arange(tril_size, dtype=torch.float32).unsqueeze(0)  # [1, 36]
+        rows, cols = torch.tril_indices(8, 8)
         ref = _tril_to_symmetric_reference(flat, dim=8)
-        out = _tril_to_symmetric(flat, dim=8)
+        out = _tril_to_symmetric(flat, dim=8, rows=rows, cols=cols)
         assert torch.equal(out, ref), "Entry placement differs from reference (dim=8)"
 
     def test_shape_is_correct(self) -> None:
         """Output shape is [..., dim, dim]."""
+        rows, cols = torch.tril_indices(8, 8)
         for batch_shape in [(10,), (3, 5), (1,)]:
             flat = _random_tril_flat(batch_shape, dim=8, dtype=torch.float32)
-            out = _tril_to_symmetric(flat, dim=8)
+            out = _tril_to_symmetric(flat, dim=8, rows=rows, cols=cols)
             expected_shape = torch.Size([*batch_shape, 8, 8])
             assert out.shape == expected_shape, f"Shape {out.shape} != {expected_shape}"
 

@@ -28,6 +28,7 @@ import json
 import logging
 import signal
 import sys
+import warnings
 from functools import partial
 from pathlib import Path
 
@@ -147,12 +148,22 @@ def parse_args() -> argparse.Namespace:
         help="Enable torch.compile with inductor backend (experimental on ROCm). "
              "Falls back to eager mode if compilation fails. Default: off.",
     )
+    parser.add_argument(
+        "--no-early-stop",
+        action="store_true",
+        default=False,
+        help="Disable early stopping so all runs train for the full epoch count.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     """Run CIFAR-10 benchmark reproduction."""
     args = parse_args()
+
+    # Suppress known third-party deprecation warnings that are not actionable
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="torchvision")
+    warnings.filterwarnings("ignore", category=FutureWarning, module="torch._inductor")
 
     # Set up logging
     logging.basicConfig(
@@ -192,6 +203,8 @@ def main() -> None:
         train_config.use_amp = True
     if args.compile:
         train_config.use_compile = True
+    if args.no_early_stop:
+        train_config.early_stopping_patience = train_config.epochs + 1
 
     config = ComparisonConfig(
         task="cifar10",

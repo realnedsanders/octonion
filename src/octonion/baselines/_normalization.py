@@ -20,23 +20,26 @@ import torch.nn as nn
 logger = logging.getLogger(__name__)
 
 
-def _tril_to_symmetric(tril_flat: torch.Tensor, dim: int) -> torch.Tensor:
+def _tril_to_symmetric(
+    tril_flat: torch.Tensor, dim: int, rows: torch.Tensor, cols: torch.Tensor
+) -> torch.Tensor:
     """Convert flat lower-triangular entries to a symmetric matrix.
 
-    Vectorized via torch.tril_indices: no Python-level loops.
-    The index computation is a fast C++ call returning a small tensor
-    (dim*(dim+1)/2 elements), so overhead is negligible versus the
-    eliminated Python loop.
+    Accepts pre-computed rows/cols from torch.tril_indices to avoid
+    calling tril_indices inside compiled regions (dynamic=True would
+    try to symbolically trace the quadratic index expression, causing
+    recursion in the shape solver).
 
     Args:
         tril_flat: [..., dim*(dim+1)/2] flat lower-triangular entries.
         dim: Matrix dimension.
+        rows: Row indices from torch.tril_indices(dim, dim).
+        cols: Col indices from torch.tril_indices(dim, dim).
 
     Returns:
         [..., dim, dim] symmetric matrix.
     """
     batch_shape = tril_flat.shape[:-1]
-    rows, cols = torch.tril_indices(dim, dim, device=tril_flat.device)
     mat = torch.zeros(
         *batch_shape, dim, dim,
         device=tril_flat.device, dtype=tril_flat.dtype,
@@ -268,6 +271,11 @@ class QuaternionBatchNorm(nn.Module):
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         # Condition number monitoring (updated each forward pass during training)
         self.register_buffer("last_cond", torch.tensor(1.0))
+        # Pre-computed tril indices as buffers so tril_indices is never called
+        # inside a compiled region (dynamic=True can't trace the quadratic expr).
+        _rows, _cols = torch.tril_indices(self.dim, self.dim)
+        self.register_buffer("_tril_rows", _rows, persistent=False)
+        self.register_buffer("_tril_cols", _cols, persistent=False)
 
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
@@ -349,28 +357,29 @@ class QuaternionBatchNorm(nn.Module):
             Normalized tensor of shape [batch, features, 4].
         """
         input_dtype = x.dtype
-        x = x.float()  # entire BN forward in float32 for numerical stability
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+            x = x.float()
 
-        if self.training:
-            mean = x.mean(dim=0)
-            x_centered = x - mean
-            cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
+            if self.training:
+                mean = x.mean(dim=0)
+                x_centered = x - mean
+                cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
 
-            with torch.no_grad():
-                self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-                self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
-                self.num_batches_tracked += 1
-        else:
-            mean = self.running_mean
-            x_centered = x - mean
-            cov = self.running_cov
+                with torch.no_grad():
+                    self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+                    self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
+                    self.num_batches_tracked += 1
+            else:
+                mean = self.running_mean
+                x_centered = x - mean
+                cov = self.running_cov
 
-        x_whitened = self._whiten(x_centered, cov)
+            x_whitened = self._whiten(x_centered, cov)
 
-        # Reconstruct symmetric gamma from lower-triangular entries
-        gamma_sym = _tril_to_symmetric(self.gamma, self.dim)
-        out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
-        out = out + self.beta
+            # Reconstruct symmetric gamma from lower-triangular entries
+            gamma_sym = _tril_to_symmetric(self.gamma, self.dim, self._tril_rows, self._tril_cols)
+            out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
+            out = out + self.beta
 
         return out.to(input_dtype)
 
@@ -433,6 +442,9 @@ class OctonionBatchNorm(nn.Module):
         )
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         self.register_buffer("last_cond", torch.tensor(1.0))
+        _rows, _cols = torch.tril_indices(self.dim, self.dim)
+        self.register_buffer("_tril_rows", _rows, persistent=False)
+        self.register_buffer("_tril_cols", _cols, persistent=False)
 
     def _whiten(
         self, x_centered: torch.Tensor, cov: torch.Tensor
@@ -504,26 +516,27 @@ class OctonionBatchNorm(nn.Module):
             Normalized tensor of shape [batch, features, 8].
         """
         input_dtype = x.dtype
-        x = x.float()  # entire BN forward in float32 for numerical stability
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+            x = x.float()
 
-        if self.training:
-            mean = x.mean(dim=0)
-            x_centered = x - mean
-            cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
+            if self.training:
+                mean = x.mean(dim=0)
+                x_centered = x - mean
+                cov = torch.einsum("bfi, bfj -> fij", x_centered, x_centered) / x.shape[0]
 
-            with torch.no_grad():
-                self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
-                self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
-                self.num_batches_tracked += 1
-        else:
-            mean = self.running_mean
-            x_centered = x - mean
-            cov = self.running_cov
+                with torch.no_grad():
+                    self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+                    self.running_cov.mul_(1 - self.momentum).add_(self.momentum * cov)
+                    self.num_batches_tracked += 1
+            else:
+                mean = self.running_mean
+                x_centered = x - mean
+                cov = self.running_cov
 
-        x_whitened = self._whiten(x_centered, cov)
+            x_whitened = self._whiten(x_centered, cov)
 
-        gamma_sym = _tril_to_symmetric(self.gamma, self.dim)
-        out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
-        out = out + self.beta
+            gamma_sym = _tril_to_symmetric(self.gamma, self.dim, self._tril_rows, self._tril_cols)
+            out = torch.einsum("fij, bfj -> bfi", gamma_sym, x_whitened)
+            out = out + self.beta
 
         return out.to(input_dtype)

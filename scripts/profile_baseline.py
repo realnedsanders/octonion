@@ -75,6 +75,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip exporting Chrome traces (faster, less disk usage).",
     )
+    parser.add_argument(
+        "--ref-hidden",
+        type=int,
+        default=4,
+        help="Base hidden width for all algebras (same-width protocol). "
+             "Default 4 matches the CIFAR reproduction run: "
+             "R=3.7M, C=1.87M, H=950K, O=495K params.",
+    )
     return parser.parse_args()
 
 
@@ -113,7 +121,7 @@ def _algebra_name_to_type(name: str):
     return mapping[name.lower()]
 
 
-def build_profile_model(algebra_name: str, device: torch.device) -> nn.Module:
+def build_profile_model(algebra_name: str, device: torch.device, ref_hidden: int = 4) -> nn.Module:
     """Build a CIFAR-scale model for the given algebra type.
 
     Uses cifar_network_config() to ensure profiling uses the exact same
@@ -131,6 +139,7 @@ def build_profile_model(algebra_name: str, device: torch.device) -> nn.Module:
 
     algebra = _algebra_name_to_type(algebra_name)
     config = cifar_network_config(algebra, dataset="cifar10")
+    config.base_hidden = ref_hidden  # same-width protocol: all algebras use ref_hidden
     model = AlgebraNetwork(config).to(device)
     return model
 
@@ -177,6 +186,7 @@ def profile_algebra(
     activities: list[ProfilerActivity],
     output_dir: Path,
     export_traces: bool,
+    ref_hidden: int = 4,
 ) -> dict[str, float]:
     """Profile forward+backward pass for a single algebra.
 
@@ -198,7 +208,7 @@ def profile_algebra(
     print(f"{'='*60}")
 
     # Build model
-    model = build_profile_model(algebra_name, device)
+    model = build_profile_model(algebra_name, device, ref_hidden=ref_hidden)
     loss_fn = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
@@ -359,6 +369,7 @@ def main() -> int:
                 activities=activities,
                 output_dir=output_dir,
                 export_traces=not args.no_traces,
+                ref_hidden=args.ref_hidden,
             )
             results[algebra_name] = stats
         except Exception as exc:

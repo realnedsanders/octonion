@@ -270,6 +270,7 @@ def train_model(
     # Per project policy: "seed-controlled but not CUDA deterministic".
     if str(device).startswith("cuda"):
         torch.backends.cudnn.benchmark = True
+        torch.set_float32_matmul_precision("high")
 
     # Optional torch.compile for potential kernel fusion speedup.
     # Gated by config flag; only applied on CUDA devices (ROCm support is
@@ -410,7 +411,10 @@ def train_model(
                 writer.add_scalar("VRAM/peak_MB", vram_peak, epoch)
 
             # ── Validation ──
-            val_loss, val_acc = evaluate(model, val_loader, device, loss_fn)
+            # Use same autocast context as training to avoid torch._dynamo
+            # recompile churn (GLOBAL_STATE changed: grad_mode autocast).
+            with torch.amp.autocast(amp_device_type, enabled=use_amp):
+                val_loss, val_acc = evaluate(model, val_loader, device, loss_fn)
             val_losses.append(val_loss)
             val_accuracies.append(val_acc)
 

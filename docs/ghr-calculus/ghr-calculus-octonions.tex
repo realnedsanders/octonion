@@ -1,13 +1,14 @@
 % GHR Calculus for Octonions: Approach and Findings
 % Octonion Computation Substrate — Phase 2
 %
-% Compile with: pdflatex ghr-calculus-octonions.tex
-% Requires: amsmath, amssymb, amsthm, booktabs, hyperref, geometry
+% Compile with: pdflatex ghr-calculus-octonions.tex (run twice for citations/TOC)
+% Requires: amsmath, amssymb, amsthm, mathtools, booktabs, hyperref, geometry
 
 \documentclass[11pt]{article}
 
 \usepackage[margin=1.2in]{geometry}
 \usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{microtype}
@@ -265,7 +266,7 @@ $1\times 7$ real--imaginary block, a $7\times 1$ imaginary--real block, and a
 $7\times 7$ imaginary--imaginary block involving a rank-one outer product
 $\mathbf{v}\mathbf{v}^\top$ plus a diagonal term:
 \begin{equation}
-  \mathbf{J}[1{:},{:}1{:}]
+  \mathbf{J}_{\mathrm{im,im}}
   = e^a\!\left[
       \frac{\cos r\cdot r - \sin r}{r^3}\,\mathbf{v}\mathbf{v}^\top
       + \frac{\sin r}{r}\,\mathbf{I}_7
