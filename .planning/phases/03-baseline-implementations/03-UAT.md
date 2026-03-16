@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-baseline-implementations
 source: [03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md, 03-05-SUMMARY.md, 03-06-SUMMARY.md, 03-07-SUMMARY.md, 03-08-SUMMARY.md, 03-09-SUMMARY.md, 03-10-SUMMARY.md, 03-11-SUMMARY.md, 03-12-SUMMARY.md]
 started: 2026-03-16T03:18:25Z
@@ -73,21 +73,39 @@ skipped: 0
   reason: "User reported: tests/test_perf_equivalence.py:171: TypeError: _tril_to_symmetric() missing 2 required positional arguments: 'rows' and 'cols'"
   severity: major
   test: 1
-  artifacts: []
-  missing: []
+  root_cause: "Working-tree fix to tests/test_perf_equivalence.py (adding rows, cols args to all _tril_to_symmetric call sites) was never committed — the committed test uses old 2-arg signature but _normalization.py now requires 4 args"
+  artifacts:
+    - path: "tests/test_perf_equivalence.py"
+      issue: "Committed version calls _tril_to_symmetric(flat, dim=N) without rows/cols; working-tree already has the fix but it's unstaged"
+  missing:
+    - "Stage and commit the working-tree changes to tests/test_perf_equivalence.py"
+  debug_session: ".planning/debug/tril-to-symmetric-signature-mismatch.md"
 
 - truth: "Profiling script shows ~3.7M params for REAL baseline under same-width protocol"
   status: failed
   reason: "User reported: Real was 59,471,626 params — way too many. Should be ~3.7M."
   severity: major
   test: 8
-  artifacts: []
-  missing: []
+  root_cause: "build_profile_model() passes ref_hidden directly as base_hidden to AlgebraNetwork, which multiplies it by algebra.multiplier (8 for REAL), inflating Real filters 8x; AlgebraNetwork has no same-width bypass mode"
+  artifacts:
+    - path: "scripts/profile_baseline.py"
+      issue: "build_profile_model() sets config.base_hidden = ref_hidden without compensating for the multiplier"
+    - path: "src/octonion/baselines/_network.py"
+      issue: "AlgebraNetwork unconditionally applies algebra.multiplier to base_hidden — no same-width mode exists"
+  missing:
+    - "Add same_width flag or base_filters field to NetworkConfig/AlgebraNetwork to bypass the multiplier"
+    - "Fix build_profile_model() to use same-width path so all algebras get exactly ref_hidden filters"
+  debug_session: ".planning/debug/real-network-param-explosion.md"
 
 - truth: "AMP-safe BN runs without errors (no NaN, no AttributeError)"
   status: failed
   reason: "User reported: AttributeError: type object 'QuaternionBatchNorm' has no attribute 'name'"
   severity: major
   test: 9
-  artifacts: []
-  missing: []
+  root_cause: "Test invocation error: user ran a hand-typed variant with BN.name (no double underscores) instead of BN.__name__; the BN code itself is clean and has no bug"
+  artifacts:
+    - path: "src/octonion/baselines/_normalization.py"
+      issue: "No bug — QuaternionBatchNorm and OctonionBatchNorm are correct; neither defines .name because it's not needed"
+  missing:
+    - "Re-run the exact UAT command with BN.__name__ to confirm AMP-safe BN actually passes"
+  debug_session: ".planning/debug/qbn-no-name-attr.md"
