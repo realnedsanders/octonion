@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 04-numerical-stability
 source: [04-01-SUMMARY.md, 04-02-SUMMARY.md]
 started: 2026-03-20T03:00:00Z
-updated: 2026-03-20T03:20:00Z
+updated: 2026-03-20T12:00:00Z
 ---
 
 ## Current Test
@@ -51,7 +51,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Analysis script produces no NaN values in JSON output files"
-  status: failed
+  status: resolved
   reason: "At depth 500 (and 200-300 for some algebras), stripped chains produce f64 norms ~1e63. The f32 chain overflows to inf. Computing (inf - huge).norm() = NaN. Guard only checks out64_norm > 1e-30 but not for inf/NaN in out32. Octonion composition condition numbers at all depths (2/5/10) produce non-finite Jacobian SVD values for all samples. Same overflow issue in mitigation baseline at deep checkpoints."
   severity: blocker
   test: 5
@@ -64,7 +64,7 @@ skipped: 0
     - "Use json-safe serialization: replace NaN/inf with null or string sentinel in JSON output"
     - "Octonion composition condition numbers: chains explode, all Jacobian SVDs non-finite → handle gracefully"
 - truth: "SC-4 mitigation ratio is assessable and >= 2.0x for at least one algebra"
-  status: failed
+  status: resolved
   reason: "Stable depth calculations depend on NaN-free relative error data. With NaN at deep layers, baseline stable depth is underestimated (stops at last finite measurement), making improvement ratios unreliable."
   severity: blocker
   test: 6
