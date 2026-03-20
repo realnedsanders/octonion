@@ -202,10 +202,24 @@ def find_stable_depth(errors_by_depth: dict[int, float], threshold: float = STAB
     return stable
 
 
+def _sanitize_for_json(obj):
+    """Recursively replace NaN/inf with null for valid JSON output."""
+    if isinstance(obj, float):
+        if not np.isfinite(obj):
+            return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    return obj
+
+
 def save_json(data: dict, path: str) -> None:
-    """Save data to JSON with float handling."""
+    """Save data to JSON, converting NaN/inf to null for valid JSON."""
+    sanitized = _sanitize_for_json(data)
     with open(path, "w") as f:
-        json.dump(data, f, indent=2, default=float)
+        json.dump(sanitized, f, indent=2, default=float)
 
 
 # ── Section 1: Depth Sweep / Error Accumulation (SC-1 + SC-3) ──────────
@@ -260,14 +274,20 @@ def run_depth_sweep() -> dict:
                         # Relative error
                         out64_norm = out64.norm()
                         if out64_norm.item() > 1e-30:
-                            rel_err = (out32.double() - out64).norm() / out64_norm
-                            errors.append(rel_err.item())
+                            if not torch.isfinite(out32).all():
+                                errors.append(float("inf"))
+                            else:
+                                rel_err = (out32.double() - out64).norm() / out64_norm
+                                errors.append(rel_err.item())
 
                         # Norm drift: output norm / input norm
                         in_norm = x64.norm().item()
                         out_norm = out64.norm().item()
                         if in_norm > 1e-30:
-                            norm_ratios.append(out_norm / in_norm)
+                            if not np.isfinite(out_norm):
+                                norm_ratios.append(float("inf"))
+                            else:
+                                norm_ratios.append(out_norm / in_norm)
 
                 if errors:
                     results["stripped"][alg_name][str(depth)][mag_label] = {
@@ -340,8 +360,11 @@ def run_depth_sweep() -> dict:
 
                             out64_norm = out64.norm()
                             if out64_norm.item() > 1e-30:
-                                rel_err = (out32.double() - out64).norm() / out64_norm
-                                errors.append(rel_err.item())
+                                if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
+                                    errors.append(float("inf"))
+                                else:
+                                    rel_err = (out32.double() - out64).norm() / out64_norm
+                                    errors.append(rel_err.item())
 
                     if errors:
                         results["full"][alg_name][str(depth)][mag_label] = {
@@ -462,10 +485,10 @@ def run_condition_numbers() -> dict:
                 }
             else:
                 results["primitives"][op_name][str(magnitude)] = {
-                    "mean": float("nan"),
-                    "std": float("nan"),
-                    "median": float("nan"),
-                    "max": float("nan"),
+                    "mean": float("inf"),
+                    "std": float("inf"),
+                    "median": float("inf"),
+                    "max": float("inf"),
                     "n_samples": 0,
                 }
             print(f"    {op_name} mag={magnitude:6.2f}: "
@@ -525,10 +548,10 @@ def run_condition_numbers() -> dict:
                 }
             else:
                 results["compositions"][alg_name][str(comp_depth)] = {
-                    "mean": float("nan"),
-                    "std": float("nan"),
-                    "median": float("nan"),
-                    "max": float("nan"),
+                    "mean": float("inf"),
+                    "std": float("inf"),
+                    "median": float("inf"),
+                    "max": float("inf"),
                     "n_samples": 0,
                 }
             print(f"    {alg_name} chain depth={comp_depth}: "
@@ -580,10 +603,10 @@ def run_condition_numbers() -> dict:
                     }
                 else:
                     results["networks"][alg_name][str(magnitude)] = {
-                        "mean": float("nan"),
-                        "std": float("nan"),
-                        "median": float("nan"),
-                        "max": float("nan"),
+                        "mean": float("inf"),
+                        "std": float("inf"),
+                        "median": float("inf"),
+                        "max": float("inf"),
                         "n_samples": 0,
                     }
                 print(f"    {alg_name} network mag={magnitude:6.2f}: "
@@ -593,10 +616,10 @@ def run_condition_numbers() -> dict:
             print(f"    {alg_name} network: ERROR - {e}")
             for magnitude in network_magnitudes:
                 results["networks"][alg_name][str(magnitude)] = {
-                    "mean": float("nan"),
-                    "std": float("nan"),
-                    "median": float("nan"),
-                    "max": float("nan"),
+                    "mean": float("inf"),
+                    "std": float("inf"),
+                    "median": float("inf"),
+                    "max": float("inf"),
                     "n_samples": 0,
                     "error": str(e),
                 }
@@ -652,10 +675,16 @@ def run_mitigation() -> dict:
                     h32 = layer_f32(h32)
                     depth = i + 1
                     if depth in checkpoint_depths:
+                        if not torch.isfinite(h64).all():
+                            # Both chains diverged, skip sample
+                            continue
                         out64_norm = h64.norm()
                         if out64_norm.item() > 1e-30:
-                            rel_err = (h32.double() - h64).norm() / out64_norm
-                            baseline_errors[depth].append(rel_err.item())
+                            if not torch.isfinite(h32).all():
+                                baseline_errors[depth].append(float("inf"))
+                            else:
+                                rel_err = (h32.double() - h64).norm() / out64_norm
+                                baseline_errors[depth].append(rel_err.item())
 
         for d in checkpoint_depths:
             if baseline_errors[d]:
@@ -700,10 +729,16 @@ def run_mitigation() -> dict:
                             h64 = stabilizer_f64(h64)
                             h32 = stabilizer_f32(h32)
                         if depth in checkpoint_depths:
+                            if not torch.isfinite(h64).all():
+                                # Both chains diverged, skip sample
+                                continue
                             out64_norm = h64.norm()
                             if out64_norm.item() > 1e-30:
-                                rel_err = (h32.double() - h64).norm() / out64_norm
-                                mitigated_errors[depth].append(rel_err.item())
+                                if not torch.isfinite(h32).all():
+                                    mitigated_errors[depth].append(float("inf"))
+                                else:
+                                    rel_err = (h32.double() - h64).norm() / out64_norm
+                                    mitigated_errors[depth].append(rel_err.item())
 
             k_key = f"K={K}"
             results[alg_name]["mitigated"][k_key] = {}
@@ -783,7 +818,7 @@ def plot_depth_sweep(depth_results: dict, output_dir: str = "results/stability")
                 for d in DEPTHS:
                     entry = data.get(alg_name, {}).get(str(d), {}).get(mag_label, {})
                     err = entry.get("mean_rel_error", float("nan"))
-                    if not np.isnan(err) and err > 0:
+                    if np.isfinite(err) and err > 0:
                         depths_list.append(d)
                         errors_list.append(err)
 
@@ -810,7 +845,7 @@ def plot_depth_sweep(depth_results: dict, output_dir: str = "results/stability")
             for d in DEPTHS:
                 entry = data.get(alg_name, {}).get(str(d), {}).get(mag_label, {})
                 err = entry.get("mean_rel_error", float("nan"))
-                if not np.isnan(err) and err > 0:
+                if np.isfinite(err) and err > 0:
                     depths_list.append(d)
                     errors_list.append(err)
             if depths_list:
@@ -848,7 +883,7 @@ def plot_condition_numbers(cond_results: dict, output_dir: str = "results/stabil
         for mag in MAGNITUDES:
             entry = op_data.get(str(mag), {})
             mean_cond = entry.get("mean", float("nan"))
-            if not np.isnan(mean_cond):
+            if np.isfinite(mean_cond):
                 mags.append(mag)
                 means.append(mean_cond)
         if mags:
@@ -914,7 +949,7 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
         for d in checkpoint_depths:
             entry = baseline.get(str(d), {})
             err = entry.get("mean_rel_error", float("nan"))
-            if not np.isnan(err) and err > 0:
+            if np.isfinite(err) and err > 0:
                 base_depths.append(d)
                 base_errors.append(err)
         if base_depths:
@@ -931,7 +966,7 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
             for d in checkpoint_depths:
                 entry = k_data.get(str(d), {})
                 err = entry.get("mean_rel_error", float("nan"))
-                if not np.isnan(err) and err > 0:
+                if np.isfinite(err) and err > 0:
                     k_depths.append(d)
                     k_errors.append(err)
             if k_depths:
