@@ -12,24 +12,22 @@ Determine empirically whether octonionic representations provide measurable adva
 
 ### Validated
 
-<!-- Shipped and confirmed valuable. -->
-
-(None yet — ship to validate)
+- [x] Core octonionic algebra library (multiplication, conjugation, inversion, associator) with property-based tests — Validated in Phase 1: Octonionic Algebra
+- [x] GHR calculus gradient implementation for octonionic backpropagation — Validated in Phase 2: GHR Calculus
+- [x] Baseline implementations: fair R/C/H/O comparison networks with matched parameter counts — Validated in Phase 3: Baseline Implementations
+- [x] Numerical stability analysis across all components — Validated in Phase 4: Numerical Stability
 
 ### Active
 
-- [ ] Core octonionic algebra library (multiplication, conjugation, inversion, associator) with property-based tests
-- [ ] Controlled density experiments: octonion vs quaternion vs complex vs real on matched-parameter tasks
 - [ ] Optimization landscape characterization: does non-associativity create pathological loss surfaces?
+- [ ] Controlled density experiments: octonion vs quaternion vs complex vs real on matched-parameter tasks
 - [ ] Reversible reasoning experiments: demonstrate backward inference through octonionic transformations
 - [ ] G₂-equivariant layer implementation and training pipeline
 - [ ] Hyperboloid-octonionic hybrid model (Option B from thesis §6.2)
 - [ ] Hyperbolic projection stability analysis (the central open problem from thesis §9.7)
 - [ ] Geometric signal detection on synthetic data with known ground truth
 - [ ] Multi-stream data fusion architecture (financial + text streams)
-- [ ] GHR calculus gradient implementation for octonionic backpropagation
 - [ ] End-to-end ORE proof-of-concept on real-world data
-- [ ] Numerical stability analysis across all components
 
 ### Out of Scope
 
@@ -74,4 +72,4 @@ Determine empirically whether octonionic representations provide measurable adva
 | Full thesis scope | Validate all major claims rather than cherry-picking; systematic approach | — Pending |
 
 ---
-*Last updated: 2026-03-07 after initialization*
+*Last updated: 2026-03-19 after Phase 4 completion*
