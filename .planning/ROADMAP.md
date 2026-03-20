@@ -98,11 +98,11 @@ Plans:
   2. Condition numbers of octonionic multiplication, inversion, and composed operations are characterized as a function of input magnitude
   3. float32 vs float64 convergence comparison identifies the minimum precision required for each operation class
   4. At least one mitigation strategy (re-normalization, mixed precision, or compensation) is demonstrated to extend stable depth by at least 2x
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — StabilizingNorm module, config integration, and Wave 0 smoke test infrastructure
+- [ ] 04-02-PLAN.md — Comprehensive stability analysis script (depth sweep, condition numbers, float32/64 comparison, mitigation)
 
 ### Phase 5: Optimization Landscape
 **Goal**: Determine whether octonionic networks can be trained reliably
@@ -193,7 +193,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 | 1. Octonionic Algebra | 4/6 | Gap closure | - |
 | 2. GHR Calculus | 1/4 | In progress | - |
 | 3. Baseline Implementations | 12/15 | UAT gap closure | - |
-| 4. Numerical Stability | 0/? | Not started | - |
+| 4. Numerical Stability | 0/2 | Planned | - |
 | 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
 | 7. Density & Geometric Claims | 0/? | Not started | - |
