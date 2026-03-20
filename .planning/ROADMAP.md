@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: GHR Calculus** - Octonionic backpropagation gradients validated by finite-difference checks
 - [x] **Phase 3: Baseline Implementations** - Fair R/C/H comparison networks with matched parameter counts (completed 2026-03-13)
 - [ ] **Phase 4: Numerical Stability** - Precision characterization across depths, float widths, and operation chains
-- [ ] **Phase 5: Optimization Landscape (GO/NO-GO)** - Quantitative landscape characterization determining project viability
+- [ ] **Phase 5: Optimization Landscape** - Quantitative landscape characterization determining project viability
 - [ ] **Phase 6: Reversibility Claim** - Algebraic inversion quality vs RevNet/INN baselines across depth and noise
 - [ ] **Phase 7: Density & Geometric Claims** - Matched-parameter density advantage and geometric signal detection experiments
 - [ ] **Phase 8: G2 Equivariance & Hyperbolic Hybrid** - Novel G2-equivariant layers and hyperboloid-octonionic model
@@ -104,16 +104,16 @@ Plans:
 - [ ] 04-01: TBD
 - [ ] 04-02: TBD
 
-### Phase 5: Optimization Landscape (GO/NO-GO)
-**Goal**: Determine whether octonionic networks can be trained reliably -- this gates the entire remainder of the project
+### Phase 5: Optimization Landscape
+**Goal**: Determine whether octonionic networks can be trained reliably
 **Depends on**: Phase 2, Phase 3, Phase 4
 **Requirements**: FOUND-04
 **Success Criteria** (what must be TRUE):
   1. Gradient variance across 20+ random seeds is characterized and compared to R/C/H baselines on at least 2 synthetic tasks with known optima
   2. Hessian eigenspectrum at convergence shows ratio of negative eigenvalues (saddle points) for octonionic networks is within 3x of quaternionic baseline
   3. Training convergence profiles (loss vs step) across 3+ optimizers (SGD, Adam, a Riemannian optimizer) are documented for all 4 algebras
-  4. GO decision: octonionic networks converge to solutions within 2x loss of R8-dense-mixing baseline on 3+ tasks with 10+ seeds each
-  5. If NO-GO: landscape pathology is characterized quantitatively (publishable negative result) and project pivots
+  4. Determine if octonionic networks converge to solutions within 2x loss of R8-dense-mixing baseline on 3+ tasks with 10+ seeds each
+  5. Determine if landscape pathology is characterized quantitatively (publishable negative result) and project pivots
 **Plans**: TBD
 
 Plans:

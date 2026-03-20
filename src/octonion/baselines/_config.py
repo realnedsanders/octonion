@@ -78,7 +78,13 @@ class TrainConfig:
         epochs: Maximum training epochs.
         lr: Learning rate.
         optimizer: Optimizer name.
-        scheduler: LR scheduler type.
+        scheduler: LR scheduler type. Options:
+            - "cosine": CosineAnnealingLR (default for general use)
+            - "step": StepLR with step_size = epochs // 3
+            - "plateau": ReduceLROnPlateau
+            - "step_cifar": Step-decay matching Gaudet & Maida 2018 / Trabelsi
+              2018 CIFAR protocol: LR=lr for 10 warmup epochs, LR=lr*10 for
+              epochs 10-119, LR=lr at epoch 120, LR=lr/10 at epoch 150.
         weight_decay: L2 regularization weight.
         early_stopping_patience: Epochs to wait before early stopping.
         warmup_epochs: Number of warmup epochs.
@@ -88,6 +94,11 @@ class TrainConfig:
         use_compile: Whether to apply torch.compile with inductor backend
             (opt-in, experimental on ROCm). Falls back to eager mode if
             compilation fails. Default: False.
+        gradient_clip_norm: Max gradient norm for clipping. 0 = disabled.
+            Gaudet & Maida 2018 and Trabelsi 2018 use gradient norm clipping
+            at 1.0 for CIFAR experiments.
+        nesterov: Use Nesterov momentum with SGD. Both Gaudet & Maida 2018
+            and Trabelsi 2018 use Nesterov momentum.
         checkpoint_every: Save checkpoint every N epochs.
         seed: Random seed for reproducibility.
         batch_size: Training batch size.
@@ -104,6 +115,8 @@ class TrainConfig:
     warmup_epochs: int = 5
     use_amp: bool = False
     use_compile: bool = False  # Opt-in torch.compile (experimental on ROCm)
+    gradient_clip_norm: float = 0.0  # 0 = disabled; papers use 1.0
+    nesterov: bool = False  # Nesterov momentum for SGD
     checkpoint_every: int = 10
     seed: int = 42
     batch_size: int = 128

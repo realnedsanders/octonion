@@ -99,6 +99,8 @@ def _config_hash(config: ComparisonConfig) -> str:
             "early_stopping_patience": config.train_config.early_stopping_patience,
             "warmup_epochs": config.train_config.warmup_epochs,
             "use_amp": config.train_config.use_amp,
+            "gradient_clip_norm": getattr(config.train_config, "gradient_clip_norm", 0.0),
+            "nesterov": getattr(config.train_config, "nesterov", False),
             "checkpoint_every": config.train_config.checkpoint_every,
             "seed": config.train_config.seed,
             "batch_size": config.train_config.batch_size,

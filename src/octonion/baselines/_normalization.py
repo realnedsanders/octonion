@@ -157,57 +157,66 @@ class ComplexBatchNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: complex batch normalization.
 
+        Always computes in float32 and casts back to input dtype on exit.
+        This ensures AMP safety: mean, covariance, inverse square root, and
+        the gamma/beta affine transform all run in float32 regardless of
+        autocast state (matching QuaternionBN/OctonionBN behavior).
+
         Args:
             x: Input tensor of shape [batch, features, 2].
 
         Returns:
             Normalized tensor of shape [batch, features, 2].
         """
-        if self.training:
-            mean = x.mean(dim=0)  # [features, 2]
-            x_centered = x - mean
+        input_dtype = x.dtype
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+            x = x.float()
+
+            if self.training:
+                mean = x.mean(dim=0)  # [features, 2]
+                x_centered = x - mean
+                x_r = x_centered[..., 0]
+                x_i = x_centered[..., 1]
+
+                vrr = (x_r * x_r).mean(dim=0) + self.eps
+                vri = (x_r * x_i).mean(dim=0)
+                vii = (x_i * x_i).mean(dim=0) + self.eps
+
+                with torch.no_grad():
+                    self.running_mean.mul_(1 - self.momentum).add_(
+                        self.momentum * mean
+                    )
+                    self.running_var_rr.mul_(1 - self.momentum).add_(
+                        self.momentum * vrr
+                    )
+                    self.running_var_ri.mul_(1 - self.momentum).add_(
+                        self.momentum * vri
+                    )
+                    self.running_var_ii.mul_(1 - self.momentum).add_(
+                        self.momentum * vii
+                    )
+                    self.num_batches_tracked += 1
+            else:
+                mean = self.running_mean
+                vrr = self.running_var_rr + self.eps
+                vri = self.running_var_ri
+                vii = self.running_var_ii + self.eps
+                x_centered = x - mean
+
+            inv_rr, inv_ri, inv_ii = self._compute_inverse_sqrt_2x2(vrr, vri, vii)
+
             x_r = x_centered[..., 0]
             x_i = x_centered[..., 1]
+            w_r = inv_rr * x_r + inv_ri * x_i
+            w_i = inv_ri * x_r + inv_ii * x_i
 
-            vrr = (x_r * x_r).mean(dim=0) + self.eps
-            vri = (x_r * x_i).mean(dim=0)
-            vii = (x_i * x_i).mean(dim=0) + self.eps
+            out_r = self.gamma_rr * w_r + self.gamma_ri * w_i
+            out_i = self.gamma_ri * w_r + self.gamma_ii * w_i
 
-            with torch.no_grad():
-                self.running_mean.mul_(1 - self.momentum).add_(
-                    self.momentum * mean
-                )
-                self.running_var_rr.mul_(1 - self.momentum).add_(
-                    self.momentum * vrr
-                )
-                self.running_var_ri.mul_(1 - self.momentum).add_(
-                    self.momentum * vri
-                )
-                self.running_var_ii.mul_(1 - self.momentum).add_(
-                    self.momentum * vii
-                )
-                self.num_batches_tracked += 1
-        else:
-            mean = self.running_mean
-            vrr = self.running_var_rr + self.eps
-            vri = self.running_var_ri
-            vii = self.running_var_ii + self.eps
-            x_centered = x - mean
+            result = torch.stack([out_r, out_i], dim=-1)
+            result = result + self.beta
 
-        inv_rr, inv_ri, inv_ii = self._compute_inverse_sqrt_2x2(vrr, vri, vii)
-
-        x_r = x_centered[..., 0]
-        x_i = x_centered[..., 1]
-        w_r = inv_rr * x_r + inv_ri * x_i
-        w_i = inv_ri * x_r + inv_ii * x_i
-
-        out_r = self.gamma_rr * w_r + self.gamma_ri * w_i
-        out_i = self.gamma_ri * w_r + self.gamma_ii * w_i
-
-        result = torch.stack([out_r, out_i], dim=-1)
-        result = result + self.beta
-
-        return result
+        return result.to(input_dtype)
 
 
 class QuaternionBatchNorm(nn.Module):

@@ -3,9 +3,10 @@
 
 Orchestrates full CIFAR-10 training using the Phase 3 baseline infrastructure:
 - AlgebraNetwork conv2d topology (ResNet-style, depth=28)
-- Parameter-matched architectures across R, C, H, O
-- SGD with cosine LR for 200 epochs
-- 3 random seeds for mean +/- std
+- Same-width architectures across R, C, H, O (Gaudet & Maida 2018 protocol)
+- SGD with Nesterov momentum, step-decay LR (0.01 warmup -> 0.1 peak -> /10 at 120,150)
+- Gradient norm clipping at 1.0
+- 200 epochs, 3 random seeds for mean +/- std
 
 Generates structured reproduction reports comparing our results against
 published targets from Trabelsi et al. 2018 (C) and Gaudet & Maida 2018 (R, H).
@@ -97,26 +98,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ref-hidden",
         type=int,
-        default=16,
+        default=4,
         help="Base hidden width (filter count) for reference model",
     )
     parser.add_argument(
         "--num-workers",
         type=int,
-        default=4,
+        default=16,
         help="Number of data loader workers",
     )
     parser.add_argument(
         "--algebras",
         nargs="+",
-        default=["O", "R", "C", "H"],
+        default=["R", "C", "H", "O"],
         choices=["R", "C", "H", "O"],
         help="Which algebras to train (default: all four)",
     )
     parser.add_argument(
         "--epochs",
         type=int,
-        default=None,
+        default=200,
         help="Override number of training epochs (default: 200 from cifar_train_config)",
     )
     parser.add_argument(
@@ -128,7 +129,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-match-params",
         action="store_true",
-        default=False,
+        default=True,
         help="Use same-width mode (all algebras get same base_filters). "
              "Matches the protocol in Gaudet & Maida 2018 / Trabelsi et al. 2018 "
              "where H had fewer params but same architecture width as R.",
@@ -136,22 +137,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--use-amp",
         action="store_true",
-        default=False,
+        default=True,
         help="Enable automatic mixed precision (AMP) for faster training. "
-             "BN whitening is protected with float32 casting so AMP is safe "
-             "for all four algebras. Default: off (float32 for reproduction fidelity).",
+             "All BN layers (including ComplexBN) are protected with "
+             "autocast(enabled=False) + float32 casting so AMP is safe "
+             "for all four algebras.",
     )
     parser.add_argument(
         "--compile",
         action="store_true",
-        default=False,
+        default=True,
         help="Enable torch.compile with inductor backend (experimental on ROCm). "
              "Falls back to eager mode if compilation fails. Default: off.",
     )
     parser.add_argument(
         "--no-early-stop",
         action="store_true",
-        default=False,
+        default=True,
         help="Disable early stopping so all runs train for the full epoch count.",
     )
     return parser.parse_args()
@@ -243,6 +245,8 @@ def main() -> None:
     logger.info(f"Ref hidden: {args.ref_hidden}")
     logger.info(f"Match params: {not args.no_match_params}")
     logger.info(f"AMP: {train_config.use_amp}")
+    logger.info(f"Gradient clip norm: {getattr(train_config, 'gradient_clip_norm', 0.0)}")
+    logger.info(f"Nesterov momentum: {getattr(train_config, 'nesterov', False)}")
     logger.info(f"torch.compile: {getattr(train_config, 'use_compile', False)}")
     logger.info(f"Data dir: {args.data_dir}")
     logger.info(f"Output dir: {args.output_dir}")

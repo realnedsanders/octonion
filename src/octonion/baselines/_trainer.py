@@ -75,7 +75,8 @@ def _build_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optim
         return torch.optim.AdamW(params, lr=config.lr, weight_decay=config.weight_decay)
     elif name == "sgd":
         return torch.optim.SGD(
-            params, lr=config.lr, weight_decay=config.weight_decay, momentum=0.9
+            params, lr=config.lr, weight_decay=config.weight_decay,
+            momentum=0.9, nesterov=getattr(config, "nesterov", False),
         )
     else:
         raise ValueError(f"Unknown optimizer: {config.optimizer!r}. Use 'adam', 'adamw', or 'sgd'.")
@@ -101,13 +102,36 @@ def _build_scheduler(
         return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.epochs)
     elif name == "step":
         return torch.optim.lr_scheduler.StepLR(optimizer, step_size=max(1, config.epochs // 3))
+    elif name == "step_cifar":
+        # Matches Gaudet & Maida 2018 / Trabelsi 2018 CIFAR schedule:
+        # LR=lr for warmup (epochs 0-9), LR=lr*10 for epochs 10-119,
+        # LR=lr at epoch 120, LR=lr/10 at epoch 150.
+        #
+        # Implemented as a MultiStepLR starting from the peak LR (lr*10),
+        # with milestones at epochs 120 and 150 dividing by 10 each time.
+        # The warmup from lr to lr*10 is handled separately in the training
+        # loop (see warmup logic in train_model).
+        #
+        # IMPORTANT: The scheduler is only stepped after warmup_epochs
+        # (i.e., starting at real epoch 10). To align milestones with real
+        # epoch numbers, we subtract warmup_epochs from the milestones.
+        # E.g., warmup_epochs=10 -> milestones=[110, 140] so the scheduler
+        # triggers at real epochs 120 and 150.
+        warmup = getattr(config, "warmup_epochs", 10)
+        peak_lr = config.lr * 10  # e.g., 0.01 * 10 = 0.1
+        for pg in optimizer.param_groups:
+            pg["lr"] = peak_lr
+        return torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[120 - warmup, 150 - warmup], gamma=0.1
+        )
     elif name == "plateau":
         return torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", patience=5, factor=0.5
         )
     else:
         raise ValueError(
-            f"Unknown scheduler: {config.scheduler!r}. Use 'cosine', 'step', or 'plateau'."
+            f"Unknown scheduler: {config.scheduler!r}. "
+            f"Use 'cosine', 'step', 'step_cifar', or 'plateau'."
         )
 
 
@@ -293,14 +317,26 @@ def train_model(
     # TensorBoard
     writer = SummaryWriter(log_dir=output_dir)
 
-    # LR warmup: wrap with LambdaLR that linearly increases for warmup_epochs
+    # LR warmup configuration
     warmup_epochs = config.warmup_epochs
-    target_lr = config.lr
+    is_step_cifar = config.scheduler.lower() == "step_cifar"
 
-    if warmup_epochs > 0:
-        # Set initial LR to near-zero for warmup
-        for pg in optimizer.param_groups:
-            pg["lr"] = 0.0
+    if is_step_cifar:
+        # step_cifar: warmup holds LR at config.lr (e.g., 0.01) for warmup_epochs,
+        # then jumps to peak LR (config.lr * 10 = 0.1) when warmup ends.
+        # The MultiStepLR scheduler already has peak LR set; during warmup we
+        # override to config.lr. After warmup, we let the scheduler control LR.
+        warmup_lr = config.lr  # Hold at base LR during warmup
+        target_lr = config.lr * 10  # Peak LR after warmup
+        if warmup_epochs > 0:
+            for pg in optimizer.param_groups:
+                pg["lr"] = warmup_lr
+    else:
+        # Default: linear warmup from 0 to config.lr
+        target_lr = config.lr
+        if warmup_epochs > 0:
+            for pg in optimizer.param_groups:
+                pg["lr"] = 0.0
 
     # Tracking
     train_losses: list[float] = []
@@ -336,10 +372,16 @@ def train_model(
         for epoch in range(config.epochs):
             # Compute current LR based on warmup
             if warmup_epochs > 0 and epoch < warmup_epochs:
-                warmup_factor = (epoch + 1) / max(1, warmup_epochs)
-                current_lr = target_lr * warmup_factor
-                for pg in optimizer.param_groups:
-                    pg["lr"] = current_lr
+                if is_step_cifar:
+                    # step_cifar: hold at warmup_lr (config.lr) during warmup
+                    for pg in optimizer.param_groups:
+                        pg["lr"] = warmup_lr
+                else:
+                    # Default: linear warmup from 0 to target_lr
+                    warmup_factor = (epoch + 1) / max(1, warmup_epochs)
+                    current_lr = target_lr * warmup_factor
+                    for pg in optimizer.param_groups:
+                        pg["lr"] = current_lr
             elif warmup_epochs > 0 and epoch == warmup_epochs:
                 # Restore target LR at end of warmup
                 for pg in optimizer.param_groups:
@@ -365,6 +407,13 @@ def train_model(
                     loss = loss_fn(outputs, targets)
 
                 scaler.scale(loss).backward()
+
+                # Gradient clipping (if configured)
+                grad_clip = getattr(config, "gradient_clip_norm", 0.0)
+                if grad_clip > 0:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
                 scaler.step(optimizer)
                 scaler.update()
 

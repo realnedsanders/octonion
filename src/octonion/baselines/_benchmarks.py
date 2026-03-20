@@ -343,10 +343,11 @@ def cifar_train_config(dataset: str = "cifar10") -> TrainConfig:
     """Build training config matching published CIFAR hyperparameters.
 
     Matches Gaudet & Maida 2018 and Trabelsi et al. 2018 protocols:
-    - SGD with momentum 0.9
-    - Cosine annealing LR schedule
-    - 200 epochs (standard for CIFAR benchmarks)
+    - SGD with Nesterov momentum 0.9
+    - Step-decay LR: 0.01 warmup (10 epochs) -> 0.1 peak -> /10 at epoch 120 -> /10 at 150
+    - 200 epochs
     - Weight decay 5e-4
+    - Gradient norm clipping at 1.0
     - No AMP (float32 for reproduction fidelity)
 
     Args:
@@ -359,11 +360,13 @@ def cifar_train_config(dataset: str = "cifar10") -> TrainConfig:
         epochs=200,
         lr=0.01,
         optimizer="sgd",
-        scheduler="cosine",
+        scheduler="step_cifar",
         weight_decay=5e-4,
-        early_stopping_patience=50,
-        warmup_epochs=5,
+        early_stopping_patience=200 + 1,  # Effectively disabled
+        warmup_epochs=10,
         use_amp=False,
+        gradient_clip_norm=1.0,
+        nesterov=True,
         checkpoint_every=25,
         seed=42,
         batch_size=128,

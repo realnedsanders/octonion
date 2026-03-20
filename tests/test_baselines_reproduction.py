@@ -199,22 +199,134 @@ class TestCIFARTrainConfig:
     """Verify training configs match published hyperparameters."""
 
     def test_cifar10_train_config(self) -> None:
-        """CIFAR-10 train config should match published hyperparameters."""
+        """CIFAR-10 train config should match published hyperparameters.
+
+        Matches Gaudet & Maida 2018 / Trabelsi 2018:
+        - SGD with Nesterov momentum
+        - step_cifar LR schedule (0.01 warmup -> 0.1 peak -> step decay)
+        - Gradient norm clipping at 1.0
+        """
         tc = cifar_train_config("cifar10")
         assert tc.epochs == 200
         assert tc.lr == 0.01
         assert tc.optimizer == "sgd"
-        assert tc.scheduler == "cosine"
+        assert tc.scheduler == "step_cifar"
         assert tc.weight_decay == 5e-4
         assert tc.batch_size == 128
-        assert tc.warmup_epochs == 5
+        assert tc.warmup_epochs == 10
         assert tc.use_amp is False
+        assert tc.gradient_clip_norm == 1.0
+        assert tc.nesterov is True
 
     def test_cifar100_train_config(self) -> None:
         """CIFAR-100 train config uses same hyperparameters."""
         tc = cifar_train_config("cifar100")
         assert tc.epochs == 200
         assert tc.optimizer == "sgd"
+
+    def test_step_cifar_scheduler_lr_values(self) -> None:
+        """step_cifar scheduler should match published LR schedule.
+
+        Verifies the LR schedule from Gaudet & Maida 2018 / Trabelsi 2018:
+        - Epochs 0-9:   LR = 0.01  (warmup at base LR)
+        - Epochs 10-119: LR = 0.1  (peak LR)
+        - Epochs 120-149: LR = 0.01 (after first step decay)
+        - Epochs 150-199: LR = 0.001 (after second step decay)
+
+        Simulates train_model's exact warmup + scheduler stepping logic:
+        - During warmup (epochs 0-9): LR overridden to config.lr, scheduler NOT stepped
+        - At epoch 10: LR restored to peak (config.lr * 10), scheduler stepping begins
+        - Milestones adjusted by -warmup_epochs so scheduler hits them at real epochs 120, 150
+        """
+        import torch
+        from octonion.baselines._trainer import _build_optimizer, _build_scheduler
+
+        tc = cifar_train_config("cifar10")
+
+        # Build a tiny model just for optimizer/scheduler
+        model = torch.nn.Linear(10, 10)
+        tc_copy = TrainConfig(
+            epochs=tc.epochs, lr=tc.lr, optimizer="sgd", scheduler="step_cifar",
+            weight_decay=tc.weight_decay, nesterov=tc.nesterov,
+            warmup_epochs=tc.warmup_epochs,
+        )
+        opt = _build_optimizer(model, tc_copy)
+        sched = _build_scheduler(opt, tc_copy)
+
+        # After _build_scheduler, optimizer should be at peak LR (0.1)
+        assert abs(opt.param_groups[0]["lr"] - 0.1) < 1e-8, (
+            f"Peak LR should be 0.1, got {opt.param_groups[0]['lr']}"
+        )
+
+        # Simulate train_model's exact logic
+        warmup_epochs = tc.warmup_epochs  # 10
+        warmup_lr = tc.lr  # 0.01
+        target_lr = tc.lr * 10  # 0.1
+
+        # Set warmup LR
+        for pg in opt.param_groups:
+            pg["lr"] = warmup_lr
+
+        for epoch in range(tc.epochs):
+            # Warmup override (same logic as train_model)
+            if warmup_epochs > 0 and epoch < warmup_epochs:
+                for pg in opt.param_groups:
+                    pg["lr"] = warmup_lr
+            elif warmup_epochs > 0 and epoch == warmup_epochs:
+                for pg in opt.param_groups:
+                    pg["lr"] = target_lr
+
+            lr = opt.param_groups[0]["lr"]
+
+            # Step scheduler only after warmup
+            if epoch >= warmup_epochs:
+                sched.step()
+
+        # Now verify key LR values by re-simulating and checking at specific epochs
+        # Reset everything
+        opt2 = _build_optimizer(model, tc_copy)
+        sched2 = _build_scheduler(opt2, tc_copy)
+        for pg in opt2.param_groups:
+            pg["lr"] = warmup_lr
+
+        lr_at_epoch: dict[int, float] = {}
+        for epoch in range(tc.epochs):
+            if warmup_epochs > 0 and epoch < warmup_epochs:
+                for pg in opt2.param_groups:
+                    pg["lr"] = warmup_lr
+            elif warmup_epochs > 0 and epoch == warmup_epochs:
+                for pg in opt2.param_groups:
+                    pg["lr"] = target_lr
+
+            lr_at_epoch[epoch] = opt2.param_groups[0]["lr"]
+
+            if epoch >= warmup_epochs:
+                sched2.step()
+
+        # Warmup phase: LR = 0.01
+        assert abs(lr_at_epoch[0] - 0.01) < 1e-8, f"Epoch 0: LR={lr_at_epoch[0]}"
+        assert abs(lr_at_epoch[9] - 0.01) < 1e-8, f"Epoch 9: LR={lr_at_epoch[9]}"
+
+        # Peak phase: LR = 0.1
+        assert abs(lr_at_epoch[10] - 0.1) < 1e-8, f"Epoch 10: LR={lr_at_epoch[10]}"
+        assert abs(lr_at_epoch[50] - 0.1) < 1e-8, f"Epoch 50: LR={lr_at_epoch[50]}"
+        assert abs(lr_at_epoch[119] - 0.1) < 1e-8, f"Epoch 119: LR={lr_at_epoch[119]}"
+
+        # First decay: LR = 0.01 at epoch 120
+        assert abs(lr_at_epoch[120] - 0.01) < 1e-8, (
+            f"LR at epoch 120 should be 0.01, got {lr_at_epoch[120]}"
+        )
+        assert abs(lr_at_epoch[149] - 0.01) < 1e-8, (
+            f"LR at epoch 149 should be 0.01, got {lr_at_epoch[149]}"
+        )
+
+        # Second decay: LR = 0.001 at epoch 150
+        assert abs(lr_at_epoch[150] - 0.001) < 1e-8, (
+            f"LR at epoch 150 should be 0.001, got {lr_at_epoch[150]}"
+        )
+        assert abs(lr_at_epoch[199] - 0.001) < 1e-8, (
+            f"LR at epoch 199 should be 0.001, got {lr_at_epoch[199]}"
+        )
 
     def test_published_results_integrity(self) -> None:
         """Published results dict should have entries for all algebras."""
