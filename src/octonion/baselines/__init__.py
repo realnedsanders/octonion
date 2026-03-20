@@ -52,6 +52,9 @@ from octonion.baselines._normalization import (
     QuaternionBatchNorm,
     RealBatchNorm,
 )
+from octonion.baselines._stabilization import (
+    StabilizingNorm,
+)
 from octonion.baselines._param_matching import (
     find_matched_width,
     flop_report,
@@ -124,6 +127,8 @@ __all__ = [
     # Activation
     "SplitActivation",
     "NormPreservingActivation",
+    # Stabilization
+    "StabilizingNorm",
     # Initialization
     "real_init",
     "complex_init",

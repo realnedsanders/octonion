@@ -66,6 +66,7 @@ class NetworkConfig:
     activation: str = "split_relu"  # "split_relu", "split_gelu", "norm_preserving"
     output_projection: str = "real"  # "real", "flatten", "norm", "learned"
     use_batchnorm: bool = True
+    stabilize_every: int | None = None  # Insert StabilizingNorm every N layers (None = disabled)
     input_dim: int = 784
     output_dim: int = 10
 
