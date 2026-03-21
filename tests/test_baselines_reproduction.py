@@ -25,6 +25,15 @@ from octonion.baselines._benchmarks import (
 from octonion.baselines._config import AlgebraType, TrainConfig
 from octonion.baselines._network import AlgebraNetwork
 
+# Only the 4 original algebras have AlgebraNetwork/CIFAR support.
+# PHM8 and R8_DENSE are standalone layers used through _SimpleAlgebraMLP.
+_NETWORK_ALGEBRAS = [
+    AlgebraType.REAL,
+    AlgebraType.COMPLEX,
+    AlgebraType.QUATERNION,
+    AlgebraType.OCTONION,
+]
+
 
 # ── Helpers ────────────────────────────────────────────────────────
 
@@ -51,7 +60,7 @@ class TestCIFAR10ParamMatching:
         """Build all 4 algebra models for CIFAR-10."""
         self.models = {}
         self.param_counts = {}
-        for algebra in AlgebraType:
+        for algebra in _NETWORK_ALGEBRAS:
             model = _build_cifar_model(algebra, "cifar10")
             self.models[algebra.short_name] = model
             self.param_counts[algebra.short_name] = _count_params(model)
@@ -111,7 +120,7 @@ class TestCIFAR100ParamMatching:
         """Build all 4 algebra models for CIFAR-100."""
         self.models = {}
         self.param_counts = {}
-        for algebra in AlgebraType:
+        for algebra in _NETWORK_ALGEBRAS:
             model = _build_cifar_model(algebra, "cifar100")
             self.models[algebra.short_name] = model
             self.param_counts[algebra.short_name] = _count_params(model)
@@ -140,7 +149,7 @@ class TestCIFAR100ParamMatching:
 class TestCIFAR10ForwardPass:
     """Verify forward pass on a single batch for all 4 algebras on CIFAR-10."""
 
-    @pytest.mark.parametrize("algebra", list(AlgebraType), ids=lambda a: a.short_name)
+    @pytest.mark.parametrize("algebra", _NETWORK_ALGEBRAS, ids=lambda a: a.short_name)
     def test_forward_pass_shape(self, algebra: AlgebraType) -> None:
         """Forward pass should produce [B, 10] output for CIFAR-10 input."""
         model = _build_cifar_model(algebra, "cifar10")
@@ -157,7 +166,7 @@ class TestCIFAR10ForwardPass:
             f"{algebra.short_name}: output shape {output.shape}, expected ({batch_size}, 10)"
         )
 
-    @pytest.mark.parametrize("algebra", list(AlgebraType), ids=lambda a: a.short_name)
+    @pytest.mark.parametrize("algebra", _NETWORK_ALGEBRAS, ids=lambda a: a.short_name)
     def test_forward_pass_finite(self, algebra: AlgebraType) -> None:
         """Forward pass output should be finite (no NaN/Inf)."""
         model = _build_cifar_model(algebra, "cifar10")
@@ -175,7 +184,7 @@ class TestCIFAR10ForwardPass:
 class TestCIFAR100ForwardPass:
     """Verify forward pass on a single batch for all 4 algebras on CIFAR-100."""
 
-    @pytest.mark.parametrize("algebra", list(AlgebraType), ids=lambda a: a.short_name)
+    @pytest.mark.parametrize("algebra", _NETWORK_ALGEBRAS, ids=lambda a: a.short_name)
     def test_forward_pass_shape(self, algebra: AlgebraType) -> None:
         """Forward pass should produce [B, 100] output for CIFAR-100 input."""
         model = _build_cifar_model(algebra, "cifar100")

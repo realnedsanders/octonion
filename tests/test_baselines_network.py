@@ -12,7 +12,14 @@ import torch
 from octonion.baselines._config import AlgebraType, NetworkConfig
 
 
-ALL_ALGEBRAS = list(AlgebraType)
+# Only the 4 original algebras have AlgebraNetwork support.
+# PHM8 and R8_DENSE are standalone layers used through _SimpleAlgebraMLP.
+ALL_ALGEBRAS = [
+    AlgebraType.REAL,
+    AlgebraType.COMPLEX,
+    AlgebraType.QUATERNION,
+    AlgebraType.OCTONION,
+]
 B = 4  # batch size
 
 

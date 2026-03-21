@@ -290,7 +290,9 @@ class TestConv2dParamMatching:
         ref_model = AlgebraNetwork(ref_config)
         target_params = sum(p.numel() for p in ref_model.parameters())
 
-        for algebra in AlgebraType:
+        # Only iterate original 4 algebras that AlgebraNetwork supports
+        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        for algebra in _NETWORK_ALGEBRAS:
             width = find_matched_width(
                 target_params=target_params,
                 algebra=algebra,
@@ -323,7 +325,9 @@ class TestConv2dParamMatching:
         ref_model = AlgebraNetwork(ref_config)
         target_params = sum(p.numel() for p in ref_model.parameters())
 
-        for algebra in AlgebraType:
+        # Only iterate original 4 algebras that AlgebraNetwork supports
+        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        for algebra in _NETWORK_ALGEBRAS:
             width = find_matched_width(
                 target_params=target_params,
                 algebra=algebra,
@@ -510,7 +514,9 @@ class TestConv2dComparison:
         """Forward pass on [B, 3, 32, 32] through conv2d network produces [B, 10]."""
         from octonion.baselines._param_matching import _build_conv_model
 
-        for algebra in list(AlgebraType):
+        # Only iterate original 4 algebras that AlgebraNetwork/conv2d supports
+        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        for algebra in _NETWORK_ALGEBRAS:
             model = _build_conv_model(
                 algebra=algebra,
                 base_hidden=4,
@@ -571,9 +577,10 @@ class TestSameWidthMode:
     """Verify same-width mode: same base_hidden, different base_filters."""
 
     def test_same_width_real_representational_width(self) -> None:
-        """All algebras get the same real representational width."""
+        """Original 4 algebras get the same real representational width."""
         ref_hidden = 8
-        for algebra in AlgebraType:
+        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        for algebra in _NETWORK_ALGEBRAS:
             # base_filters = base_hidden * multiplier
             # real_width = base_filters * dim (for non-real) or base_filters (for real)
             base_filters = ref_hidden * algebra.multiplier
@@ -591,7 +598,8 @@ class TestSameWidthMode:
 
         ref_hidden = 8
         param_counts = {}
-        for algebra in AlgebraType:
+        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        for algebra in _NETWORK_ALGEBRAS:
             config = NetworkConfig(
                 algebra=algebra,
                 topology="conv2d",
