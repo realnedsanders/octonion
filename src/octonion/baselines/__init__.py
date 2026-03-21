@@ -25,6 +25,8 @@ from octonion.baselines._algebra_linear import (
     QuaternionLinear,
     RealLinear,
 )
+from octonion.baselines._dense_mixing import DenseMixingLinear
+from octonion.baselines._phm_linear import PHM8Linear
 from octonion.baselines._algebra_rnn import (
     ComplexGRUCell,
     OctonionLSTMCell,
@@ -103,6 +105,8 @@ __all__ = [
     "ComplexLinear",
     "QuaternionLinear",
     "OctonionDenseLinear",
+    "PHM8Linear",
+    "DenseMixingLinear",
     # Recurrent cells
     "RealLSTMCell",
     "ComplexGRUCell",

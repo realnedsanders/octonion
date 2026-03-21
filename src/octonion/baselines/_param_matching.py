@@ -18,6 +18,8 @@ from octonion.baselines._algebra_linear import (
     RealLinear,
 )
 from octonion.baselines._config import AlgebraType
+from octonion.baselines._dense_mixing import DenseMixingLinear
+from octonion.baselines._phm_linear import PHM8Linear
 
 
 class _SimpleAlgebraMLP(nn.Module):
@@ -56,6 +58,10 @@ class _SimpleAlgebraMLP(nn.Module):
             LayerClass = QuaternionLinear
         elif algebra == AlgebraType.OCTONION:
             LayerClass = OctonionDenseLinear
+        elif algebra == AlgebraType.PHM8:
+            LayerClass = PHM8Linear
+        elif algebra == AlgebraType.R8_DENSE:
+            LayerClass = DenseMixingLinear
         else:
             raise ValueError(f"Unknown algebra: {algebra}")
 

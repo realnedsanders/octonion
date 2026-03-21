@@ -119,11 +119,18 @@ class TestR8DenseParamMatching:
     """R8_DENSE works with find_matched_width binary search."""
 
     def test_find_matched_width_r8_dense(self) -> None:
+        """R8_DENSE param matching with 10% tolerance.
+
+        DenseMixingLinear has 64*hidden^2 params per layer (vs 8*hidden^2
+        for octonion), so each unit step in hidden causes a large param
+        jump. Use 10% tolerance (same as conv2d matching) and a larger
+        target to keep per-unit jumps small relative to total.
+        """
         from octonion.baselines._param_matching import _build_simple_mlp
 
         ref = _build_simple_mlp(
             algebra=AlgebraType.OCTONION,
-            hidden=25,
+            hidden=64,
             depth=3,
             input_dim=32,
             output_dim=10,
@@ -135,6 +142,7 @@ class TestR8DenseParamMatching:
             algebra=AlgebraType.R8_DENSE,
             topology="mlp",
             depth=3,
+            tolerance=0.10,
             input_dim=32,
             output_dim=10,
         )

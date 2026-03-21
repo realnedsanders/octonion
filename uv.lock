@@ -177,6 +177,18 @@ wheels = [
 ]
 
 [[package]]
+name = "geoopt"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/0f/f8d4afc40ffd1d2e8a4386bad152176cdc726b077c9bd5d65621b122559d/geoopt-0.5.1-py3-none-any.whl", hash = "sha256:d6ee06e943e7e882ba785db09a6d705d34b8bf5408d4d546b3a8ac2e4ff3496d", size = 90072, upload-time = "2025-06-19T20:13:58.92Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -667,8 +679,10 @@ name = "octonion"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "geoopt" },
     { name = "matplotlib" },
     { name = "optuna" },
+    { name = "pytorch-optimizer" },
     { name = "scipy" },
     { name = "seaborn" },
     { name = "tensorboard" },
@@ -688,8 +702,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "geoopt", specifier = ">=0.5.1" },
     { name = "matplotlib", specifier = ">=3.10.8" },
     { name = "optuna", specifier = ">=4.7.0" },
+    { name = "pytorch-optimizer", specifier = ">=3.10.0" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "tensorboard", specifier = ">=2.20.0" },
@@ -945,6 +961,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
+]
+
+[[package]]
+name = "pytorch-optimizer"
+version = "3.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/89/fc/313e6ad458114f3b5ad982c72343f88ef686a238787bcc39cad866a39282/pytorch_optimizer-3.10.0.tar.gz", hash = "sha256:da50f3700e403ac0ce774cbbfdfe94a3f39162eca65eea79d67cfde28ead642b", size = 21314846, upload-time = "2026-03-01T06:20:11.622Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/e3/bfc6f22bbcccf2b824c3e9d84a094d1ca9151a5d8a6c0b7990aeefa5cbb6/pytorch_optimizer-3.10.0-py3-none-any.whl", hash = "sha256:931b0c85d665fa635c8cd4d04f9a7fd8f23b915a8e19a23b2c07341f783c5799", size = 287433, upload-time = "2026-03-01T06:20:09.107Z" },
 ]
 
 [[package]]
