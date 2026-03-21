@@ -106,7 +106,7 @@ Plans:
 - [ ] 04-03-PLAN.md — [UAT GAP CLOSURE] Fix float32 overflow handling and JSON serialization in analysis script
 
 ### Phase 5: Optimization Landscape
-**Goal**: Determine whether octonionic networks can be trained reliably
+**Goal**: Determine whether octonionic networks can be trained reliably -- go/no-go gate for project viability
 **Depends on**: Phase 2, Phase 3, Phase 4
 **Requirements**: FOUND-04
 **Success Criteria** (what must be TRUE):
@@ -115,11 +115,15 @@ Plans:
   3. Training convergence profiles (loss vs step) across 3+ optimizers (SGD, Adam, a Riemannian optimizer) are documented for all 4 algebras
   4. Determine if octonionic networks converge to solutions within 2x loss of R8-dense-mixing baseline on 3+ tasks with 10+ seeds each
   5. Determine if landscape pathology is characterized quantitatively (publishable negative result) and project pivots
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md — Install deps (geoopt, pytorch-optimizer), extend AlgebraType, implement PHM8Linear + DenseMixingLinear
+- [ ] 05-02-PLAN.md — 5 synthetic task generators (algebra-native, cross product, sinusoidal, classification) with controls
+- [ ] 05-03-PLAN.md — Hessian eigenspectrum toolkit (full Hessian + stochastic Lanczos) and Bill & Cox curvature measurement
+- [ ] 05-04-PLAN.md — Trainer extension (LBFGS/Riemannian/Shampoo), AlgebraNetwork PHM8/R8D dispatch, gradient stats, gate logic
+- [ ] 05-05-PLAN.md — Experiment orchestration with incremental saves, Hessian checkpoints, smoke test
+- [ ] 05-06-PLAN.md — Analysis script, full experiment run, gate verdict, human review checkpoint
 
 ### Phase 6: Reversibility Claim
 **Goal**: Determine whether octonionic algebraic inversion provides meaningful backward inference that outperforms trained invertible networks
@@ -195,7 +199,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 | 2. GHR Calculus | 1/4 | In progress | - |
 | 3. Baseline Implementations | 12/15 | UAT gap closure | - |
 | 4. Numerical Stability | 2/3 | UAT gap closure | - |
-| 5. Optimization Landscape (GO/NO-GO) | 0/? | Not started | - |
+| 5. Optimization Landscape (GO/NO-GO) | 0/6 | Planned | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
 | 7. Density & Geometric Claims | 0/? | Not started | - |
 | 8. G2 Equivariance & Hyperbolic Hybrid | 0/? | Not started | - |
