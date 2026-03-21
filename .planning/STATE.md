@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-21T05:37:00.000Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-21T05:47:33.651Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 34
-  completed_plans: 26
+  completed_plans: 28
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 05 (optimization-landscape) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Plan: 3 of 6
 | Phase 04 P03 | 15min | 2 tasks | 8 files |
 | Phase 05 P02 | 4min | 1 tasks | 6 files |
 | Phase 05 P01 | 7min | 2 tasks | 11 files |
+| Phase 05 P03 | 7min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,9 @@ Recent decisions affecting current work:
 - [Phase 05-01]: DenseMixingLinear param matching uses 10% tolerance due to 64x params-per-feature-pair granularity
 - [Phase 05-01]: ComparisonConfig.algebras default restricted to original 4 algebras (R,C,H,O)
 - [Phase 05-01]: PHM8/R8_DENSE multiplier=1 nominal; actual param counts handled by binary search
+- [Phase 05]: torch.func.functional_call for Hessian gradient threading (avoids p.data mutation breaking autograd)
+- [Phase 05]: Full reorthogonalization in Lanczos (Ghorbani et al. 2019) for numerical stability
+- [Phase 05]: Float64 required for finite-difference Hessian cross-check (float32 eps=1e-4 insufficient)
 
 ### Pending Todos
 
@@ -185,6 +189,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T05:37:00Z
-Stopped at: Completed 05-01-PLAN.md
-Resume file: .planning/phases/05-optimization-landscape/05-01-SUMMARY.md
+Last session: 2026-03-21T05:47:33.649Z
+Stopped at: Completed 05-03-PLAN.md
+Resume file: None
