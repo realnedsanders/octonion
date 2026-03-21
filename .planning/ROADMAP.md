@@ -115,7 +115,7 @@ Plans:
   3. Training convergence profiles (loss vs step) across 3+ optimizers (SGD, Adam, a Riemannian optimizer) are documented for all 4 algebras
   4. Determine if octonionic networks converge to solutions within 2x loss of R8-dense-mixing baseline on 3+ tasks with 10+ seeds each
   5. Determine if landscape pathology is characterized quantitatively (publishable negative result) and project pivots
-**Plans**: 6 plans
+**Plans**: 8 plans
 
 Plans:
 - [ ] 05-01-PLAN.md — Install deps (geoopt, pytorch-optimizer), extend AlgebraType, implement PHM8Linear + DenseMixingLinear
@@ -124,6 +124,8 @@ Plans:
 - [ ] 05-04-PLAN.md — Trainer extension (LBFGS/Riemannian/Shampoo), AlgebraNetwork PHM8/R8D dispatch, gradient stats, gate logic
 - [ ] 05-05-PLAN.md — Experiment orchestration with incremental saves, Hessian checkpoints, smoke test
 - [ ] 05-06-PLAN.md — Analysis script, full experiment run, gate verdict, human review checkpoint
+- [ ] 05-07-PLAN.md — [GAP CLOSURE] Fix intermediate checkpoint saving, create post-training analysis script (Hessian/curvature/gradient)
+- [ ] 05-08-PLAN.md — [GAP CLOSURE] Integration tests verifying post-training analysis produces expected data
 
 ### Phase 6: Reversibility Claim
 **Goal**: Determine whether octonionic algebraic inversion provides meaningful backward inference that outperforms trained invertible networks
@@ -199,7 +201,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 | 2. GHR Calculus | 1/4 | In progress | - |
 | 3. Baseline Implementations | 12/15 | UAT gap closure | - |
 | 4. Numerical Stability | 2/3 | UAT gap closure | - |
-| 5. Optimization Landscape (GO/NO-GO) | 0/6 | Planned | - |
+| 5. Optimization Landscape (GO/NO-GO) | 5/8 | Gap closure | - |
 | 6. Reversibility Claim | 0/? | Not started | - |
 | 7. Density & Geometric Claims | 0/? | Not started | - |
 | 8. G2 Equivariance & Hyperbolic Hybrid | 0/? | Not started | - |
