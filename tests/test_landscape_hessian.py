@@ -22,6 +22,7 @@ from octonion.landscape._hessian import (
     hessian_vector_product,
     stochastic_lanczos,
 )
+from octonion.landscape._curvature import measure_curvature
 
 
 # ---------------------------------------------------------------------------
@@ -271,3 +272,105 @@ class TestAutoSelection:
             max_full_params=2000,
         )
         assert result["method"] == "lanczos"
+
+
+# ---------------------------------------------------------------------------
+# Curvature measurement tests
+# ---------------------------------------------------------------------------
+
+
+class QuadraticModel(nn.Module):
+    """Simple model whose loss surface has known positive curvature.
+
+    Forward: output = linear(x), loss = MSE.
+    The model is "trained" to a fixed point so curvature is well-defined.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.linear = nn.Linear(4, 1, bias=True)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.linear(x)
+
+
+class TestCurvature:
+    """Tests for measure_curvature."""
+
+    def test_curvature_quadratic(self) -> None:
+        """Curvature on a simple trained model should be positive."""
+        torch.manual_seed(42)
+        model = QuadraticModel()
+
+        # Create simple data that model "converges" on
+        x = torch.randn(20, 4)
+        y = x[:, 0:1] + 0.5 * x[:, 1:2]  # Deterministic target
+
+        # "Train" model briefly to a decent point
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+        for _ in range(100):
+            optimizer.zero_grad()
+            loss = _mse_loss(model(x), y)
+            loss.backward()
+            optimizer.step()
+
+        result = measure_curvature(
+            model, _mse_loss, x, y,
+            n_directions=10,
+            n_steps=21,
+            seed=42,
+        )
+
+        # Curvature should be positive around a minimum
+        assert result["mean_curvature"] > 0, (
+            f"Expected positive mean curvature, got {result['mean_curvature']}"
+        )
+
+    def test_curvature_restores_weights(self) -> None:
+        """Model parameters should be unchanged after curvature measurement."""
+        torch.manual_seed(42)
+        model = QuadraticModel()
+        x = torch.randn(10, 4)
+        y = torch.randn(10, 1)
+
+        # Save original weights
+        orig_state = {
+            name: p.clone() for name, p in model.named_parameters()
+        }
+
+        measure_curvature(model, _mse_loss, x, y, n_directions=5, n_steps=11)
+
+        # Verify weights restored
+        for name, p in model.named_parameters():
+            torch.testing.assert_close(
+                p.data, orig_state[name],
+                msg=f"Parameter {name} was not restored after curvature measurement"
+            )
+
+    def test_curvature_result_structure(self) -> None:
+        """Result dict has all expected keys."""
+        torch.manual_seed(42)
+        model = QuadraticModel()
+        x = torch.randn(10, 4)
+        y = torch.randn(10, 1)
+
+        result = measure_curvature(model, _mse_loss, x, y, n_directions=3, n_steps=11)
+
+        assert "mean_curvature" in result
+        assert "median_curvature" in result
+        assert "std_curvature" in result
+        assert "curvatures" in result
+        assert "n_directions" in result
+
+    def test_curvature_n_directions(self) -> None:
+        """Curvatures list length matches n_directions."""
+        torch.manual_seed(42)
+        model = QuadraticModel()
+        x = torch.randn(10, 4)
+        y = torch.randn(10, 1)
+
+        n_dir = 7
+        result = measure_curvature(model, _mse_loss, x, y, n_directions=n_dir, n_steps=11)
+
+        assert len(result["curvatures"]) == n_dir
+        assert result["n_directions"] == n_dir
