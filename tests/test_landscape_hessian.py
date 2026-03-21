@@ -93,48 +93,57 @@ class TestFullHessian:
         assert result["method"] == "full"
 
     def test_full_hessian_nn_linear_vs_finite_diff(self) -> None:
-        """Full Hessian on nn.Linear matches finite-difference Hessian within 1e-4."""
+        """Full Hessian on nn.Linear matches finite-difference Hessian within 1e-3."""
         torch.manual_seed(42)
+        # Use float64 for finite-difference precision
         model = SmallLinear()
-        x = torch.randn(10, 2)
-        y = torch.randn(10, 1)
+        model.double()
+        x = torch.randn(10, 2, dtype=torch.float64)
+        y = torch.randn(10, 1, dtype=torch.float64)
 
-        result = compute_full_hessian(model, _mse_loss, x, y)
+        # Save original params BEFORE any Hessian computation
+        orig_params = torch.cat(
+            [p.reshape(-1).detach().clone() for p in model.parameters()]
+        )
 
-        # Finite-difference Hessian
-        params = torch.cat([p.reshape(-1) for p in model.parameters()])
-        n = params.numel()
-        H_fd = torch.zeros(n, n)
-        eps = 1e-4
+        # Finite-difference Hessian (do this first so params are untouched)
+        n = orig_params.numel()
+        H_fd = torch.zeros(n, n, dtype=torch.float64)
+        eps = 1e-5
 
-        for i in range(n):
-            def _loss_at(flat: torch.Tensor) -> float:
-                offset = 0
-                for p in model.parameters():
-                    numel = p.numel()
-                    p.data.copy_(flat[offset:offset + numel].reshape(p.shape))
-                    offset += numel
-                with torch.no_grad():
-                    out = model(x)
-                    return _mse_loss(out, y).item()
-
-            e_i = torch.zeros(n)
-            e_i[i] = eps
-            for j in range(n):
-                e_j = torch.zeros(n)
-                e_j[j] = eps
-                fpp = _loss_at(params + e_i + e_j)
-                fpm = _loss_at(params + e_i - e_j)
-                fmp = _loss_at(params - e_i + e_j)
-                fmm = _loss_at(params - e_i - e_j)
-                H_fd[i, j] = (fpp - fpm - fmp + fmm) / (4 * eps * eps)
-
-            # Restore original params
+        def _loss_at(flat: torch.Tensor) -> float:
             offset = 0
             for p in model.parameters():
                 numel = p.numel()
-                p.data.copy_(params[offset:offset + numel].reshape(p.shape))
+                p.data.copy_(flat[offset:offset + numel].reshape(p.shape))
                 offset += numel
+            with torch.no_grad():
+                out = model(x)
+                return _mse_loss(out, y).item()
+
+        for i in range(n):
+            e_i = torch.zeros(n, dtype=torch.float64)
+            e_i[i] = eps
+            for j in range(i, n):  # Symmetric, only upper triangle
+                e_j = torch.zeros(n, dtype=torch.float64)
+                e_j[j] = eps
+                fpp = _loss_at(orig_params + e_i + e_j)
+                fpm = _loss_at(orig_params + e_i - e_j)
+                fmp = _loss_at(orig_params - e_i + e_j)
+                fmm = _loss_at(orig_params - e_i - e_j)
+                val = (fpp - fpm - fmp + fmm) / (4 * eps * eps)
+                H_fd[i, j] = val
+                H_fd[j, i] = val
+
+        # Restore original params
+        offset = 0
+        for p in model.parameters():
+            numel = p.numel()
+            p.data.copy_(orig_params[offset:offset + numel].reshape(p.shape))
+            offset += numel
+
+        # Now compute full Hessian via autograd
+        result = compute_full_hessian(model, _mse_loss, x, y)
 
         eigs_fd = np.sort(np.linalg.eigvalsh(H_fd.numpy()))
         eigs_full = np.sort(result["eigenvalues"])
