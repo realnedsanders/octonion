@@ -277,3 +277,141 @@ def test_train_config_manifold_type() -> None:
     assert config.manifold_type == "sphere"
     config2 = TrainConfig(manifold_type="stiefel")
     assert config2.manifold_type == "stiefel"
+
+
+# ── Gradient Stats Tests ────────────────────────────────────────────
+
+
+def test_gradient_stats_structure() -> None:
+    """collect_gradient_stats returns dict with expected fields."""
+    from octonion.landscape._gradient_stats import collect_gradient_stats
+
+    model = _tiny_real_model()
+    loss_fn = nn.CrossEntropyLoss()
+    x = torch.randn(8, 8)
+    y = torch.randint(0, 4, (8,))
+
+    stats = collect_gradient_stats(model, loss_fn, x, y, device="cpu")
+    assert "grad_norm_mean" in stats
+    assert "grad_norm_std" in stats
+    assert "grad_norm_max" in stats
+    assert "grad_norm_min" in stats
+    assert "per_layer_stats" in stats
+    assert isinstance(stats["per_layer_stats"], list)
+    assert len(stats["per_layer_stats"]) > 0
+    # Each layer stat should have expected fields
+    layer_stat = stats["per_layer_stats"][0]
+    assert "name" in layer_stat
+    assert "norm" in layer_stat
+
+
+# ── Go/No-Go Gate Tests ────────────────────────────────────────────
+
+
+def test_gate_green() -> None:
+    """evaluate_gate returns GREEN when O is within 2x of R8D on all tasks."""
+    from octonion.landscape._gate import GateVerdict, evaluate_gate
+
+    results = {
+        "task_A": {
+            "O": {"final_val_losses": [0.5, 0.6, 0.7], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.4, 0.5, 0.6]},
+        },
+        "task_B": {
+            "O": {"final_val_losses": [0.3, 0.4, 0.5], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.3, 0.35, 0.4]},
+        },
+        "task_C": {
+            "O": {"final_val_losses": [0.8, 0.9, 1.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.7, 0.8, 0.9]},
+        },
+    }
+    gate = evaluate_gate(results)
+    assert gate["verdict"] == GateVerdict.GREEN
+
+
+def test_gate_red_divergence() -> None:
+    """evaluate_gate returns RED when divergence_rate > 0.5."""
+    from octonion.landscape._gate import GateVerdict, evaluate_gate
+
+    # O has high divergence: most seeds have loss >> initial_loss
+    results = {
+        "task_A": {
+            "O": {
+                "final_val_losses": [100.0, 200.0, 300.0, 0.5],
+                "initial_loss": 2.0,
+            },
+            "R8_DENSE": {"final_val_losses": [0.4, 0.5, 0.6, 0.5]},
+        },
+    }
+    gate = evaluate_gate(results)
+    assert gate["verdict"] == GateVerdict.RED
+
+
+def test_gate_red_loss() -> None:
+    """evaluate_gate returns RED when O loss worse than 3x on majority."""
+    from octonion.landscape._gate import GateVerdict, evaluate_gate
+
+    # O is much worse than R8D on 2 of 3 tasks (majority)
+    results = {
+        "task_A": {
+            "O": {"final_val_losses": [5.0, 6.0, 7.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.4, 0.5, 0.6]},
+        },
+        "task_B": {
+            "O": {"final_val_losses": [4.0, 5.0, 6.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.3, 0.35, 0.4]},
+        },
+        "task_C": {
+            "O": {"final_val_losses": [0.8, 0.9, 1.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.7, 0.8, 0.9]},
+        },
+    }
+    gate = evaluate_gate(results)
+    assert gate["verdict"] == GateVerdict.RED
+
+
+def test_gate_yellow() -> None:
+    """evaluate_gate returns YELLOW for intermediate cases."""
+    from octonion.landscape._gate import GateVerdict, evaluate_gate
+
+    # O is within 3x on all, but not within 2x on all
+    results = {
+        "task_A": {
+            "O": {"final_val_losses": [1.0, 1.2, 1.5], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.4, 0.5, 0.6]},
+        },
+        "task_B": {
+            "O": {"final_val_losses": [0.3, 0.4, 0.5], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.3, 0.35, 0.4]},
+        },
+        "task_C": {
+            "O": {"final_val_losses": [0.8, 0.9, 1.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.7, 0.8, 0.9]},
+        },
+    }
+    gate = evaluate_gate(results)
+    assert gate["verdict"] == GateVerdict.YELLOW
+
+
+def test_gate_ratio_uses_min() -> None:
+    """Gate uses min(best_ratio, median_ratio) as gate_ratio per task."""
+    from octonion.landscape._gate import evaluate_gate
+    import numpy as np
+
+    # Construct a case where best_ratio != median_ratio
+    results = {
+        "task_A": {
+            "O": {"final_val_losses": [0.3, 0.5, 10.0], "initial_loss": 2.0},
+            "R8_DENSE": {"final_val_losses": [0.3, 0.5, 0.6]},
+        },
+    }
+    gate = evaluate_gate(results)
+    task_metrics = gate["per_task"]["task_A"]
+
+    # best_ratio = min(O) / min(R8D) = 0.3/0.3 = 1.0
+    # median_ratio = median(O) / median(R8D) = 0.5/0.5 = 1.0
+    # gate_ratio = min(1.0, 1.0) = 1.0
+    assert task_metrics["gate_ratio"] == pytest.approx(1.0, rel=0.01)
+    assert task_metrics["gate_ratio"] <= task_metrics["best_ratio"]
+    assert task_metrics["gate_ratio"] <= task_metrics["median_ratio"]
