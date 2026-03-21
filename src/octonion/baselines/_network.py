@@ -184,6 +184,8 @@ class AlgebraNetwork(nn.Module):
         # For parameter matching, the multiplier scales the width
         self.hidden = config.base_hidden * config.algebra.multiplier
         self.algebra_dim = config.algebra.dim
+        self.algebra = config.algebra
+        self.dtype = torch.float32  # Default dtype for layer construction
 
         if config.topology == "mlp":
             self._build_mlp(config)
@@ -210,6 +212,12 @@ class AlgebraNetwork(nn.Module):
             return QuaternionLinear(in_f, out_f)
         elif algebra == AlgebraType.OCTONION:
             return OctonionDenseLinear(in_f, out_f)
+        elif algebra == AlgebraType.PHM8:
+            from octonion.baselines._phm_linear import PHM8Linear
+            return PHM8Linear(in_f, out_f, bias=True, dtype=self.dtype)
+        elif algebra == AlgebraType.R8_DENSE:
+            from octonion.baselines._dense_mixing import DenseMixingLinear
+            return DenseMixingLinear(in_f, out_f, bias=True, dtype=self.dtype)
         raise ValueError(f"Unknown algebra: {algebra}")
 
     def _get_conv2d(
@@ -238,6 +246,9 @@ class AlgebraNetwork(nn.Module):
         elif algebra == AlgebraType.QUATERNION:
             return QuaternionBatchNorm(features)
         elif algebra == AlgebraType.OCTONION:
+            return OctonionBatchNorm(features)
+        elif algebra in (AlgebraType.PHM8, AlgebraType.R8_DENSE):
+            # PHM8 and R8_DENSE use same 8D whitening as OCTONION
             return OctonionBatchNorm(features)
         raise ValueError(f"Unknown algebra: {algebra}")
 

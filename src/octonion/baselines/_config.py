@@ -80,7 +80,9 @@ class TrainConfig:
     Attributes:
         epochs: Maximum training epochs.
         lr: Learning rate.
-        optimizer: Optimizer name.
+        optimizer: Optimizer name. Options: "adam", "adamw", "sgd",
+            "lbfgs", "riemannian_adam", "shampoo".
+            For LBFGS, use batch_size >= 512 or full-batch for stability.
         scheduler: LR scheduler type. Options:
             - "cosine": CosineAnnealingLR (default for general use)
             - "step": StepLR with step_size = epochs // 3
@@ -107,6 +109,10 @@ class TrainConfig:
         batch_size: Training batch size.
         lock_optimizer: If True, all algebras use same optimizer (Adam)
             for controlled comparison.
+        manifold_type: Manifold type for Riemannian optimizer. Options:
+            - "sphere": S^{dim-1} unit-norm constraint per algebra element
+            - "stiefel": Orthogonality constraint on weight matrices
+            Only used when optimizer="riemannian_adam".
     """
 
     epochs: int = 100
@@ -124,6 +130,7 @@ class TrainConfig:
     seed: int = 42
     batch_size: int = 128
     lock_optimizer: bool = False
+    manifold_type: str = "sphere"  # "sphere" or "stiefel" for riemannian_adam
 
 
 @dataclass

@@ -54,6 +54,104 @@ def _get_model_module(model: nn.Module) -> nn.Module:
     return model
 
 
+def _wrap_manifold_params(
+    model: nn.Module,
+    algebra_type: AlgebraType,
+    manifold_type: str = "sphere",
+) -> nn.Module:
+    """Replace algebra weight parameters with geoopt ManifoldParameter for Riemannian optimization.
+
+    Only wraps weights in algebra-specific layers (not bias, BN, projection layers).
+
+    Args:
+        model: The network to wrap.
+        algebra_type: Determines which manifold dimensions to use.
+        manifold_type: "sphere" for S^{dim-1} (unit-norm per algebra element),
+                       or "stiefel" for Stiefel manifold (orthogonality constraint
+                       on weight matrices). Per user decision: try BOTH.
+
+    Manifold assignments by algebra and manifold_type:
+      - REAL: Euclidean (no constraint, regardless of manifold_type)
+      - COMPLEX + sphere: geoopt.Sphere() on pairs (S^1)
+      - QUATERNION + sphere: geoopt.Sphere() on quads (S^3)
+      - OCTONION + sphere: geoopt.Sphere() on octets (S^7)
+      - COMPLEX/QUATERNION/OCTONION + stiefel: geoopt.Stiefel() on weight matrices
+
+    Returns:
+        The model with manifold-wrapped parameters (modified in-place).
+    """
+    import geoopt
+
+    if algebra_type in (AlgebraType.REAL,):
+        return model  # Real: Euclidean, no manifold constraint
+
+    if manifold_type == "sphere":
+        manifold = geoopt.Sphere()
+    elif manifold_type == "stiefel":
+        manifold = geoopt.Stiefel()
+    else:
+        raise ValueError(f"Unknown manifold_type: {manifold_type}")
+
+    # Walk the model and wrap algebra-specific weight parameters.
+    # Strategy: wrap parameters in modules that are algebra layers
+    # (OctonionDenseLinear, QuaternionLinear, ComplexLinear, PHM8Linear,
+    # DenseMixingLinear) but NOT input_proj, output_proj, or BN modules.
+    _skip_module_patterns = ("bn", "norm", "output_proj", "input_proj")
+    _skip_param_patterns = ("bias",)
+
+    # Import algebra layer types for identification
+    from octonion.baselines._algebra_linear import (
+        ComplexLinear,
+        OctonionDenseLinear,
+        QuaternionLinear,
+    )
+
+    _algebra_layer_types = (ComplexLinear, QuaternionLinear, OctonionDenseLinear)
+    try:
+        from octonion.baselines._phm_linear import PHM8Linear
+        _algebra_layer_types = (*_algebra_layer_types, PHM8Linear)
+    except ImportError:
+        pass
+    try:
+        from octonion.baselines._dense_mixing import DenseMixingLinear
+        _algebra_layer_types = (*_algebra_layer_types, DenseMixingLinear)
+    except ImportError:
+        pass
+
+    for mod_name, module in model.named_modules():
+        # Skip BN and projection modules by name
+        if any(skip in mod_name.lower() for skip in _skip_module_patterns):
+            continue
+
+        # For algebra layers, wrap their weight parameters
+        if isinstance(module, _algebra_layer_types):
+            # For OctonionDenseLinear, weights are in a ParameterList
+            if hasattr(module, "weights") and isinstance(module.weights, nn.ParameterList):
+                for idx in range(len(module.weights)):
+                    param = module.weights[idx]
+                    if manifold_type == "stiefel" and (param.dim() < 2 or param.shape[-2] < param.shape[-1]):
+                        continue
+                    try:
+                        mp = geoopt.ManifoldParameter(param.data.clone(), manifold=manifold)
+                        module.weights[idx] = mp
+                    except Exception:
+                        pass
+            else:
+                # For other algebra layers (ComplexLinear, QuaternionLinear, etc.)
+                for pname, param in list(module.named_parameters(recurse=False)):
+                    if any(skip in pname.lower() for skip in _skip_param_patterns):
+                        continue
+                    if manifold_type == "stiefel" and (param.dim() < 2 or param.shape[-2] < param.shape[-1]):
+                        continue
+                    try:
+                        mp = geoopt.ManifoldParameter(param.data.clone(), manifold=manifold)
+                        setattr(module, pname, mp)
+                    except Exception:
+                        pass
+
+    return model
+
+
 def _build_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optimizer:
     """Build optimizer from config.
 
@@ -78,8 +176,23 @@ def _build_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optim
             params, lr=config.lr, weight_decay=config.weight_decay,
             momentum=0.9, nesterov=getattr(config, "nesterov", False),
         )
+    elif name == "lbfgs":
+        return torch.optim.LBFGS(
+            params, lr=config.lr, max_iter=20, line_search_fn="strong_wolfe",
+        )
+    elif name == "riemannian_adam":
+        import geoopt
+        return geoopt.optim.RiemannianAdam(
+            params, lr=config.lr, weight_decay=config.weight_decay,
+        )
+    elif name == "shampoo":
+        from pytorch_optimizer import Shampoo
+        return Shampoo(params, lr=config.lr, weight_decay=config.weight_decay)
     else:
-        raise ValueError(f"Unknown optimizer: {config.optimizer!r}. Use 'adam', 'adamw', or 'sgd'.")
+        raise ValueError(
+            f"Unknown optimizer: {config.optimizer!r}. "
+            f"Use 'adam', 'adamw', 'sgd', 'lbfgs', 'riemannian_adam', or 'shampoo'."
+        )
 
 
 def _build_scheduler(
@@ -395,29 +508,49 @@ def train_model(
             epoch_loss = 0.0
             n_batches = 0
 
+            is_lbfgs = isinstance(optimizer, torch.optim.LBFGS)
+
             for batch in train_loader:
                 inputs = batch[0].to(device, non_blocking=True)
                 targets = batch[1].to(device, non_blocking=True)
 
-                optimizer.zero_grad(set_to_none=True)
-
                 amp_device_type = "cuda" if str(device).startswith("cuda") else "cpu"
-                with torch.amp.autocast(amp_device_type, enabled=use_amp):
-                    outputs = model(inputs)
-                    loss = loss_fn(outputs, targets)
 
-                scaler.scale(loss).backward()
+                if is_lbfgs:
+                    # LBFGS requires a closure that re-evaluates the model
+                    batch_loss_value = [0.0]
 
-                # Gradient clipping (if configured)
-                grad_clip = getattr(config, "gradient_clip_norm", 0.0)
-                if grad_clip > 0:
-                    scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+                    def closure() -> torch.Tensor:
+                        optimizer.zero_grad(set_to_none=True)
+                        with torch.amp.autocast(amp_device_type, enabled=use_amp):
+                            outputs = model(inputs)
+                            loss = loss_fn(outputs, targets)
+                        loss.backward()
+                        batch_loss_value[0] = loss.item()
+                        return loss
 
-                scaler.step(optimizer)
-                scaler.update()
+                    optimizer.step(closure)
+                    epoch_loss += batch_loss_value[0]
+                else:
+                    optimizer.zero_grad(set_to_none=True)
 
-                epoch_loss += loss.item()
+                    with torch.amp.autocast(amp_device_type, enabled=use_amp):
+                        outputs = model(inputs)
+                        loss = loss_fn(outputs, targets)
+
+                    scaler.scale(loss).backward()
+
+                    # Gradient clipping (if configured)
+                    grad_clip = getattr(config, "gradient_clip_norm", 0.0)
+                    if grad_clip > 0:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+
+                    scaler.step(optimizer)
+                    scaler.update()
+
+                    epoch_loss += loss.item()
+
                 n_batches += 1
 
             avg_train_loss = epoch_loss / max(n_batches, 1)
