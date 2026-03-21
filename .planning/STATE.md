@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-21T05:47:33.651Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-03-21T05:48:24.893Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 34
-  completed_plans: 28
+  completed_plans: 29
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 05 (optimization-landscape) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Plan: 4 of 6
 | Phase 05 P02 | 4min | 1 tasks | 6 files |
 | Phase 05 P01 | 7min | 2 tasks | 11 files |
 | Phase 05 P03 | 7min | 2 tasks | 4 files |
+| Phase 05 P04 | 7min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,9 @@ Recent decisions affecting current work:
 - [Phase 05]: torch.func.functional_call for Hessian gradient threading (avoids p.data mutation breaking autograd)
 - [Phase 05]: Full reorthogonalization in Lanczos (Ghorbani et al. 2019) for numerical stability
 - [Phase 05]: Float64 required for finite-difference Hessian cross-check (float32 eps=1e-4 insufficient)
+- [Phase 05]: Manifold wrapping uses isinstance-based algebra layer detection, not parameter name patterns, for robust ParameterList handling
+- [Phase 05]: LBFGS training loop bypasses AMP scaler entirely (closure pattern incompatible with gradient scaling)
+- [Phase 05]: Gate verdict uses min(best_ratio, median_ratio) per task for most favorable O comparison; 2x=GREEN, 3x majority=RED, else YELLOW
 
 ### Pending Todos
 
@@ -189,6 +193,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T05:47:33.649Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-03-21T05:48:24.891Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None
