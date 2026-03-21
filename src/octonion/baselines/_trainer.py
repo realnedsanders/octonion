@@ -256,6 +256,10 @@ def evaluate(
 ) -> tuple[float, float]:
     """Evaluate model on a dataset.
 
+    For classification (CrossEntropyLoss): returns (avg_loss, accuracy).
+    For regression (MSELoss, etc.): returns (avg_loss, 0.0) since accuracy
+    is not meaningful for regression tasks.
+
     Args:
         model: Model to evaluate.
         loader: DataLoader for evaluation data.
@@ -268,6 +272,8 @@ def evaluate(
     if loss_fn is None:
         loss_fn = nn.CrossEntropyLoss()
 
+    is_classification = isinstance(loss_fn, nn.CrossEntropyLoss)
+
     model.eval()
     total_loss = 0.0
     correct = 0
@@ -279,12 +285,13 @@ def evaluate(
             outputs = model(inputs)
             loss = loss_fn(outputs, targets)
             total_loss += loss.item() * inputs.size(0)
-            _, predicted = outputs.max(1)
-            correct += predicted.eq(targets).sum().item()
+            if is_classification:
+                _, predicted = outputs.max(1)
+                correct += predicted.eq(targets).sum().item()
             total += inputs.size(0)
 
     avg_loss = total_loss / max(total, 1)
-    accuracy = correct / max(total, 1)
+    accuracy = correct / max(total, 1) if is_classification else 0.0
     return avg_loss, accuracy
 
 
@@ -509,12 +516,11 @@ def train_model(
             n_batches = 0
 
             is_lbfgs = isinstance(optimizer, torch.optim.LBFGS)
+            amp_device_type = "cuda" if str(device).startswith("cuda") else "cpu"
 
             for batch in train_loader:
                 inputs = batch[0].to(device, non_blocking=True)
                 targets = batch[1].to(device, non_blocking=True)
-
-                amp_device_type = "cuda" if str(device).startswith("cuda") else "cpu"
 
                 if is_lbfgs:
                     # LBFGS requires a closure that re-evaluates the model
