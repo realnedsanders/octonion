@@ -118,13 +118,13 @@ Plans:
 **Plans**: 8 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Install deps (geoopt, pytorch-optimizer), extend AlgebraType, implement PHM8Linear + DenseMixingLinear
-- [ ] 05-02-PLAN.md — 5 synthetic task generators (algebra-native, cross product, sinusoidal, classification) with controls
-- [ ] 05-03-PLAN.md — Hessian eigenspectrum toolkit (full Hessian + stochastic Lanczos) and Bill & Cox curvature measurement
-- [ ] 05-04-PLAN.md — Trainer extension (LBFGS/Riemannian/Shampoo), AlgebraNetwork PHM8/R8D dispatch, gradient stats, gate logic
-- [ ] 05-05-PLAN.md — Experiment orchestration with incremental saves, Hessian checkpoints, smoke test
+- [x] 05-01-PLAN.md — Install deps (geoopt, pytorch-optimizer), extend AlgebraType, implement PHM8Linear + DenseMixingLinear
+- [x] 05-02-PLAN.md — 5 synthetic task generators (algebra-native, cross product, sinusoidal, classification) with controls
+- [x] 05-03-PLAN.md — Hessian eigenspectrum toolkit (full Hessian + stochastic Lanczos) and Bill & Cox curvature measurement
+- [x] 05-04-PLAN.md — Trainer extension (LBFGS/Riemannian/Shampoo), AlgebraNetwork PHM8/R8D dispatch, gradient stats, gate logic
+- [x] 05-05-PLAN.md — Experiment orchestration with incremental saves, Hessian checkpoints, smoke test
 - [ ] 05-06-PLAN.md — Analysis script, full experiment run, gate verdict, human review checkpoint
-- [ ] 05-07-PLAN.md — [GAP CLOSURE] Fix intermediate checkpoint saving, create post-training analysis script (Hessian/curvature/gradient)
+- [x] 05-07-PLAN.md — [GAP CLOSURE] Fix intermediate checkpoint saving, create post-training analysis script (Hessian/curvature/gradient)
 - [ ] 05-08-PLAN.md — [GAP CLOSURE] Integration tests verifying post-training analysis produces expected data
 
 ### Phase 6: Reversibility Claim
