@@ -1,0 +1,350 @@
+{
+  "experiment_info": {
+    "tasks": [
+      "algebra_native_single"
+    ],
+    "algebras": [
+      "R",
+      "C",
+      "H",
+      "O",
+      "R8D"
+    ],
+    "optimizers": [
+      "adam",
+      "sgd"
+    ],
+    "progress": {
+      "total_runs_found": 69,
+      "completed": 69,
+      "failed": 0,
+      "remaining": 0,
+      "avg_time_per_run_seconds": 42.24429096000782,
+      "estimated_remaining_seconds": 0.0,
+      "estimated_remaining_hours": 0.0
+    }
+  },
+  "gate_verdict": {
+    "verdict": "GREEN",
+    "summary": "Gate verdict: GREEN; Tasks within 2x: 1/1; Tasks within 3x: 1/1",
+    "per_task": {
+      "algebra_native_single": {
+        "best_ratio": 1.4819697239010755e-13,
+        "median_ratio": 1.258937749144905e-13,
+        "gate_ratio": 1.258937749144905e-13,
+        "divergence_rate": 0.4,
+        "within_2x": true,
+        "within_3x": true
+      }
+    },
+    "has_data": true
+  },
+  "convergence_profiles": {
+    "algebra_native_single": {
+      "algebra_stats": {
+        "R": {
+          "n_runs": 22,
+          "n_errors": 0,
+          "best_val_loss_mean": 0.016052957583579306,
+          "best_val_loss_median": 2.348159492369939e-14,
+          "best_val_loss_std": 0.051959008614977896,
+          "best_val_loss_min": 1.798848661173358e-14,
+          "best_val_loss_max": 0.17731455862522125,
+          "best_val_loss_ci_95": [
+            -0.006984376249296206,
+            0.039090291416454814
+          ],
+          "final_val_loss_mean": 0.01605295758357931,
+          "mean_epochs": 91.81818181818181
+        },
+        "C": {
+          "n_runs": 20,
+          "n_errors": 0,
+          "best_val_loss_mean": 1.2486513811848022e-14,
+          "best_val_loss_median": 1.2013855405293428e-14,
+          "best_val_loss_std": 1.6927774049164134e-15,
+          "best_val_loss_min": 1.0149187599280823e-14,
+          "best_val_loss_max": 1.8123744605774705e-14,
+          "best_val_loss_ci_95": [
+            1.1694269599485016e-14,
+            1.3278758024211029e-14
+          ],
+          "final_val_loss_mean": 1.2493325627499497e-14,
+          "mean_epochs": 100.0
+        },
+        "H": {
+          "n_runs": 20,
+          "n_errors": 0,
+          "best_val_loss_mean": 1.0016776551551206e-14,
+          "best_val_loss_median": 1.0000110109561686e-14,
+          "best_val_loss_std": 8.221894971368115e-16,
+          "best_val_loss_min": 8.620858931232545e-15,
+          "best_val_loss_max": 1.1883034736325653e-14,
+          "best_val_loss_ci_95": [
+            9.63198002208403e-15,
+            1.0401573081018383e-14
+          ],
+          "final_val_loss_mean": 1.003114920229871e-14,
+          "mean_epochs": 100.0
+        },
+        "O": {
+          "n_runs": 5,
+          "n_errors": 0,
+          "best_val_loss_mean": 0.052661495685585404,
+          "best_val_loss_median": 1.3398269223686282e-14,
+          "best_val_loss_std": 0.0726252949321694,
+          "best_val_loss_min": 1.3323857848187431e-14,
+          "best_val_loss_max": 0.14387023210525512,
+          "best_val_loss_ci_95": [
+            -0.03751471839061963,
+            0.14283770976179044
+          ],
+          "final_val_loss_mean": 0.05266149568558541,
+          "mean_epochs": 64.0
+        },
+        "R8D": {
+          "n_runs": 2,
+          "n_errors": 0,
+          "best_val_loss_mean": 0.10692212522029876,
+          "best_val_loss_median": 0.10692212522029876,
+          "best_val_loss_std": 0.02404740830321758,
+          "best_val_loss_min": 0.08991803973913193,
+          "best_val_loss_max": 0.1239262107014656,
+          "best_val_loss_ci_95": [
+            -0.10913526625482267,
+            0.3229795166954202
+          ],
+          "final_val_loss_mean": 0.10692212522029876,
+          "mean_epochs": 10.0
+        }
+      },
+      "n_optimizers": 2
+    }
+  },
+  "pairwise_statistical_tests": {
+    "algebra_native_single": {
+      "adam": [
+        {
+          "algebra_a": "O",
+          "algebra_b": "R",
+          "n_pairs": 2,
+          "stats": {
+            "t_stat": -3.9121355413799312,
+            "t_p_value": 0.15931805837336424,
+            "w_stat": 0.0,
+            "w_p_value": 0.5,
+            "effect_size": -3.671131477260316,
+            "mean_diff": -0.04492879420518875,
+            "ci_lower": -0.19085279189960971,
+            "ci_upper": 0.10099520348923222
+          },
+          "holm_bonferroni": {
+            "original_p": 0.15931805837336424,
+            "adjusted_p": 0.47614905406751806,
+            "rejected": false
+          }
+        },
+        {
+          "algebra_a": "O",
+          "algebra_b": "R8D",
+          "n_pairs": 2,
+          "stats": {
+            "t_stat": 0.8463766075533359,
+            "t_p_value": 0.5528467176840489,
+            "w_stat": 1.0,
+            "w_p_value": 1.0,
+            "effect_size": 1.1812077563659809,
+            "mean_diff": 0.024731613993644715,
+            "ci_lower": -0.3465510373165052,
+            "ci_upper": 0.39601426530379463
+          },
+          "holm_bonferroni": {
+            "original_p": 0.5528467176840489,
+            "adjusted_p": 0.5528467176840489,
+            "rejected": false
+          }
+        },
+        {
+          "algebra_a": "R",
+          "algebra_b": "R8D",
+          "n_pairs": 2,
+          "stats": {
+            "t_stat": 3.9276033752364548,
+            "t_p_value": 0.15871635135583936,
+            "w_stat": 0.0,
+            "w_p_value": 0.5,
+            "effect_size": 4.09289562064458,
+            "mean_diff": 0.06966040819883346,
+            "ci_lower": -0.1556982454168955,
+            "ci_upper": 0.2950190618145624
+          },
+          "holm_bonferroni": {
+            "original_p": 0.15871635135583936,
+            "adjusted_p": 0.47614905406751806,
+            "rejected": false
+          }
+        }
+      ],
+      "sgd": [
+        {
+          "algebra_a": "C",
+          "algebra_b": "H",
+          "n_pairs": 20,
+          "stats": {
+            "t_stat": 5.670365655979733,
+            "t_p_value": 1.8198215799788162e-05,
+            "w_stat": 1.0,
+            "w_p_value": 3.814697265625e-06,
+            "effect_size": 1.8559774099170656,
+            "mean_diff": 2.4697372602968187e-15,
+            "ci_lower": 1.5581171272250702e-15,
+            "ci_upper": 3.381357393368567e-15
+          },
+          "holm_bonferroni": {
+            "original_p": 1.8198215799788162e-05,
+            "adjusted_p": 7.279286319915265e-05,
+            "rejected": true
+          }
+        },
+        {
+          "algebra_a": "C",
+          "algebra_b": "O",
+          "n_pairs": 3,
+          "stats": {
+            "t_stat": -2.5861942527351367,
+            "t_p_value": 0.12261294813761989,
+            "w_stat": 0.0,
+            "w_p_value": 0.25,
+            "effect_size": -2.1218285132079693,
+            "mean_diff": -1.09496977457324e-15,
+            "ci_lower": -2.9166715607318403e-15,
+            "ci_upper": 7.267320115853601e-16
+          },
+          "holm_bonferroni": {
+            "original_p": 0.12261294813761989,
+            "adjusted_p": 0.19204667996667565,
+            "rejected": false
+          }
+        },
+        {
+          "algebra_a": "C",
+          "algebra_b": "R",
+          "n_pairs": 20,
+          "stats": {
+            "t_stat": -12.856942317466567,
+            "t_p_value": 8.012645540151395e-11,
+            "w_stat": 0.0,
+            "w_p_value": 1.9073486328125e-06,
+            "effect_size": -4.086733958378649,
+            "mean_diff": -1.1525305172716383e-14,
+            "ci_lower": -1.340154762331215e-14,
+            "ci_upper": -9.649062722120616e-15
+          },
+          "holm_bonferroni": {
+            "original_p": 8.012645540151395e-11,
+            "adjusted_p": 4.006322770075697e-10,
+            "rejected": true
+          }
+        },
+        {
+          "algebra_a": "H",
+          "algebra_b": "O",
+          "n_pairs": 3,
+          "stats": {
+            "t_stat": -5.904584218142529,
+            "t_p_value": 0.02750491172722189,
+            "w_stat": 0.0,
+            "w_p_value": 0.25,
+            "effect_size": -4.975409539171371,
+            "mean_diff": -3.704308774507327e-15,
+            "ci_lower": -6.4036274177229435e-15,
+            "ci_upper": -1.0049901312917102e-15
+          },
+          "holm_bonferroni": {
+            "original_p": 0.02750491172722189,
+            "adjusted_p": 0.08251473518166567,
+            "rejected": false
+          }
+        },
+        {
+          "algebra_a": "H",
+          "algebra_b": "R",
+          "n_pairs": 20,
+          "stats": {
+            "t_stat": -15.280035348382864,
+            "t_p_value": 3.9735893665452475e-12,
+            "w_stat": 0.0,
+            "w_p_value": 1.9073486328125e-06,
+            "effect_size": -5.34386275697444,
+            "mean_diff": -1.3995042433013202e-14,
+            "ci_lower": -1.5912051117018745e-14,
+            "ci_upper": -1.207803374900766e-14
+          },
+          "holm_bonferroni": {
+            "original_p": 3.9735893665452475e-12,
+            "adjusted_p": 2.3841536199271487e-11,
+            "rejected": true
+          }
+        },
+        {
+          "algebra_a": "O",
+          "algebra_b": "R",
+          "n_pairs": 3,
+          "stats": {
+            "t_stat": -2.989874789069348,
+            "t_p_value": 0.09602333998333783,
+            "w_stat": 0.0,
+            "w_p_value": 0.25,
+            "effect_size": -2.4329013120874228,
+            "mean_diff": -1.1856086602207948e-14,
+            "ci_lower": -2.891787914604041e-14,
+            "ci_upper": 5.20570594162451e-15
+          },
+          "holm_bonferroni": {
+            "original_p": 0.09602333998333783,
+            "adjusted_p": 0.19204667996667565,
+            "rejected": false
+          }
+        }
+      ]
+    }
+  },
+  "literature_comparison": {
+    "bill_cox_2024": {
+      "reference": "Bill & Cox (2024) - Quaternion loss surface curvature",
+      "our_results": {},
+      "note": "Bill & Cox found smoother loss surfaces for quaternion networks; we extend to octonions"
+    },
+    "wu_et_al_2020": {
+      "reference": "Wu et al. (2020) - Deep Octonion Networks convergence patterns",
+      "our_convergence_speed": {
+        "R": {
+          "mean_epochs_to_90pct": 2.772727272727273,
+          "std_epochs": 1.4452489711965162,
+          "n_measurements": 22
+        },
+        "C": {
+          "mean_epochs_to_90pct": 2.0,
+          "std_epochs": 0.0,
+          "n_measurements": 20
+        },
+        "H": {
+          "mean_epochs_to_90pct": 3.3,
+          "std_epochs": 1.0310954828418377,
+          "n_measurements": 20
+        },
+        "O": {
+          "mean_epochs_to_90pct": 6.4,
+          "std_epochs": 1.51657508881031,
+          "n_measurements": 5
+        },
+        "R8D": {
+          "mean_epochs_to_90pct": 7.0,
+          "std_epochs": 0.0,
+          "n_measurements": 2
+        }
+      },
+      "note": "Epochs to reach 90% of best improvement; Wu et al. observed slower convergence for higher-dim algebras"
+    }
+  }
+}

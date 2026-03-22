@@ -1,0 +1,14 @@
+{
+  "verdict": "GREEN",
+  "summary": "Gate verdict: GREEN; Tasks within 2x: 1/1; Tasks within 3x: 1/1",
+  "per_task": {
+    "algebra_native_single": {
+      "best_ratio": 1.4819697239010755e-13,
+      "median_ratio": 1.258937749144905e-13,
+      "gate_ratio": 1.258937749144905e-13,
+      "divergence_rate": 0.4,
+      "within_2x": true,
+      "within_3x": true
+    }
+  }
+}

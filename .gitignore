@@ -2,3 +2,7 @@ data
 experiments
 .hypothesis
 *.pyc
+
+# Runtime artifacts from experiment runs
+*.pt
+events.out.tfevents.*
