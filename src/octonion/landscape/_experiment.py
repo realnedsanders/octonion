@@ -114,6 +114,7 @@ def _optimizer_train_config(
     optimizer_name: str,
     config: LandscapeConfig,
     manifold_type: str = "sphere",
+    is_hessian_seed: bool = False,
 ) -> TrainConfig:
     """Build a TrainConfig with optimizer-specific settings.
 
@@ -121,6 +122,8 @@ def _optimizer_train_config(
         optimizer_name: Optimizer name (sgd, adam, lbfgs, riemannian_adam, shampoo).
         config: LandscapeConfig with shared settings.
         manifold_type: Manifold type for riemannian_adam.
+        is_hessian_seed: If True, override checkpoint_every to save
+            intermediate checkpoints for Hessian analysis.
 
     Returns:
         TrainConfig instance tuned for the given optimizer.
@@ -137,7 +140,7 @@ def _optimizer_train_config(
     )
 
     if optimizer_name == "sgd":
-        return TrainConfig(
+        tc = TrainConfig(
             **base,
             optimizer="sgd",
             lr=0.01,
@@ -145,21 +148,21 @@ def _optimizer_train_config(
             nesterov=True,
         )
     elif optimizer_name == "adam":
-        return TrainConfig(
+        tc = TrainConfig(
             **base,
             optimizer="adam",
             lr=1e-3,
             scheduler="cosine",
         )
     elif optimizer_name == "lbfgs":
-        return TrainConfig(
+        tc = TrainConfig(
             **{**base, "batch_size": config.lbfgs_batch_size},
             optimizer="lbfgs",
             lr=1.0,
             scheduler="cosine",
         )
     elif optimizer_name == "riemannian_adam":
-        return TrainConfig(
+        tc = TrainConfig(
             **base,
             optimizer="riemannian_adam",
             lr=1e-3,
@@ -167,7 +170,7 @@ def _optimizer_train_config(
             manifold_type=manifold_type,
         )
     elif optimizer_name == "shampoo":
-        return TrainConfig(
+        tc = TrainConfig(
             **base,
             optimizer="shampoo",
             lr=1e-2,
@@ -175,6 +178,12 @@ def _optimizer_train_config(
         )
     else:
         raise ValueError(f"Unknown optimizer: {optimizer_name!r}")
+
+    # For Hessian seeds, save frequent checkpoints to capture intermediate fractions
+    if is_hessian_seed and config.epochs >= 4:
+        tc.checkpoint_every = max(1, config.epochs // 4)
+
+    return tc
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +615,7 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                         # Build data loaders
                         train_config = _optimizer_train_config(
                             actual_opt, config, manifold_type=manifold_type,
+                            is_hessian_seed=is_hessian_seed,
                         )
                         bs = min(train_config.batch_size, len(train_ds))
                         train_loader = DataLoader(
@@ -647,17 +657,35 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                                 "epochs_trained": 0,
                             }
 
-                        # Save Hessian checkpoints at intermediate fractions
+                        # Save Hessian checkpoints at intermediate + final fractions
                         if is_hessian_seed:
                             for frac in config.hessian_checkpoints:
                                 if frac == 0.0:
-                                    continue  # Already saved above
+                                    continue  # Already saved before training
                                 if frac == 1.0:
-                                    # Save converged model
+                                    # Save converged model directly
                                     _save_hessian_checkpoint(
                                         config.output_dir, task_name, display_name,
                                         alg_name, seed, 1.0, model,
                                     )
+                                else:
+                                    # Extract intermediate checkpoint from trainer's saved checkpoints
+                                    target_epoch = max(1, int(frac * config.epochs))
+                                    trainer_ckpt = run_dir / f"checkpoint_epoch{target_epoch}.pt"
+                                    if trainer_ckpt.exists():
+                                        full_ckpt = torch.load(str(trainer_ckpt), weights_only=False)
+                                        ckpt_dir = _hessian_checkpoint_dir(
+                                            config.output_dir, task_name, display_name, alg_name, seed
+                                        )
+                                        ckpt_dir.mkdir(parents=True, exist_ok=True)
+                                        hessian_path = ckpt_dir / f"checkpoint_{frac:.2f}.pt"
+                                        torch.save(full_ckpt["model_state_dict"], hessian_path)
+                                        logger.info(f"Saved Hessian checkpoint at frac={frac:.2f} from epoch {target_epoch}")
+                                    else:
+                                        logger.warning(
+                                            f"Trainer checkpoint at epoch {target_epoch} not found for "
+                                            f"frac={frac:.2f}; expected {trainer_ckpt}"
+                                        )
 
                         # Save result immediately (crash resilience)
                         run_result = {
