@@ -125,7 +125,7 @@ Plans:
 - [x] 05-05-PLAN.md — Experiment orchestration with incremental saves, Hessian checkpoints, smoke test
 - [ ] 05-06-PLAN.md — Analysis script, full experiment run, gate verdict, human review checkpoint
 - [x] 05-07-PLAN.md — [GAP CLOSURE] Fix intermediate checkpoint saving, create post-training analysis script (Hessian/curvature/gradient)
-- [ ] 05-08-PLAN.md — [GAP CLOSURE] Integration tests verifying post-training analysis produces expected data
+- [x] 05-08-PLAN.md — [GAP CLOSURE] Integration tests verifying post-training analysis produces expected data
 
 ### Phase 6: Reversibility Claim
 **Goal**: Determine whether octonionic algebraic inversion provides meaningful backward inference that outperforms trained invertible networks
