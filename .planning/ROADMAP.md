@@ -21,6 +21,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 7: Density & Geometric Claims** - Matched-parameter density advantage and geometric signal detection experiments
 - [ ] **Phase 8: G2 Equivariance & Hyperbolic Hybrid** - Novel G2-equivariant layers and hyperboloid-octonionic model
 - [ ] **Phase 9: Associator & Subalgebra Analysis** - Associator-aware architecture and Fano plane decomposition of learned representations
+- [ ] **Phase 10: Predict-and-Fill Benchmarks** - Reversible conjecture at scale with missing-data identification and completion tasks
+- [ ] **Phase 11: Applied Single-Stream Benchmarks** - Anomaly detection and time series prediction vs LSTM/Transformer baselines
+- [ ] **Phase 12: Hyperboloid Projection Stability** - Empirical characterization of the Euclidean-Lorentzian projection distortion problem
+- [ ] **Phase 13: Multi-Stream Data Fusion** - ORE proof-of-concept ingesting heterogeneous real-time data streams
 
 ## Phase Details
 
@@ -189,11 +193,72 @@ Plans:
 - [ ] 09-01: TBD
 - [ ] 09-02: TBD
 
+### Phase 10: Predict-and-Fill Benchmarks
+**Goal**: Validate the "geometry of absence" concept and test reversible conjecture on practical missing-data tasks
+**Depends on**: Phase 6 (reversibility), Phase 8 (hyperbolic geometry for uncertainty manifold structure)
+**Requirements**: CLAIM-01 (extended)
+**Success Criteria** (what must be TRUE):
+  1. Predict-and-fill task defined where the model must identify which dimensions of input are missing and generate plausible completions using inverse projection
+  2. Octonionic inverse projection produces lower reconstruction error than optimization-based inversion baselines on structured missing data
+  3. Uncertainty manifold geometry (dimension, curvature) correlates with the amount and type of missing information
+  4. The model accurately distinguishes "what it knows" from "what it doesn't know" as measured by calibration of uncertainty estimates
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+- [ ] 10-02: TBD
+
+### Phase 11: Applied Single-Stream Benchmarks
+**Goal**: Test octonionic representations on practical time series tasks beyond synthetic data, comparing against standard sequence model baselines
+**Depends on**: Phase 5 (gate must pass), Phase 7 (density comparison infrastructure)
+**Requirements**: BASE-04 (extended)
+**Success Criteria** (what must be TRUE):
+  1. Anomaly detection benchmark on noisy time series with planted anomalies, comparing octonionic network vs LSTM vs Transformer baselines with matched parameter counts
+  2. Time series prediction benchmark (e.g., multi-step forecasting) with statistical significance testing across all algebra variants
+  3. Geometric signal hypothesis (associator coherence distinguishes signal from noise) is tested quantitatively on real-valued time series data
+  4. Results document whether the octonionic density advantage observed on synthetic tasks transfers to applied tasks
+**Plans**: TBD
+
+Plans:
+- [ ] 11-01: TBD
+- [ ] 11-02: TBD
+
+### Phase 12: Hyperboloid Projection Stability
+**Goal**: Empirically characterize the central open problem of the hyperboloid-octonionic synthesis: does re-projection after octonionic multiplication preserve useful algebraic properties?
+**Depends on**: Phase 8 (hyperboloid-octonionic hybrid implementation)
+**Requirements**: ADV-02 (extended)
+**Success Criteria** (what must be TRUE):
+  1. Projection distortion |project(a*b) - project(a) *_H project(b)| measured for random and structured octonionic inputs across varying hyperboloid radii
+  2. Distortion characterized as a function of distance from the hyperboloid apex (abstraction level)
+  3. Invertibility degradation after N re-projection cycles is quantified (does forward-inverse round-trip error accumulate?)
+  4. At least one mitigation strategy (learned projection, tangent-space approximation, or frequency of re-projection) reduces distortion by a measurable factor
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
+- [ ] 12-02: TBD
+
+### Phase 13: Multi-Stream Data Fusion
+**Goal**: Build an ORE proof-of-concept that ingests heterogeneous real-time data streams and demonstrates cross-stream geometric signal detection
+**Depends on**: Phases 6-12 (requires validated components)
+**Requirements**: APP-01, APP-02 (promoted from v2)
+**Success Criteria** (what must be TRUE):
+  1. At least 3 heterogeneous data streams (e.g., financial market data, news text sentiment, temporal event sequences) encoded into octonionic representations via learned projections
+  2. Cross-stream signal detection demonstrates that octonionic geometric coherence (subalgebra alignment, associator structure) identifies genuine cross-domain correlations
+  3. Fano plane subalgebra decomposition reveals interpretable specialization across stream types
+  4. System produces actionable predictions or alerts that outperform single-stream baselines on at least one cross-domain task
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+- [ ] 13-02: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (gate) -> 6 -> 7 -> 8 -> 9
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (gate) -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
 Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
+Note: Phases 10 and 11 can execute in parallel after their dependencies are met.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -206,3 +271,7 @@ Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
 | 7. Density & Geometric Claims | 0/? | Not started | - |
 | 8. G2 Equivariance & Hyperbolic Hybrid | 0/? | Not started | - |
 | 9. Associator & Subalgebra Analysis | 0/? | Not started | - |
+| 10. Predict-and-Fill Benchmarks | 0/? | Not started | - |
+| 11. Applied Single-Stream Benchmarks | 0/? | Not started | - |
+| 12. Hyperboloid Projection Stability | 0/? | Not started | - |
+| 13. Multi-Stream Data Fusion | 0/? | Not started | - |

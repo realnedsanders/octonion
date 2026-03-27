@@ -81,10 +81,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADV-02 | Phase 8: G2 Equivariance & Hyperbolic Hybrid | Pending |
 | ADV-03 | Phase 9: Associator & Subalgebra Analysis | Pending |
 | ADV-04 | Phase 9: Associator & Subalgebra Analysis | Pending |
+| APP-01 | Phase 13: Multi-Stream Data Fusion | Pending (promoted from v2) |
+| APP-02 | Phase 13: Multi-Stream Data Fusion | Pending (promoted from v2) |
 
 **Coverage:**
-- v1 requirements: 14 total
-- Mapped to phases: 14
+- v1 requirements: 14 total + 2 promoted from v2
+- Mapped to phases: 16
 - Unmapped: 0
 
 ---
