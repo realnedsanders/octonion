@@ -1,4 +1,4 @@
-# Octonionic Computation Substrate
+# Octonionic Neural Networks
 
 A research project investigating whether octonions, the largest normed division algebra, provide measurable advantages over real, complex, and quaternionic alternatives for geometric reasoning in machine learning.
 
