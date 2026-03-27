@@ -1,0 +1,50 @@
+\contentsline {section}{\numberline {1}Mathematical Foundations}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}The Normed Division Algebras}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Octonionic Algebra}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}The Automorphism Group $G_2$}{4}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}The Fano Plane as Computational Architecture}{4}{subsection.1.4}%
+\contentsline {section}{\numberline {2}The Reversibility Thesis}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Reversibility as a Requirement for Reasoning Under Uncertainty}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}The Geometry of Absence}{5}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Connection to Existing Work}{5}{subsection.2.3}%
+\contentsline {section}{\numberline {3}The Density Argument}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Representational Density Defined}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}The Sedenion Boundary}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Density vs.\ Capacity}{6}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Architecture: The Octonionic Reasoning Engine (ORE)}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}High-Level Architecture}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}The Encoding Layer: Learned Octonionic Projection}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}The World State Manifold}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}The Reasoning Layer: Geometric Transformations}{8}{subsection.4.4}%
+\contentsline {paragraph}{Note on non-associativity and backpropagation.}{8}{section*.2}%
+\contentsline {subsection}{\numberline {4.5}Multi-Stream Data Ingestion}{8}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Signal Discovery in Streaming Data}{8}{section.5}%
+\contentsline {subsection}{\numberline {5.1}The Geometric Signal Hypothesis}{8}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Noise as Geometric Incoherence}{9}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Learned Dimensional Semantics}{9}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Hyperbolic Geometry of the State Space}{9}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Motivation: Why Flat Geometry is Insufficient}{9}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Three Formulations}{10}{subsection.6.2}%
+\contentsline {subsubsection}{\numberline {6.2.1}Option A: Poincar\'{e} Ball in $\mathbb {O}$ (Pragmatic)}{10}{subsubsection.6.2.1}%
+\contentsline {subsubsection}{\numberline {6.2.2}Option B: Hyperboloid Model via Split Signature (Selected First Approach)}{10}{subsubsection.6.2.2}%
+\contentsline {subsubsection}{\numberline {6.2.3}Option C: The Octonionic Hyperbolic Plane $\mathbb {O}H^2$ (Exotic)}{10}{subsubsection.6.2.3}%
+\contentsline {subsection}{\numberline {6.3}The Hybrid Hyperboloid-Octonionic Model}{11}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}What Hyperbolic Geometry Contributes to the Architecture}{11}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Connections to Exceptional Structures}{11}{subsection.6.5}%
+\contentsline {section}{\numberline {7}Training and Optimization}{12}{section.7}%
+\contentsline {subsection}{\numberline {7.1}The Octonionic Gradient}{12}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Loss Functions for Geometric Reasoning}{12}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}$G_2$-Equivariant Layers}{12}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Open Questions and Risks}{12}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Optimization Landscape}{12}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Scaling Behavior}{13}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Numerical Stability}{13}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}The ``Why Not $\mathbb {R}^8$?'' Challenge}{13}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}The Non-Associativity Trade-off}{13}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.6}Grounding the Geometry of Absence}{13}{subsection.8.6}%
+\contentsline {subsection}{\numberline {8.7}The Hyperboloid Projection Problem}{13}{subsection.8.7}%
+\contentsline {subsection}{\numberline {8.8}Numerical Stability in Hyperbolic Space}{13}{subsection.8.8}%
+\contentsline {section}{\numberline {9}Experimental Roadmap}{14}{section.9}%
+\contentsline {section}{\numberline {10}Conclusion}{15}{section.10}%
+\contentsline {section}{\numberline {A}The Fano Plane}{16}{appendix.A}%
+\contentsline {section}{\numberline {B}$G_2$ as a Subgroup of $\SO (7)$}{16}{appendix.B}%

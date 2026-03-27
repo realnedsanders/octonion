@@ -6,20 +6,20 @@ A research project investigating whether octonions, the largest normed division 
 
 There are exactly four number systems that support addition, subtraction, multiplication, division, and norm preservation. These are the **normed division algebras**, each constructed by doubling the previous one:
 
-| Algebra | Dimension | Property lost |
-|---------|-----------|---------------|
-| Real numbers (R) | 1 | None |
-| Complex numbers (C) | 2 | Ordering |
-| Quaternions (H) | 4 | Commutativity |
-| **Octonions (O)** | **8** | **Associativity** |
+| Algebra             | Dimension | Property lost     |
+| ------------------- | --------- | ----------------- |
+| Real numbers (R)    | 1         | None              |
+| Complex numbers (C) | 2         | Ordering          |
+| Quaternions (H)     | 4         | Commutativity     |
+| **Octonions (O)**   | **8**     | **Associativity** |
 
-[Hurwitz's theorem (1898)](https://en.wikipedia.org/wiki/Hurwitz%27s_theorem_(composition_algebras)) proves that no further normed division algebra exists. Beyond octonions, the Cayley-Dickson construction produces algebras with zero divisors, which destroy invertibility and render the algebra unsuitable for reversible computation.
+[Hurwitz's theorem (1898)](<https://en.wikipedia.org/wiki/Hurwitz%27s_theorem_(composition_algebras)>) proves that no further normed division algebra exists. Beyond octonions, the Cayley-Dickson construction produces algebras with zero divisors, which destroy invertibility and render the algebra unsuitable for reversible computation.
 
 Octonions appear throughout theoretical physics (string theory, M-theory, exceptional Lie groups). This project investigates their potential as a computational substrate for machine learning.
 
 ## Thesis
 
-The full argument is in [`octonionic-ml-thesis.md`](octonionic-ml-thesis.md). The core claims:
+The full argument is in [`docs/thesis/main.tex`](docs/thesis/main.pdf). The core claims:
 
 1. **Density**: Octonions encode more geometric structure per parameter than smaller algebras. Their automorphism group (G_2, 14-dimensional) is larger than the algebra itself (8-dimensional), a property unique among division algebras.
 
@@ -33,13 +33,13 @@ The project validates these claims empirically, bottom-up, with controlled exper
 
 A PyTorch-native library implementing the full stack from algebra to experiment infrastructure:
 
-| Module | Description |
-|--------|-------------|
-| **Core algebra** | Multiplication via Fano plane structure constants tensor, conjugation, norm, inverse, associator. Cayley-Dickson construction cross-check. R/C/H/O tower types implementing a shared `NormedDivisionAlgebra` interface. `OctonionLinear` layer, batch operations, exp/log. |
-| **`calculus/`** | GHR Wirtinger derivatives for octonionic backpropagation. Analytic 8x8 Jacobians for all 7 primitives. Parenthesization-aware chain rule handling non-associativity. `torch.autograd.Function` implementations with `create_graph=True` support. |
+| Module           | Description                                                                                                                                                                                                                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Core algebra** | Multiplication via Fano plane structure constants tensor, conjugation, norm, inverse, associator. Cayley-Dickson construction cross-check. R/C/H/O tower types implementing a shared `NormedDivisionAlgebra` interface. `OctonionLinear` layer, batch operations, exp/log.                                                              |
+| **`calculus/`**  | GHR Wirtinger derivatives for octonionic backpropagation. Analytic 8x8 Jacobians for all 7 primitives. Parenthesization-aware chain rule handling non-associativity. `torch.autograd.Function` implementations with `create_graph=True` support.                                                                                        |
 | **`baselines/`** | Fair comparison networks: R (8x width), C (4x), H (2x), O (1x). Parameter matching via binary search (<1% deviation). Algebra-specific batch normalization with Cholesky whitening. `AlgebraNetwork` skeleton supporting MLP, Conv2D, and Recurrent topologies. Training infrastructure with gradient statistics, AMP, and TensorBoard. |
-| **`landscape/`** | Hessian eigenspectrum computation (full + stochastic Lanczos). Bill & Cox (2024) loss surface curvature measurement. Gradient variance collection across seeds. Go/no-go gate evaluation (GREEN/YELLOW/RED). Experiment orchestration with incremental saves. |
-| **`tasks/`** | Synthetic task generators with known optima: algebra-native, cross product, sinusoidal, classification. |
+| **`landscape/`** | Hessian eigenspectrum computation (full + stochastic Lanczos). Bill & Cox (2024) loss surface curvature measurement. Gradient variance collection across seeds. Go/no-go gate evaluation (GREEN/YELLOW/RED). Experiment orchestration with incremental saves.                                                                           |
+| **`tasks/`**     | Synthetic task generators with known optima: algebra-native, cross product, sinusoidal, classification.                                                                                                                                                                                                                                 |
 
 **739 tests** covering algebra, calculus, baselines, stability, and landscape (pytest + Hypothesis property-based testing).
 
@@ -47,21 +47,21 @@ A PyTorch-native library implementing the full stack from algebra to experiment 
 
 The project proceeds in phases, each validating a specific claim before building on it:
 
-| Phase | What it validates | Status |
-|-------|-------------------|--------|
-| 1. Octonionic Algebra | Core operations, Moufang identities, norm preservation | Complete |
-| 2. GHR Calculus | Octonionic gradients match finite-difference to <1e-5 | Complete |
-| 3. Baselines | Fair R/C/H/O comparison networks, matched parameters | Complete |
-| 4. Numerical Stability | Precision vs depth, condition numbers, mitigations | Complete |
-| **5. Optimization Landscape** | **Go/no-go gate: can octonionic networks train?** | **Experiments running** |
-| 6. Reversibility | Algebraic inversion vs RevNet/INN baselines | Pending (blocked on Phase 5) |
-| 7. Density & Geometry | Matched-parameter density advantage, geometric detection | Pending (blocked on Phase 5) |
-| 8. G_2 & Hyperbolic | G_2-equivariant layers, hyperboloid-octonionic hybrid | Pending (blocked on Phase 5) |
-| 9. Associator Analysis | Non-associativity as signal, Fano subalgebra specialization | Pending (blocked on Phase 5) |
-| 10. Predict-and-Fill | Reversible conjecture, geometry of absence validation | Pending |
-| 11. Applied Benchmarks | Anomaly detection, time series vs LSTM/Transformer | Pending |
-| 12. Hyperboloid Projection | Euclidean-Lorentzian projection distortion characterization | Pending |
-| 13. Multi-Stream Fusion | ORE proof-of-concept with heterogeneous data streams | Pending |
+| Phase                         | What it validates                                           | Status                       |
+| ----------------------------- | ----------------------------------------------------------- | ---------------------------- |
+| 1. Octonionic Algebra         | Core operations, Moufang identities, norm preservation      | Complete                     |
+| 2. GHR Calculus               | Octonionic gradients match finite-difference to <1e-5       | Complete                     |
+| 3. Baselines                  | Fair R/C/H/O comparison networks, matched parameters        | Complete                     |
+| 4. Numerical Stability        | Precision vs depth, condition numbers, mitigations          | Complete                     |
+| **5. Optimization Landscape** | **Go/no-go gate: can octonionic networks train?**           | **Experiments running**      |
+| 6. Reversibility              | Algebraic inversion vs RevNet/INN baselines                 | Pending (blocked on Phase 5) |
+| 7. Density & Geometry         | Matched-parameter density advantage, geometric detection    | Pending (blocked on Phase 5) |
+| 8. G_2 & Hyperbolic           | G_2-equivariant layers, hyperboloid-octonionic hybrid       | Pending (blocked on Phase 5) |
+| 9. Associator Analysis        | Non-associativity as signal, Fano subalgebra specialization | Pending (blocked on Phase 5) |
+| 10. Predict-and-Fill          | Reversible conjecture, geometry of absence validation       | Pending                      |
+| 11. Applied Benchmarks        | Anomaly detection, time series vs LSTM/Transformer          | Pending                      |
+| 12. Hyperboloid Projection    | Euclidean-Lorentzian projection distortion characterization | Pending                      |
+| 13. Multi-Stream Fusion       | ORE proof-of-concept with heterogeneous data streams        | Pending                      |
 
 Phase 5 is the critical gate. If non-associativity creates pathological loss surfaces, the project pivots to documenting a quantitative negative result. If the gate passes, Phases 6-13 proceed.
 
@@ -101,14 +101,14 @@ Empirically, the naive (associativity-assuming) chain rule produces >100% relati
 
 Every experiment compares 4+ algebras with matched total parameter counts:
 
-| Algebra | Width multiplier | Role |
-|---------|-----------------|------|
-| Real (R) | 8x | Standard baseline |
-| Complex (C) | 4x | Published quaternionic/complex ML comparison |
-| Quaternion (H) | 2x | Closest associative relative |
-| Octonion (O) | 1x | Primary subject |
-| PHM-8 | Matched | Kronecker-factored structure (Zhang et al. 2021) |
-| R8-Dense | Matched | Unconstrained 8x8 real mixing control |
+| Algebra        | Width multiplier | Role                                             |
+| -------------- | ---------------- | ------------------------------------------------ |
+| Real (R)       | 8x               | Standard baseline                                |
+| Complex (C)    | 4x               | Published quaternionic/complex ML comparison     |
+| Quaternion (H) | 2x               | Closest associative relative                     |
+| Octonion (O)   | 1x               | Primary subject                                  |
+| PHM-8          | Matched          | Kronecker-factored structure (Zhang et al. 2021) |
+| R8-Dense       | Matched          | Unconstrained 8x8 real mixing control            |
 
 Parameter counts are matched to within 1% via binary search over hidden widths. This ensures performance differences reflect algebraic structure rather than model capacity. The R8-Dense baseline specifically guards against the possibility that an unconstrained real-valued model with the same parameter budget could achieve equivalent results.
 
@@ -154,14 +154,14 @@ results/                   # Experiment outputs (JSON + plots)
 
 ## References
 
-- Baez, J. C. (2002). "The Octonions." *Bulletin of the AMS*, 39(2), 145-205.
-- Bill, J. & Cox, B. (2024). "Exploring Quaternion Neural Network Loss Surfaces." *Advances in Applied Clifford Algebras*, 34.
-- Chen, R. T. Q., et al. (2018). "Neural Ordinary Differential Equations." *NeurIPS*.
-- Ganea, O., Becigneul, G., & Hofmann, T. (2018). "Hyperbolic Neural Networks." *NeurIPS*.
-- Nickel, M. & Kiela, D. (2017). "Poincare Embeddings for Learning Hierarchical Representations." *NeurIPS*.
-- Parcollet, T., et al. (2019). "Quaternion Recurrent Neural Networks." *ICLR*.
-- Wu, J., et al. (2020). "Deep Octonion Networks." *Neurocomputing*, 397, 179-191.
-- Zhang, A., et al. (2021). "Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters." *ICLR*.
+- Baez, J. C. (2002). "The Octonions." _Bulletin of the AMS_, 39(2), 145-205.
+- Bill, J. & Cox, B. (2024). "Exploring Quaternion Neural Network Loss Surfaces." _Advances in Applied Clifford Algebras_, 34.
+- Chen, R. T. Q., et al. (2018). "Neural Ordinary Differential Equations." _NeurIPS_.
+- Ganea, O., Becigneul, G., & Hofmann, T. (2018). "Hyperbolic Neural Networks." _NeurIPS_.
+- Nickel, M. & Kiela, D. (2017). "Poincare Embeddings for Learning Hierarchical Representations." _NeurIPS_.
+- Parcollet, T., et al. (2019). "Quaternion Recurrent Neural Networks." _ICLR_.
+- Wu, J., et al. (2020). "Deep Octonion Networks." _Neurocomputing_, 397, 179-191.
+- Zhang, A., et al. (2021). "Beyond Fully-Connected Layers with Quaternions: Parameterization of Hypercomplex Multiplications with 1/n Parameters." _ICLR_.
 
 ## License
 

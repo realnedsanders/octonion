@@ -1,0 +1,58 @@
+\begin{thebibliography}{8}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chen et~al.(2018)Chen, Rubanova, Bettencourt, and Duvenaud]{Chen2018}
+Ricky T.~Q. Chen, Yulia Rubanova, Jesse Bettencourt, and David Duvenaud.
+\newblock Neural ordinary differential equations.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2018.
+
+\bibitem[Dinh et~al.(2017)Dinh, Sohl-Dickstein, and Bengio]{Dinh2016}
+Laurent Dinh, Jascha Sohl-Dickstein, and Samy Bengio.
+\newblock Density estimation using {Real-NVP}.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2017.
+
+\bibitem[Ganea et~al.(2018)Ganea, B{\'e}cigneul, and Hofmann]{Ganea2018}
+Octavian-Eugen Ganea, Gary B{\'e}cigneul, and Thomas Hofmann.
+\newblock Hyperbolic neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2018.
+
+\bibitem[Gomez et~al.(2017)Gomez, Ren, Urtasun, and Grosse]{Gomez2017}
+Aidan~N. Gomez, Mengye Ren, Raquel Urtasun, and Roger~B. Grosse.
+\newblock The reversible residual network: Backpropagation without storing
+  activations.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2017.
+
+\bibitem[Nickel and Kiela(2017)]{Nickel2017}
+Maximilian Nickel and Douwe Kiela.
+\newblock Poincar{\'e} embeddings for learning hierarchical representations.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2017.
+
+\bibitem[Parcollet et~al.(2019)Parcollet, Ravanelli, Morchid, Linarès,
+  Trabelsi, De~Mori, and Bengio]{Parcollet2019}
+Titouan Parcollet, Mirco Ravanelli, Mohamed Morchid, Georges Linarès, Chiheb
+  Trabelsi, Renato De~Mori, and Yoshua Bengio.
+\newblock Quaternion recurrent neural networks.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2019.
+
+\bibitem[Sarkar(2011)]{Sarkar2011}
+Rik Sarkar.
+\newblock Low distortion {Delaunay} embedding of trees in hyperbolic plane.
+\newblock In \emph{Graph Drawing (GD)}, 2011.
+
+\bibitem[Xu and Mandic(2015)]{Xu2015}
+Dongpo Xu and Danilo~P. Mandic.
+\newblock The theory of quaternion matrix derivatives.
+\newblock \emph{IEEE Transactions on Signal Processing}, 63\penalty0
+  (6):\penalty0 1543--1556, 2015.
+
+\end{thebibliography}

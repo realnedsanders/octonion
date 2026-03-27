@@ -39,7 +39,7 @@ Determine empirically whether octonionic representations provide measurable adva
 
 ## Context
 
-**Thesis foundation:** The project follows the theoretical framework from `octonionic-ml-thesis.md` which argues that octonions (𝕆), as the largest normed division algebra, constitute an optimal substrate for encoding knowledge and performing reasoning in ML. Key mathematical underpinnings include Hurwitz's theorem (hard ceiling at dim 8), G₂ automorphism group (14-dim structure-preserving transforms), and the Fano plane decomposition into 7 overlapping quaternionic subalgebras.
+**Thesis foundation:** The project follows the theoretical framework from `docs/thesis/main.tex` which argues that octonions (𝕆), as the largest normed division algebra, constitute an optimal substrate for encoding knowledge and performing reasoning in ML. Key mathematical underpinnings include Hurwitz's theorem (hard ceiling at dim 8), G₂ automorphism group (14-dim structure-preserving transforms), and the Fano plane decomposition into 7 overlapping quaternionic subalgebras.
 
 **Primary risk:** The optimization landscape question — if non-associativity creates pathological loss surfaces, the entire approach may be untrainable. This must be addressed early.
 
