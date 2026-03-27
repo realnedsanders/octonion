@@ -64,7 +64,7 @@ def _integration_config(output_dir: str) -> LandscapeConfig:
         output_dir=output_dir,
         device="cpu",
         hessian_seeds=[0],
-        hessian_checkpoints=[0.0, 0.25, 0.5, 1.0],
+        hessian_checkpoints=[0.0, 0.25, 0.5, 0.75, 1.0],
         n_curvature_directions=3,
     )
 
@@ -72,7 +72,7 @@ def _integration_config(output_dir: str) -> LandscapeConfig:
 @pytest.mark.slow
 @pytest.mark.timeout(300)
 def test_intermediate_hessian_checkpoints_saved(tmp_path: Path) -> None:
-    """Verify Hessian checkpoints saved at all 4 fractions (0.00, 0.25, 0.50, 1.00)."""
+    """Verify Hessian checkpoints saved at all 5 fractions (0.00, 0.25, 0.50, 0.75, 1.00)."""
     config = _integration_config(str(tmp_path))
     run_landscape_experiment(config)
 
@@ -83,12 +83,13 @@ def test_intermediate_hessian_checkpoints_saved(tmp_path: Path) -> None:
     assert (ckpt_dir / "checkpoint_0.00.pt").exists(), "Missing checkpoint at fraction 0.00"
     assert (ckpt_dir / "checkpoint_0.25.pt").exists(), "Missing checkpoint at fraction 0.25"
     assert (ckpt_dir / "checkpoint_0.50.pt").exists(), "Missing checkpoint at fraction 0.50"
+    assert (ckpt_dir / "checkpoint_0.75.pt").exists(), "Missing checkpoint at fraction 0.75"
     assert (ckpt_dir / "checkpoint_1.00.pt").exists(), "Missing checkpoint at fraction 1.00"
 
     # Verify checkpoints are loadable (valid torch format)
     import torch
 
-    for frac in ["0.00", "0.25", "0.50", "1.00"]:
+    for frac in ["0.00", "0.25", "0.50", "0.75", "1.00"]:
         state = torch.load(ckpt_dir / f"checkpoint_{frac}.pt", weights_only=True)
         assert isinstance(state, dict), f"Checkpoint {frac} is not a state_dict"
         assert len(state) > 0, f"Checkpoint {frac} is empty"

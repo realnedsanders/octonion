@@ -78,7 +78,7 @@ class LandscapeConfig:
     lbfgs_batch_size: int = 512  # Larger for LBFGS stability
     output_dir: str = "results/landscape"
     hessian_checkpoints: list[float] = field(
-        default_factory=lambda: [0.0, 0.25, 0.5, 1.0]
+        default_factory=lambda: [0.0, 0.25, 0.5, 0.75, 1.0]
     )
     hessian_seeds: list[int] = field(
         default_factory=lambda: [0, 4, 9, 14, 19]  # 5 representative
