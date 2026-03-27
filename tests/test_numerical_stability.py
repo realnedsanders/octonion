@@ -13,9 +13,21 @@ Tests cover:
 
 from __future__ import annotations
 
+import copy
+import json
+
+import numpy as np
 import pytest
 import torch
 import torch.nn as nn
+
+from octonion.baselines._algebra_linear import (
+    ComplexLinear,
+    OctonionDenseLinear,
+    QuaternionLinear,
+    RealLinear,
+)
+from octonion.baselines._config import AlgebraType
 
 
 # ── SC-1: StabilizingNorm ─────────────────────────────────────────
@@ -139,3 +151,155 @@ def test_dtype_comparison_smoke() -> None:
     rel_err = (out32.double() - out64).norm() / (out64.norm() + 1e-30)
     assert rel_err.item() > 0
     assert rel_err.item() < 1.0
+
+
+# ── Measurement Integrity Tests ──────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "algebra,layer_cls",
+    [
+        (AlgebraType.REAL, RealLinear),
+        (AlgebraType.COMPLEX, ComplexLinear),
+        (AlgebraType.QUATERNION, QuaternionLinear),
+        (AlgebraType.OCTONION, OctonionDenseLinear),
+    ],
+)
+def test_full_network_float64_all_algebras(algebra, layer_cls) -> None:
+    """AlgebraNetwork at float64 with BN: forward pass works for R/C/H/O."""
+    torch.manual_seed(42)
+    from octonion.baselines._config import NetworkConfig
+    from octonion.baselines._network import AlgebraNetwork
+
+    hidden = 4
+    config = NetworkConfig(
+        algebra=algebra,
+        topology="mlp",
+        depth=2,
+        base_hidden=hidden,
+        activation="split_relu",
+        output_projection="flatten",
+        use_batchnorm=True,
+        input_dim=hidden * algebra.dim,
+        output_dim=hidden * algebra.dim,
+    )
+    model = AlgebraNetwork(config).to(torch.float64)
+
+    # Warmup BN running stats in train mode
+    model.train()
+    with torch.no_grad():
+        for _ in range(5):
+            x = torch.randn(8, hidden * algebra.dim, dtype=torch.float64)
+            model(x)
+
+    # Eval mode forward pass
+    model.eval()
+    with torch.no_grad():
+        x = torch.randn(2, hidden * algebra.dim, dtype=torch.float64)
+        out = model(x)
+
+    assert out.shape[0] == 2
+    assert torch.isfinite(out).all(), f"{algebra.short_name} float64 output contains non-finite values"
+
+
+def test_stripped_chain_depth500_no_nan() -> None:
+    """Depth 500 stripped chain: all errors are finite or inf, never NaN."""
+    torch.manual_seed(42)
+    depth = 500
+    hidden = 4
+    n_samples = 10
+
+    layers_f64 = nn.ModuleList(
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64)
+         for _ in range(depth)]
+    )
+    layers_f32 = copy.deepcopy(layers_f64).float()
+    layers_f64.eval()
+    layers_f32.eval()
+
+    errors = []
+    with torch.no_grad():
+        for i in range(n_samples):
+            torch.manual_seed(42 + i + 1)
+            x64 = torch.randn(1, hidden, 8, dtype=torch.float64)
+            x32 = x64.float()
+
+            h64, h32 = x64, x32
+            for l64, l32 in zip(layers_f64, layers_f32):
+                h64 = l64(h64)
+                h32 = l32(h32)
+
+            # Apply the same guard logic as the analysis script
+            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
+                errors.append(float("inf"))
+            elif h64.norm().item() <= 1e-30:
+                errors.append(float("inf"))
+            else:
+                rel_err = (h32.double() - h64).norm() / h64.norm()
+                errors.append(rel_err.item())
+
+    assert len(errors) == n_samples, "Every sample must produce an error entry"
+    for e in errors:
+        assert not np.isnan(e), f"Got NaN error — guard logic is broken"
+        assert e >= 0 or np.isinf(e), f"Error must be non-negative or inf, got {e}"
+
+
+def test_json_serialization_no_nan_infinity() -> None:
+    """_sanitize_for_json produces valid JSON with no bare NaN/Infinity."""
+    # Import from the script by adding its directory to sys.path
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+    from analyze_stability import _sanitize_for_json
+
+    data = {
+        "a": float("nan"),
+        "b": float("inf"),
+        "c": float("-inf"),
+        "d": 1.5,
+        "nested": {"x": float("nan"), "y": [float("inf"), 2.0]},
+    }
+    sanitized = _sanitize_for_json(data)
+    json_str = json.dumps(sanitized)
+
+    # Must be valid JSON (no bare NaN/Infinity tokens)
+    parsed = json.loads(json_str)
+    assert parsed["a"] is None
+    assert parsed["b"] is None
+    assert parsed["c"] is None
+    assert parsed["d"] == 1.5
+    assert parsed["nested"]["x"] is None
+    assert parsed["nested"]["y"][0] is None
+    assert parsed["nested"]["y"][1] == 2.0
+
+
+def test_condition_number_composition_octonion() -> None:
+    """2-layer O chain: condition number is finite or inf, never NaN."""
+    torch.manual_seed(42)
+    from octonion._multiplication import octonion_mul
+    from octonion.calculus._numeric import numeric_jacobian
+
+    hidden = 4
+    layers = nn.ModuleList(
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64)
+         for _ in range(2)]
+    )
+    layers.eval()
+
+    in_dim = hidden * 8
+
+    def chain_fn(x, _layers=layers):
+        h = x.reshape(hidden, 8)
+        for layer in _layers:
+            h = layer(h)
+        return h.reshape(-1)
+
+    x = torch.randn(in_dim, dtype=torch.float64)
+    x = x / x.norm()
+
+    J = numeric_jacobian(chain_fn, x)
+    sv = torch.linalg.svdvals(J)
+    cond = (sv[0] / sv[-1].clamp(min=1e-30)).item()
+
+    assert not np.isnan(cond), "Condition number must not be NaN"
+    assert cond >= 1.0, "Condition number must be >= 1"

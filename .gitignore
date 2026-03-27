@@ -6,3 +6,5 @@ experiments
 # Runtime artifacts from experiment runs
 *.pt
 events.out.tfevents.*
+results
+results/*

@@ -309,7 +309,7 @@ class QuaternionBatchNorm(nn.Module):
         Returns:
             Whitened tensor [batch, features, dim] float32.
         """
-        eye = torch.eye(self.dim, device=cov.device, dtype=torch.float32).unsqueeze(0)
+        eye = torch.eye(self.dim, device=cov.device, dtype=cov.dtype).unsqueeze(0)
         cov_reg = cov + self.eps * eye
 
         L, info = torch.linalg.cholesky_ex(cov_reg)
@@ -355,9 +355,8 @@ class QuaternionBatchNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: quaternion batch normalization.
 
-        Always computes in float32 and casts back to input dtype on exit.
-        This ensures AMP safety: mean, cov, whitening, and the gamma/beta
-        affine transform all run in float32 regardless of autocast state.
+        Computes in the parameter dtype (float32 normally, float64 if model
+        was cast via .to(float64)). Disables autocast for AMP safety.
 
         Args:
             x: Input tensor of shape [batch, features, 4].
@@ -367,7 +366,7 @@ class QuaternionBatchNorm(nn.Module):
         """
         input_dtype = x.dtype
         with torch.amp.autocast(device_type=x.device.type, enabled=False):
-            x = x.float()
+            x = x.to(self.gamma.dtype)
 
             if self.training:
                 mean = x.mean(dim=0)
@@ -470,7 +469,7 @@ class OctonionBatchNorm(nn.Module):
         Returns:
             Whitened tensor [batch, features, 8] float32.
         """
-        eye = torch.eye(self.dim, device=cov.device, dtype=torch.float32).unsqueeze(0)
+        eye = torch.eye(self.dim, device=cov.device, dtype=cov.dtype).unsqueeze(0)
         cov_reg = cov + self.eps * eye
 
         L, info = torch.linalg.cholesky_ex(cov_reg)
@@ -514,9 +513,8 @@ class OctonionBatchNorm(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: octonion batch normalization.
 
-        Always computes in float32 and casts back to input dtype on exit.
-        This ensures AMP safety: mean, cov, whitening, and the gamma/beta
-        affine transform all run in float32 regardless of autocast state.
+        Computes in the parameter dtype (float32 normally, float64 if model
+        was cast via .to(float64)). Disables autocast for AMP safety.
 
         Args:
             x: Input tensor of shape [batch, features, 8].
@@ -526,7 +524,7 @@ class OctonionBatchNorm(nn.Module):
         """
         input_dtype = x.dtype
         with torch.amp.autocast(device_type=x.device.type, enabled=False):
-            x = x.float()
+            x = x.to(self.gamma.dtype)
 
             if self.training:
                 mean = x.mean(dim=0)

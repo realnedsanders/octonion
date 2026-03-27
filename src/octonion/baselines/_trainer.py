@@ -614,11 +614,21 @@ def train_model(
             epoch_time = elapsed / (epoch + 1)
             remaining = epoch_time * (config.epochs - epoch - 1)
             remaining_min = remaining / 60
-            err_pct = (1 - val_acc) * 100
+            is_classification = isinstance(loss_fn, nn.CrossEntropyLoss)
+
+            def _fmt_loss(v: float) -> str:
+                return f"{v:.4f}" if v >= 1e-4 else f"{v:.4e}"
+
+            if is_classification:
+                err_pct = (1 - val_acc) * 100
+                val_metric = f"val_acc={val_acc:.4f} ({err_pct:.2f}% err)"
+            else:
+                val_metric = f"val_loss={_fmt_loss(val_loss)}"
+
             print(
                 f"[{epoch + 1:3d}/{config.epochs}] "
-                f"train_loss={avg_train_loss:.4f}  "
-                f"val_acc={val_acc:.4f} ({err_pct:.2f}% err)  "
+                f"train_loss={_fmt_loss(avg_train_loss)}  "
+                f"{val_metric}  "
                 f"lr={optimizer.param_groups[0]['lr']:.6f}  "
                 f"~{remaining_min:.0f}min left",
                 flush=True,

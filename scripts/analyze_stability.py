@@ -271,14 +271,14 @@ def run_depth_sweep() -> dict:
                         out64 = forward_stripped_chain(layers_f64, x64)
                         out32 = forward_stripped_chain(layers_f32, x32)
 
-                        # Relative error
-                        out64_norm = out64.norm()
-                        if out64_norm.item() > 1e-30:
-                            if not torch.isfinite(out32).all():
-                                errors.append(float("inf"))
-                            else:
-                                rel_err = (out32.double() - out64).norm() / out64_norm
-                                errors.append(rel_err.item())
+                        # Relative error (every sample produces an entry)
+                        if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
+                            errors.append(float("inf"))
+                        elif out64.norm().item() <= 1e-30:
+                            errors.append(float("inf"))
+                        else:
+                            rel_err = (out32.double() - out64).norm() / out64.norm()
+                            errors.append(rel_err.item())
 
                         # Norm drift: output norm / input norm
                         in_norm = x64.norm().item()
@@ -290,24 +290,28 @@ def run_depth_sweep() -> dict:
                                 norm_ratios.append(out_norm / in_norm)
 
                 if errors:
+                    mean_err = float(np.mean(errors))
+                    std_err = 0.0 if np.isinf(mean_err) else float(np.std(errors))
+                    mean_nr = float(np.mean(norm_ratios)) if norm_ratios else 0.0
+                    std_nr = 0.0 if (norm_ratios and np.isinf(np.mean(norm_ratios))) else (float(np.std(norm_ratios)) if norm_ratios else 0.0)
                     results["stripped"][alg_name][str(depth)][mag_label] = {
-                        "mean_rel_error": float(np.mean(errors)),
-                        "std_rel_error": float(np.std(errors)),
-                        "mean_norm_ratio": float(np.mean(norm_ratios)) if norm_ratios else 0.0,
-                        "std_norm_ratio": float(np.std(norm_ratios)) if norm_ratios else 0.0,
+                        "mean_rel_error": mean_err,
+                        "std_rel_error": std_err,
+                        "mean_norm_ratio": mean_nr,
+                        "std_norm_ratio": std_nr,
                         "n_samples": len(errors),
                     }
                 else:
                     results["stripped"][alg_name][str(depth)][mag_label] = {
-                        "mean_rel_error": float("nan"),
-                        "std_rel_error": float("nan"),
-                        "mean_norm_ratio": float("nan"),
-                        "std_norm_ratio": float("nan"),
+                        "mean_rel_error": float("inf"),
+                        "std_rel_error": 0.0,
+                        "mean_norm_ratio": float("inf"),
+                        "std_norm_ratio": 0.0,
                         "n_samples": 0,
                     }
 
                 print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
-                      f"rel_err={np.mean(errors) if errors else float('nan'):.2e}")
+                      f"rel_err={np.mean(errors) if errors else float('inf'):.2e}")
 
     # ── Compute stripped stable depths (SC-3) ──
     for algebra in ALGEBRAS:
@@ -358,35 +362,37 @@ def run_depth_sweep() -> dict:
                             out64 = model_f64(x64)
                             out32 = model_f32(x32)
 
-                            out64_norm = out64.norm()
-                            if out64_norm.item() > 1e-30:
-                                if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
-                                    errors.append(float("inf"))
-                                else:
-                                    rel_err = (out32.double() - out64).norm() / out64_norm
-                                    errors.append(rel_err.item())
+                            if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
+                                errors.append(float("inf"))
+                            elif out64.norm().item() <= 1e-30:
+                                errors.append(float("inf"))
+                            else:
+                                rel_err = (out32.double() - out64).norm() / out64.norm()
+                                errors.append(rel_err.item())
 
                     if errors:
+                        mean_err = float(np.mean(errors))
+                        std_err = 0.0 if np.isinf(mean_err) else float(np.std(errors))
                         results["full"][alg_name][str(depth)][mag_label] = {
-                            "mean_rel_error": float(np.mean(errors)),
-                            "std_rel_error": float(np.std(errors)),
+                            "mean_rel_error": mean_err,
+                            "std_rel_error": std_err,
                             "n_samples": len(errors),
                         }
                     else:
                         results["full"][alg_name][str(depth)][mag_label] = {
-                            "mean_rel_error": float("nan"),
-                            "std_rel_error": float("nan"),
+                            "mean_rel_error": float("inf"),
+                            "std_rel_error": 0.0,
                             "n_samples": 0,
                         }
 
                     print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
-                          f"rel_err={np.mean(errors) if errors else float('nan'):.2e}")
+                          f"rel_err={np.mean(errors) if errors else float('inf'):.2e}")
 
                 except Exception as e:
                     print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: ERROR - {e}")
                     results["full"][alg_name][str(depth)][mag_label] = {
-                        "mean_rel_error": float("nan"),
-                        "std_rel_error": float("nan"),
+                        "mean_rel_error": float("inf"),
+                        "std_rel_error": 0.0,
                         "n_samples": 0,
                         "error": str(e),
                     }
@@ -492,7 +498,7 @@ def run_condition_numbers() -> dict:
                     "n_samples": 0,
                 }
             print(f"    {op_name} mag={magnitude:6.2f}: "
-                  f"mean_cond={np.mean(conds) if conds else float('nan'):.2e}")
+                  f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
 
     # ── N-layer compositions (all 4 algebras) ──
     print("  [2b] N-layer composition condition numbers...")
@@ -555,7 +561,7 @@ def run_condition_numbers() -> dict:
                     "n_samples": 0,
                 }
             print(f"    {alg_name} chain depth={comp_depth}: "
-                  f"mean_cond={np.mean(conds) if conds else float('nan'):.2e}")
+                  f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
 
     # ── Full network condition numbers (all 4 algebras) ──
     print("  [2c] Full network condition numbers...")
@@ -610,7 +616,7 @@ def run_condition_numbers() -> dict:
                         "n_samples": 0,
                     }
                 print(f"    {alg_name} network mag={magnitude:6.2f}: "
-                      f"mean_cond={np.mean(conds) if conds else float('nan'):.2e}")
+                      f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
 
         except Exception as e:
             print(f"    {alg_name} network: ERROR - {e}")
@@ -675,27 +681,26 @@ def run_mitigation() -> dict:
                     h32 = layer_f32(h32)
                     depth = i + 1
                     if depth in checkpoint_depths:
-                        if not torch.isfinite(h64).all():
-                            # Both chains diverged, skip sample
-                            continue
-                        out64_norm = h64.norm()
-                        if out64_norm.item() > 1e-30:
-                            if not torch.isfinite(h32).all():
-                                baseline_errors[depth].append(float("inf"))
-                            else:
-                                rel_err = (h32.double() - h64).norm() / out64_norm
-                                baseline_errors[depth].append(rel_err.item())
+                        if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
+                            baseline_errors[depth].append(float("inf"))
+                        elif h64.norm().item() <= 1e-30:
+                            baseline_errors[depth].append(float("inf"))
+                        else:
+                            rel_err = (h32.double() - h64).norm() / h64.norm()
+                            baseline_errors[depth].append(rel_err.item())
 
         for d in checkpoint_depths:
             if baseline_errors[d]:
+                mean_err = float(np.mean(baseline_errors[d]))
+                std_err = 0.0 if np.isinf(mean_err) else float(np.std(baseline_errors[d]))
                 results[alg_name]["baseline"][str(d)] = {
-                    "mean_rel_error": float(np.mean(baseline_errors[d])),
-                    "std_rel_error": float(np.std(baseline_errors[d])),
+                    "mean_rel_error": mean_err,
+                    "std_rel_error": std_err,
                 }
             else:
                 results[alg_name]["baseline"][str(d)] = {
-                    "mean_rel_error": float("nan"),
-                    "std_rel_error": float("nan"),
+                    "mean_rel_error": float("inf"),
+                    "std_rel_error": 0.0,
                 }
 
         # Baseline stable depth
@@ -729,29 +734,28 @@ def run_mitigation() -> dict:
                             h64 = stabilizer_f64(h64)
                             h32 = stabilizer_f32(h32)
                         if depth in checkpoint_depths:
-                            if not torch.isfinite(h64).all():
-                                # Both chains diverged, skip sample
-                                continue
-                            out64_norm = h64.norm()
-                            if out64_norm.item() > 1e-30:
-                                if not torch.isfinite(h32).all():
-                                    mitigated_errors[depth].append(float("inf"))
-                                else:
-                                    rel_err = (h32.double() - h64).norm() / out64_norm
-                                    mitigated_errors[depth].append(rel_err.item())
+                            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
+                                mitigated_errors[depth].append(float("inf"))
+                            elif h64.norm().item() <= 1e-30:
+                                mitigated_errors[depth].append(float("inf"))
+                            else:
+                                rel_err = (h32.double() - h64).norm() / h64.norm()
+                                mitigated_errors[depth].append(rel_err.item())
 
             k_key = f"K={K}"
             results[alg_name]["mitigated"][k_key] = {}
             for d in checkpoint_depths:
                 if mitigated_errors[d]:
+                    mean_err = float(np.mean(mitigated_errors[d]))
+                    std_err = 0.0 if np.isinf(mean_err) else float(np.std(mitigated_errors[d]))
                     results[alg_name]["mitigated"][k_key][str(d)] = {
-                        "mean_rel_error": float(np.mean(mitigated_errors[d])),
-                        "std_rel_error": float(np.std(mitigated_errors[d])),
+                        "mean_rel_error": mean_err,
+                        "std_rel_error": std_err,
                     }
                 else:
                     results[alg_name]["mitigated"][k_key][str(d)] = {
-                        "mean_rel_error": float("nan"),
-                        "std_rel_error": float("nan"),
+                        "mean_rel_error": float("inf"),
+                        "std_rel_error": 0.0,
                     }
 
             # Mitigated stable depth
