@@ -2,7 +2,7 @@
 
 **A Thesis for an Octonionic Reasoning Engine**
 
-**Author:** Quadfather
+**Author:** Antonio Escalera
 **Date:** March 2026
 **Status:** Working Draft — Foundations & Architecture
 
