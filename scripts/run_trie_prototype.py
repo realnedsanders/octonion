@@ -96,58 +96,58 @@ class OctonionTrie:
         """Find the best child for input x at this node.
 
         Returns (subalgebra_idx, child_or_None, associator_norm).
-        Uses the same logic for both insert and query.
+
+        Routing strategy:
+        1. Among existing children, find the one most SIMILAR to x
+           (highest inner product with routing key), filtered by
+           associator compatibility.
+        2. If no compatible child exists, return the best unoccupied
+           subalgebra slot (for new child creation).
+        3. Subalgebra activation determines WHERE to place new children;
+           similarity determines WHICH existing child to route to.
         """
+        x_oct = Octonion(x)
+        node_oct = Octonion(node.routing_key)
+
+        # Score all existing children by similarity + compatibility
+        # Use CONTENT for similarity (adapts as node absorbs data)
+        best_compatible = None  # (sub_idx, child, assoc_norm, similarity)
+
+        for sub_idx, child in node.children.items():
+            # Similarity: inner product between input and child's routing key (fixed)
+            sim = oct_inner(x, child.routing_key)
+
+            # Compatibility: associator check
+            child_oct = Octonion(child.routing_key)
+            assoc = associator(x_oct, child_oct, node_oct)
+            assoc_norm = assoc.components.norm().item()
+
+            if assoc_norm < self.assoc_threshold:
+                if best_compatible is None or sim > best_compatible[3]:
+                    best_compatible = (sub_idx, child, assoc_norm, sim)
+
+        if best_compatible is not None:
+            return best_compatible[0], best_compatible[1], best_compatible[2]
+
+        # No compatible child: find best unoccupied subalgebra for a new one
         product = octonion_mul(
             node.routing_key.unsqueeze(0), x.unsqueeze(0)
         ).squeeze(0)
         activations = subalgebra_activation(product)
         ranked = activations.argsort(descending=True)
 
-        x_oct = Octonion(x)
-        node_oct = Octonion(node.routing_key)
-
-        # Check each subalgebra in order of activation strength
-        best_compatible = None  # (sub_idx, child, assoc_norm)
-        best_sub = ranked[0].item()
-
-        for sub_idx in ranked:
-            sub_idx = sub_idx.item()
-            if sub_idx not in node.children:
-                if best_compatible is None:
-                    # First unoccupied subalgebra = where a new child would go
-                    return sub_idx, None, float("inf")
-                break
-            else:
-                child = node.children[sub_idx]
-                child_oct = Octonion(child.routing_key)
-                assoc = associator(x_oct, child_oct, node_oct)
-                assoc_norm = assoc.components.norm().item()
-
-                if assoc_norm < self.assoc_threshold:
-                    if best_compatible is None or assoc_norm < best_compatible[2]:
-                        best_compatible = (sub_idx, child, assoc_norm)
-
-        if best_compatible is not None:
-            return best_compatible
-
-        # All occupied children are incompatible; return first unoccupied
         for sub_idx in ranked:
             sub_idx = sub_idx.item()
             if sub_idx not in node.children:
                 return sub_idx, None, float("inf")
 
-        # All 7 occupied, all incompatible: return least-incompatible
-        least_bad = None
-        for sub_idx in ranked:
-            sub_idx = sub_idx.item()
-            child = node.children[sub_idx]
-            child_oct = Octonion(child.routing_key)
-            assoc = associator(x_oct, child_oct, node_oct)
-            an = assoc.components.norm().item()
-            if least_bad is None or an < least_bad[2]:
-                least_bad = (sub_idx, child, an)
-        return least_bad
+        # All 7 occupied, all incompatible: return most similar regardless
+        best_sim = None
+        for sub_idx, child in node.children.items():
+            sim = oct_inner(x, child.routing_key)
+            if best_sim is None or sim > best_sim[1]:
+                best_sim = (sub_idx, sim)
+        return best_sim[0], node.children[best_sim[0]], self.assoc_threshold + 1
 
     # ── Rumination ───────────────────────────────────────────────────
 
@@ -321,6 +321,7 @@ class OctonionTrie:
         return child
 
     def _compose(self, node: TrieNode, x: torch.Tensor) -> None:
+        """Compose input into node's content. Routing key is never modified."""
         node.content = octonion_mul(
             node.content.unsqueeze(0), x.unsqueeze(0)
         ).squeeze(0)

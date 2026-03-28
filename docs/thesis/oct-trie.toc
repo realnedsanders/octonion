@@ -27,10 +27,20 @@
 \contentsline {subsection}{\numberline {5.3}Information Preservation}{10}{subsection.5.3}%
 \contentsline {subsection}{\numberline {5.4}Natural Hierarchy}{10}{subsection.5.4}%
 \contentsline {section}{\numberline {6}Relationship to Existing Architectures}{10}{section.6}%
-\contentsline {section}{\numberline {7}Open Questions}{11}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Empirical Validation Prerequisites}{11}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Geometric Embedding of the Trie}{11}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Composition Order}{11}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Adaptive Thresholds}{12}{subsection.7.4}%
-\contentsline {subsection}{\numberline {7.5}Relevance Metric for Memory Buffer}{12}{subsection.7.5}%
-\contentsline {section}{\numberline {8}Conclusion}{12}{section.8}%
+\contentsline {section}{\numberline {7}Experimental Validation}{11}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Prerequisite 1: Subalgebra Routing Discriminability}{11}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Prerequisite 2: Associator as Novelty Signal}{11}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Prerequisite 3: Composition Depth vs.\ Information Retention}{12}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Prototype Trie: Stability-Plasticity Test}{12}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}Key Design Findings}{12}{subsection.7.5}%
+\contentsline {section}{\numberline {8}Open Questions}{13}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Geometric Embedding of the Trie}{13}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Composition Order}{13}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Adaptive Thresholds}{13}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Remaining Open Questions}{13}{subsection.8.4}%
+\contentsline {section}{\numberline {9}MNIST Benchmark}{14}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Experimental Setup}{14}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Effect of Encoder Quality}{14}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Effect of Octonionic Dimensionality}{15}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}Significance}{15}{subsection.9.4}%
+\contentsline {section}{\numberline {10}Conclusion}{15}{section.10}%

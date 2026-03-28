@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  28 MAR 2026 14:10
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  28 MAR 2026 21:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -991,22 +991,28 @@ Overfull \hbox (57.27405pt too wide) in paragraph at lines 436--451
  [][] 
  []
 
-[10] [11] (./oct-trie.bbl [12]) [13] (./oct-trie.aux)
+[10] [11] [12]
+Overfull \hbox (2.25606pt too wide) in paragraph at lines 583--584
+\T1/cmr/m/n/10.95 The as-so-ci-a-tor com-pat-i-bil-ity thresh-old, ru-mi-na-tio
+n con-sis-tency thresh-old, and depth er-ror thresh-
+ []
+
+[13] [14] [15] (./oct-trie.bbl) [16] (./oct-trie.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
  ***********
 Package rerunfilecheck Info: File `oct-trie.out' has not changed.
-(rerunfilecheck)             Checksum: B8C2FC199FE397D372849E4BEC808646;7047.
+(rerunfilecheck)             Checksum: E650D4CF1EC44BC11FCE31587C6DF89B;9165.
  ) 
 Here is how much of TeX's memory you used:
- 26952 strings out of 467538
- 507462 string characters out of 5419552
+ 27009 strings out of 467538
+ 508157 string characters out of 5419552
  908003 words of memory out of 5000000
- 55344 multiletter control sequences out of 15000+600000
- 648801 words of font info for 90 fonts, out of 8000000 for 9000
+ 55370 multiletter control sequences out of 15000+600000
+ 649115 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,9n,107p,744b,749s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,10n,107p,765b,749s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 ></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb>
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></
@@ -1031,11 +1037,12 @@ ist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2025/texmf-dis
 t/fonts/type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/
 fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fo
 nts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/font
-s/type1/public/cm-super/sfti1095.pfb>
-Output written on oct-trie.pdf (13 pages, 441529 bytes).
+s/type1/public/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/
+type1/public/cm-super/sftt1095.pfb>
+Output written on oct-trie.pdf (16 pages, 489652 bytes).
 PDF statistics:
- 483 PDF objects out of 1000 (max. 8388607)
- 412 compressed objects within 5 object streams
- 94 named destinations out of 1000 (max. 500000)
- 301 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 572 PDF objects out of 1000 (max. 8388607)
+ 496 compressed objects within 5 object streams
+ 124 named destinations out of 1000 (max. 500000)
+ 381 words of extra memory for PDF output out of 10000 (max. 10000000)
 

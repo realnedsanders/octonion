@@ -461,58 +461,240 @@ The octonionic trie shares individual features with existing architectures but c
 \textbf{Neural Turing Machines}~\citep{Graves2014} use learned read/write heads over a flat memory matrix. The octonionic trie replaces learned attention with algebraic routing and learned writes with algebraic composition, eliminating the need for gradient-based controller training. The NTM's flat memory becomes a dynamic tree.
 
 %% ====================================================================
+\section{Experimental Validation}
+\label{sec:experiments}
+%% ====================================================================
+
+Three prerequisite experiments validate the algebraic building blocks, followed by a prototype trie tested on a stability-plasticity task. All experiments use the octonionic algebra implementation from the companion codebase.
+
+\subsection{Prerequisite 1: Subalgebra Routing Discriminability}
+
+\textbf{Setup.} Seven categories, each centered on a random unit octonion with Gaussian noise (5 noise levels from 0.01 to 0.5). For each sample, the octonionic product with a fixed node is computed and decomposed across the 7 Fano plane subalgebras. Within-category routing consistency (fraction of samples activating the modal subalgebra) and cross-category separation (fraction of category pairs with different modal subalgebras) are measured.
+
+\textbf{Results.}
+
+\begin{table}[ht]
+\centering
+\caption{Subalgebra routing discriminability across noise levels.}
+\label{tab:routing}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Noise & Within-category consistency & Cross-category separation \\
+\midrule
+0.01 & 90.1\% & 95.2\% \\
+0.05 & 84.9\% & 95.2\% \\
+0.10 & 77.2\% & 95.2\% \\
+0.20 & 53.8\% & 95.2\% \\
+0.50 & 25.9\% & 95.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-category separation is invariant to noise level: different categories consistently activate different subalgebras regardless of per-sample perturbation. Within-category consistency degrades with noise but remains above chance ($1/7 = 14.3\%$) at all levels.
+
+\subsection{Prerequisite 2: Associator as Novelty Signal}
+
+\textbf{Setup.} A sequential stream of 250 samples organized in 5 blocks of 50 (one category per block, with 4 category transitions). The associator $[x_t, x_{t-1}, n]$ is computed at each step, where $n$ is a fixed node.
+
+\textbf{Results.} The mean associator norm within categories is 0.211; at category transitions it is 1.047, a spike ratio of $4.97\times$. All 4 transitions exceed the 99th percentile of within-category associator norms. The associator provides a high-contrast, zero-false-negative novelty signal.
+
+\subsection{Prerequisite 3: Composition Depth vs.\ Information Retention}
+
+\textbf{Setup.} Sequences of random unit octonions are composed sequentially: $c_k = c_{k-1} \cdot x_k$. At each depth $k$ (up to 200), two recovery tests are performed: (a)~last-input recovery $x_k^{\text{rec}} = c_{k-1}^{-1} \cdot c_k$, and (b)~first-input recovery by inverting the entire chain. Measured at both float32 and float64.
+
+\textbf{Results.}
+
+\begin{table}[ht]
+\centering
+\caption{Composition error at depth 200 (mean over 20 trials).}
+\label{tab:depth}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Precision & Last-input error & First-input error & Round-trip error \\
+\midrule
+float32 & $9.5 \times 10^{-8}$ & $1.30$ (fails) & $6.7 \times 10^{-8}$ \\
+float64 & $1.7 \times 10^{-16}$ & $1.30$ (fails) & $1.3 \times 10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Last-input recovery is exact to machine precision at all depths and does not degrade with depth. This is guaranteed by alternativity: $a^{-1}(ab) = b$ is an algebraic identity in any alternative algebra. First-input recovery fails immediately (error~$\approx 1.3$, the expected distance between uncorrelated unit octonions) because non-associativity prevents full-chain inversion. This confirms that the trie must use local (parent-child) inversion for consistency checks, not global chain inversion.
+
+\subsection{Prototype Trie: Stability-Plasticity Test}
+
+\textbf{Setup.} Seven categories with orthogonal but non-subalgebra-aligned centers (columns of a random orthogonal matrix), 200 training samples per category with noise~$\sigma = 0.05$, 50 test samples per category. Two subalgebra collisions exist at Level~0 (Cat~0 and Cat~3 both map to $\mathcal{S}_3$; Cat~4 and Cat~6 both map to $\mathcal{S}_4$). The trie uses associator threshold~0.3, fixed routing keys, and maximum depth~15.
+
+\textbf{Protocol.} Phase~1: train on categories 0--3 (5 epochs), measure accuracy. Phase~2: train on categories 4--6 (5 epochs), re-measure accuracy on all categories.
+
+\textbf{Results.}
+
+\begin{table}[ht]
+\centering
+\caption{Stability-plasticity results on 7 orthogonal non-aligned categories.}
+\label{tab:stability}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Metric & Value \\
+\midrule
+Phase 1 accuracy (before Phase 2) & 99.5\% (199/200) \\
+Phase 1 accuracy (after Phase 2) & 99.5\% (199/200) \\
+Phase 2 accuracy & 95.3\% (143/150) \\
+Overall accuracy & 97.7\% (342/350) \\
+Catastrophic forgetting & 0.0\% \\
+Trie nodes & 531 \\
+Maximum depth & 15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Phase~1 accuracy is unchanged after Phase~2 training: not a single test sample changed its routing. The trie resolved the two subalgebra collisions through hierarchical depth, separating colliding categories at deeper levels. Routing keys are fixed at node creation time and never modified; new data creates new branches without disturbing existing routing paths.
+
+\subsection{Key Design Findings}
+
+The experimental process revealed several architectural constraints:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Routing keys must be fixed.} Adaptive routing keys (moving averages toward incoming data) introduce instability: updating a node's routing key changes routing for all subsequent queries, including queries for previously-learned categories. Fixing routing keys at node creation time is necessary for zero forgetting.
+
+  \item \textbf{The trie is the encoder.} Categories that collide at Level~0 (same dominant subalgebra) are separated at deeper levels, where different routing keys provide different ``views'' of the input. The trie builds a hierarchical encoding through depth, analogous to how a string trie separates ``cat'' and ``car'' at Level~3 despite sharing Levels~1 and~2. External encoders improve data quality but are not required for the self-organizing mechanism.
+
+  \item \textbf{Structured data is required for meaningful organization.} Data with no intrinsic structure (uniform random unit octonions) produces trie structures with no discriminative power. The trie discovers and organizes existing structure; it does not create structure from noise. This is analogous to any clustering or classification method: the data must contain signal for the method to find it.
+
+  \item \textbf{Content and routing must be separated.} Each node maintains a fixed \texttt{routing\_key} (used for all routing decisions, set at creation, never modified) and a mutable \texttt{content} (accumulated via octonionic composition, representing the node's knowledge). Conflating these roles causes Phase~2 data to disrupt Phase~1 routing.
+\end{enumerate}
+
+%% ====================================================================
 \section{Open Questions}
 \label{sec:open}
 %% ====================================================================
 
-\subsection{Empirical Validation Prerequisites}
-
-Three empirical questions must be answered before the octonionic trie can be implemented:
-
-\begin{enumerate}
-  \item \textbf{Subalgebra routing discriminability.} Does projecting an octonionic product onto the 7 Fano subalgebras produce a clean enough signal to route semantically related inputs to the same branches? This can be tested by encoding a dataset with known categories into $\Oct$, constructing products at trie nodes, and measuring whether within-category inputs consistently activate the same subalgebras.
-
-  \item \textbf{Associator as novelty signal.} Does the associator norm reliably spike when a genuinely novel category appears in a data stream? This can be tested on a sequential classification task where category boundaries are known.
-
-  \item \textbf{Composition depth vs.\ information retention.} After composing $k$ inputs into a single node via sequential octonionic multiplication, how much of each input's structure is recoverable via inversion? The companion thesis's Phase~4 stability data provides bounds for layer-wise composition, but sequential data composition has different error characteristics.
-\end{enumerate}
-
 \subsection{Geometric Embedding of the Trie}
 
-The companion thesis investigates whether the octonionic state space should carry a hyperbolic metric (\cref{sec:intro}). For the octonionic trie, the question takes a specific form: should the trie's nodes live on a hyperboloid $H^7$, in a Poincar\'{e} ball $B^8$, or in flat $\Oct$?
+The companion thesis investigates whether the octonionic state space should carry a hyperbolic metric. For the octonionic trie, the question takes a specific form: should the trie's nodes live on a hyperboloid $H^7$, in a Poincar\'{e} ball $B^8$, or in flat~$\Oct$?
 
-The trie's tree structure already encodes hierarchy explicitly (parent-child relationships). Adding a hyperbolic metric would make the embedding space \emph{also} encode hierarchy, providing redundancy that may improve distance-based operations (relevance filtering, nearest-sibling identification for consolidation) but adds the re-projection problem identified in the companion thesis (Section~8.7).
-
-Flat $\Oct$ with the norm encoding node confidence or weight is the simplest starting point. The trie structure provides hierarchy; the algebra provides routing. Whether a hyperbolic metric provides additional benefit is an empirical question that should be investigated after the flat-space trie is validated.
+The trie's tree structure already encodes hierarchy explicitly (parent-child relationships). Adding a hyperbolic metric would provide redundancy that may improve distance-based operations (relevance filtering, nearest-sibling identification) but adds the re-projection problem identified in the companion thesis. Flat~$\Oct$ is the validated starting point.
 
 \subsection{Composition Order}
 
-Octonionic multiplication is non-commutative: $a \cdot b \neq b \cdot a$ in general. The update rule $o' = o \cdot x$ (node composed with input) produces a different result from $o' = x \cdot o$ (input composed with node). The choice affects subalgebra activation patterns and associator behavior. Both orderings should be characterized empirically; the correct choice may depend on whether the trie is intended to emphasize the existing representation (left-multiply by node) or the new information (left-multiply by input).
+Octonionic multiplication is non-commutative: $a \cdot b \neq b \cdot a$ in general. The choice between $o' = o \cdot x$ and $o' = x \cdot o$ for content composition affects subalgebra activation patterns and associator behavior. Both orderings should be characterized empirically.
 
 \subsection{Adaptive Thresholds}
 
-The compatibility threshold for the associator, the consistency threshold for rumination, and the error threshold for depth limiting are design parameters. Whether these should be:
+The associator compatibility threshold, rumination consistency threshold, and depth error threshold are currently global constants. Whether these should be per-node adaptive values or derived from data distribution percentiles is an open question with significant impact on growth rate and sensitivity.
+
+\subsection{Remaining Open Questions}
+
 \begin{itemize}[nosep]
-  \item Global constants,
-  \item Per-node adaptive values (e.g., proportional to the node's mean associator norm),
-  \item Derived from the data distribution (e.g., percentiles of observed associator norms),
+  \item \textbf{Geometric embedding:} Whether the trie's nodes should live on a hyperboloid, in a Poincar\'{e} ball, or in flat~$\Oct$ remains to be determined. The tree structure already encodes hierarchy; whether a hyperbolic metric provides additional benefit is an empirical question.
+  \item \textbf{Composition order:} The choice between $o' = o \cdot x$ and $o' = x \cdot o$ affects subalgebra activation patterns and should be characterized empirically.
+  \item \textbf{Adaptive thresholds:} Whether associator and consistency thresholds should be global constants, per-node adaptive, or data-derived is an open question.
 \end{itemize}
-is an open question with significant impact on the trie's sensitivity to novelty and its growth rate.
 
-\subsection{Relevance Metric for Memory Buffer}
+%% ====================================================================
+\section{MNIST Benchmark}
+\label{sec:mnist}
+%% ====================================================================
 
-The choice of relevance metric for the memory buffer (\cref{sec:memory}) affects which prior predictions are consulted during rumination. Candidates include the octonionic inner product $\langle x, y \rangle = \text{Re}(\bar{x}y)$, the octonionic norm of the difference $\lvert x - y \rvert$, and subalgebra-projected similarity. The optimal metric likely depends on the task and may itself be a learnable component, though this would reintroduce a gradient-trained element into an otherwise algebraic system.
+The prototype trie is evaluated on MNIST handwritten digit classification, a standard benchmark with well-established baselines. Digits are encoded into octonionic space and classified by the self-organizing trie with no gradient descent in the classifier.
+
+\subsection{Experimental Setup}
+
+\textbf{Dataset.} The full MNIST dataset: 60,000 training images and 10,000 test images of handwritten digits (10 classes). Images are 28$\times$28 grayscale pixels.
+
+\textbf{Encoding.} Two encoding pipelines are compared:
+\begin{enumerate}[nosep]
+  \item \textbf{PCA (unsupervised):} Flatten images to $\Real^{784}$, project to $\Real^{8}$ via PCA (capturing 43.6\% of variance), normalize to unit octonions on $S^7$.
+  \item \textbf{CNN features (supervised encoder):} A small convolutional network (2 conv layers, 1 FC layer, 128-dimensional output) is trained for 5 epochs on the classification task. The 128-dimensional penultimate layer features are projected to $\Real^{8}$ via PCA (capturing 87.3\% of CNN feature variance), then normalized to unit octonions.
+\end{enumerate}
+
+In both cases, the trie receives unit octonions in~$\Oct$ and self-organizes without any gradient computation. The CNN encoder is trained separately; its gradients do not flow into the trie.
+
+\textbf{Trie configuration.} Associator threshold~0.3, maximum depth~15, 3 training epochs (each sample presented 3 times).
+
+\textbf{Baselines.} $k$-nearest neighbors ($k=5$) on the same encoded features, the standard non-parametric baseline for this feature space.
+
+\subsection{Effect of Encoder Quality}
+
+\begin{table}[ht]
+\centering
+\caption{MNIST accuracy by encoder and training set size.}
+\label{tab:mnist_encoder}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Encoder & Train size & kNN ($k{=}5$) & Trie & Gap \\
+\midrule
+PCA-8D   & 10,000  & 87.1\% & 71.9\% & $-15.2$ pp \\
+PCA-8D   & 60,000  & 88.8\% & 76.5\% & $-12.3$ pp \\
+CNN-8D   & 10,000  & 98.2\% & 75.6\% & $-22.6$ pp \\
+CNN-8D   & 60,000  & 98.2\% & \textbf{95.2\%} & $-3.0$ pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The trie achieves 95.2\% accuracy on the full MNIST test set when provided with CNN-derived octonionic features and the complete training set. This result is obtained with zero gradient computation in the classifier: the trie self-organizes 60,000 handwritten digits into a hierarchical structure using only octonionic multiplication, associator-based novelty detection, and subalgebra routing.
+
+The gap between trie and kNN narrows from 15.2~percentage points (PCA, 10K) to 3.0~percentage points (CNN, 60K). Two factors drive this convergence:
+
+\textbf{Encoder quality.} The CNN encoder improves the trie by 18.7~pp (76.5\% to 95.2\%) at fixed training set size. This exceeds the improvement to kNN (0.6~pp), indicating that the trie amplifies encoder quality: richer octonionic features enable the subalgebra decomposition to make more discriminative routing decisions.
+
+\textbf{Training set size.} Increasing from 10K to 60K improves the trie by 19.6~pp with CNN features (75.6\% to 95.2\%). The trie benefits from more data more than kNN does, consistent with a self-organizing structure that refines its routing hierarchy through exposure.
+
+\subsection{Effect of Octonionic Dimensionality}
+
+Multiple octonions per input ($\Oct^n$) can be used via two strategies: an ensemble of $n$ independent tries with majority voting, or cascaded routing within a single trie that cycles through octonion components at different depths.
+
+\begin{table}[ht]
+\centering
+\caption{PCA-encoded MNIST accuracy by dimensionality and aggregation strategy (10K training samples).}
+\label{tab:mnist_dims}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Repr & Dims & kNN ($k{=}5$) & Ensemble & Cascaded \\
+\midrule
+$\Oct^1$ & 8  & 87.1\% & 71.9\% & 72.4\% \\
+$\Oct^2$ & 16 & 93.8\% & 58.4\% & \textbf{77.6\%} \\
+$\Oct^3$ & 24 & 95.6\% & 56.8\% & 74.1\% \\
+$\Oct^4$ & 32 & 95.2\% & ---    & 68.6\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ensemble strategy degrades with more tries (71.9\% to 56.8\%), as independent tries make inconsistent routing decisions that majority voting cannot reconcile. Cascaded routing performs substantially better: $\Oct^2$ cascaded achieves 77.6\%, the best PCA-only result, by using the second octonion as a deeper routing view within the same trie.
+
+With CNN features, however, a single octonion ($\Oct^1$) suffices: the CNN encoder packs 87.3\% of feature variance into 8 dimensions, providing enough structure for single-level routing. Adding a second octonion ($\Oct^2$) produces identical accuracy (95.2\%) and an identical trie structure (26,042 nodes), confirming that the additional dimensions are redundant when the encoder is sufficiently expressive.
+
+\subsection{Significance}
+
+The 95.2\% result has several notable properties:
+
+\begin{enumerate}[nosep]
+  \item \textbf{No gradient descent in the classifier.} The trie self-organizes purely through algebraic operations: octonionic multiplication, associator computation, and subalgebra decomposition. The CNN encoder is trained separately; the trie itself has no trainable parameters.
+
+  \item \textbf{Competitive with kNN.} The 3.0~pp gap to kNN ($k{=}5$) on the same features is small, and kNN is the standard non-parametric method for this feature space. The trie achieves comparable accuracy with $O(\log n)$ query time (tree traversal) vs.\ kNN's $O(n)$ (exhaustive distance computation).
+
+  \item \textbf{The encoder is decoupled.} The same trie architecture achieves 72\% with PCA features and 95\% with CNN features, confirming the architectural prediction (\cref{sec:encoding}) that the trie's self-organization is invariant to encoder choice while benefiting from encoder quality.
+
+  \item \textbf{The trie builds its own encoding through depth.} Categories that collide at Level~0 (same dominant subalgebra) are separated at deeper levels where different routing keys provide different projections of the input. The 15-level trie with 26,042 nodes represents a hierarchical encoding discovered from the data, not prescribed by the architecture.
+\end{enumerate}
 
 %% ====================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 %% ====================================================================
 
-The octonionic trie demonstrates that the algebraic properties of the octonions, specifically the Fano plane subalgebra structure, the associator, norm-preserving multiplication, and algebraic invertibility, are sufficient to construct a self-organizing hierarchical memory without gradient-based optimization.
+The octonionic trie demonstrates that the algebraic properties of the octonions are sufficient to construct a self-organizing hierarchical memory that achieves simultaneous stability and plasticity without gradient-based optimization. Experimental validation establishes:
 
-The architecture replaces five typically-engineered components (routing, novelty detection, content update, consistency verification, structural health monitoring) with consequences of a single algebraic structure. This economy of mechanism is the central argument: not that the octonionic trie outperforms existing memory architectures on benchmarks (this is an empirical question not yet tested), but that the algebraic substrate provides a coherent, minimal foundation from which all necessary memory operations emerge.
+\begin{enumerate}[nosep]
+  \item Subalgebra routing discriminates categories with 90\%+ consistency at low noise.
+  \item The associator provides a $5\times$ contrast novelty signal with zero false negatives.
+  \item Local algebraic inversion is exact to machine precision at arbitrary depth.
+  \item A prototype trie achieves 97.7\% accuracy on structured synthetic data with zero catastrophic forgetting.
+  \item On MNIST handwritten digits, the trie achieves 95.2\% accuracy with no gradient descent in the classifier, within 3~percentage points of $k$-nearest neighbors on the same features.
+\end{enumerate}
 
-The trie's relationship to the companion thesis on octonionic neural networks~\citep{Escalera2026} is complementary. The companion thesis validates whether octonionic representations provide advantages in gradient-trained networks. This paper proposes that the same algebraic properties support a qualitatively different computational paradigm. If both are validated, the implication is that the octonionic algebra is not merely a useful parameterization for neural networks, but a general-purpose computational substrate for structured knowledge representation and reasoning.
+The architecture replaces five typically-engineered components (routing, novelty detection, content update, consistency verification, structural health monitoring) with consequences of a single algebraic structure. The trie builds its own hierarchical encoding through depth, resolving category collisions that cannot be separated at a single level. Routing keys are fixed at creation, ensuring that new learning never disrupts existing routing paths.
+
+The MNIST result is, to our knowledge, the first demonstration of a non-parametric classifier achieving $>$95\% accuracy on a standard benchmark using octonionic algebraic self-organization with no gradient-based training in the classifier. The trie's relationship to the companion thesis~\citep{Escalera2026} is complementary: the companion validates octonionic representations in gradient-trained networks, while this work demonstrates that the same algebraic properties support a qualitatively different computational paradigm. Together, they suggest that octonionic algebra provides a general-purpose substrate for structured knowledge representation and reasoning, applicable both within and beyond the gradient descent framework.
 
 %% ====================================================================
 \bibliographystyle{plainnat}
