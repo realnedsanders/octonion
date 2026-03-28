@@ -1,0 +1,45 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Escalera(2026)]{Escalera2026}
+Antonio Escalera.
+\newblock Octonionic neural networks: Division algebra structure for reversible
+  geometric reasoning.
+\newblock Working draft, 2026.
+
+\bibitem[Graves et~al.(2014)Graves, Wayne, and Danihelka]{Graves2014}
+Alex Graves, Greg Wayne, and Ivo Danihelka.
+\newblock Neural turing machines.
+\newblock In \emph{arXiv preprint arXiv:1410.5401}, 2014.
+
+\bibitem[Graves et~al.(2016)Graves, Wayne, Reynolds, Harley, Danihelka,
+  Grabska-Barwi{\'n}ska, Colmenarejo, Grefenstette, Ramalho, Agapiou,
+  et~al.]{Graves2016}
+Alex Graves, Greg Wayne, Malcolm Reynolds, Tim Harley, Ivo Danihelka, Agnieszka
+  Grabska-Barwi{\'n}ska, Sergio~G{\'o}mez Colmenarejo, Edward Grefenstette,
+  Tiago Ramalho, John Agapiou, et~al.
+\newblock Hybrid computing using a neural network with dynamic external memory.
+\newblock \emph{Nature}, 538\penalty0 (7626):\penalty0 471--476, 2016.
+
+\bibitem[Hawkins and Ahmad(2016)]{Hawkins2016}
+Jeff Hawkins and Subutai Ahmad.
+\newblock Why neurons have thousands of synapses, a theory of sequence memory
+  in neocortex.
+\newblock \emph{Frontiers in Neural Circuits}, 10, 2016.
+
+\bibitem[Kanerva(1988)]{Kanerva1988}
+Pentti Kanerva.
+\newblock \emph{Sparse Distributed Memory}.
+\newblock MIT Press, 1988.
+
+\bibitem[Weston et~al.(2015)Weston, Chopra, and Bordes]{Weston2015}
+Jason Weston, Sumit Chopra, and Antoine Bordes.
+\newblock Memory networks.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2015.
+
+\end{thebibliography}

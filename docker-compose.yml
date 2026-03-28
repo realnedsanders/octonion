@@ -27,6 +27,7 @@ services:
     tty: true
     working_dir: /workspace
     command: bash
+    user: "1000:1000"
 
 volumes:
   uv-cache:

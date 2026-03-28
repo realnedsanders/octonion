@@ -156,10 +156,10 @@ def _optimizer_train_config(
         )
     elif optimizer_name == "lbfgs":
         tc = TrainConfig(
-            **{**base, "batch_size": config.lbfgs_batch_size},
+            **{**base, "batch_size": config.n_train},  # Full-batch: L-BFGS requires deterministic gradients
             optimizer="lbfgs",
             lr=1.0,
-            scheduler="cosine",
+            scheduler="none",  # L-BFGS uses internal strong Wolfe line search
         )
     elif optimizer_name == "riemannian_adam":
         tc = TrainConfig(
@@ -603,6 +603,11 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
 
                         # Build model
                         model = _build_model(algebra, task_name, config)
+
+                        # Wrap parameters for Riemannian optimization
+                        if actual_opt == "riemannian_adam":
+                            from octonion.baselines._trainer import _wrap_manifold_params
+                            model = _wrap_manifold_params(model, algebra, manifold_type)
 
                         # Save initial model state for Hessian checkpoint at 0.0
                         is_hessian_seed = seed in config.hessian_seeds

@@ -96,7 +96,7 @@ def evaluate_gate(
         }
 
     # Aggregate verdict
-    majority = n_tasks / 2.0
+    majority = (n_tasks + 1) // 2  # Strict majority: >50% of tasks
     if n_within_2x == n_tasks and not any_high_divergence:
         verdict = GateVerdict.GREEN
     elif any_high_divergence or n_within_3x < majority:

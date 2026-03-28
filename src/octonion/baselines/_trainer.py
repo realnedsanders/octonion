@@ -241,10 +241,12 @@ def _build_scheduler(
         return torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", patience=5, factor=0.5
         )
+    elif name == "none":
+        return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda _: 1.0)
     else:
         raise ValueError(
             f"Unknown scheduler: {config.scheduler!r}. "
-            f"Use 'cosine', 'step', 'step_cifar', or 'plateau'."
+            f"Use 'cosine', 'step', 'step_cifar', 'plateau', or 'none'."
         )
 
 

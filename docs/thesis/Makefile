@@ -1,12 +1,14 @@
 DOCKER_IMAGE := texlive/texlive:latest
 DOCKER_RUN   := docker run --rm -v $(CURDIR):/work -w /work $(DOCKER_IMAGE)
 
-.PHONY: all clean
+TARGETS := main oct-trie
 
-all: main.pdf
+.PHONY: all clean $(TARGETS)
 
-main.pdf: main.tex references.bib
-	$(DOCKER_RUN) sh -c "pdflatex main && bibtex main && pdflatex main && pdflatex main"
+all: $(addsuffix .pdf,$(TARGETS))
+
+%.pdf: %.tex references.bib
+	$(DOCKER_RUN) sh -c "pdflatex $* && bibtex $* && pdflatex $* && pdflatex $*"
 
 clean:
-	rm -f main.pdf main.aux main.bbl main.blg main.log main.out main.toc
+	rm -f $(foreach t,$(TARGETS),$(t).pdf $(t).aux $(t).bbl $(t).blg $(t).log $(t).out $(t).toc)
