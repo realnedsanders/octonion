@@ -147,7 +147,7 @@ Plans:
 Plans:
 - [x] T1-01-PLAN.md — Install scikit-learn, shared benchmark utilities (sklearn baselines, metrics, plotting), unit tests
 - [x] T1-02-PLAN.md — Fashion-MNIST benchmark (CNN encoder + trie + all baselines + learning curves)
-- [ ] T1-03-PLAN.md — CIFAR-10 benchmark (3 CNN encoder sizes + trie + all baselines + encoder comparison)
+- [x] T1-03-PLAN.md — CIFAR-10 benchmark (3 CNN encoder sizes + trie + all baselines + encoder comparison)
 - [ ] T1-04-PLAN.md — 20 Newsgroups text benchmark (TF-IDF + TruncatedSVD, fully gradient-free, 20-class + 4-class subset)
 - [ ] T1-05-PLAN.md — Cross-benchmark summary script + human verification checkpoint
 
@@ -240,7 +240,7 @@ Note: T1-T4 can partially overlap. T5 requires T1 and T4. T7 requires T2 and T5.
 | 3. Baseline Implementations | 12/15 | Complete (gap closure cosmetic) | - |
 | 4. Numerical Stability | 3/3 | Complete | - |
 | 5. Optimization Landscape | 7/8 | Experiments running | - |
-| T1. Benchmark Generalization | 2/5 | In Progress|  |
+| T1. Benchmark Generalization | 3/5 | In Progress|  |
 | T2. Adaptive Thresholds | 0/? | Not started | - |
 | T3. Algebraic Encoder | 0/? | Not started | - |
 | T4. Scaling Analysis | 0/? | Not started | - |
