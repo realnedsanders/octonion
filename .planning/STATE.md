@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed T1-03-PLAN.md
-last_updated: "2026-03-29T18:46:30.717Z"
+stopped_at: Completed T1-04-PLAN.md
+last_updated: "2026-03-29T18:48:24.672Z"
 progress:
   total_phases: 13
   completed_phases: 3
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 05 (optimization-landscape) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Plan: 6 of 8
 | Phase T1 P01 | 4min | 2 tasks | 4 files |
 | Phase T1 P02 | 3min | 1 tasks | 1 files |
 | Phase T1 P03 | 4min | 1 tasks | 1 files |
+| Phase T1 P04 | 5min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -195,6 +196,8 @@ Recent decisions affecting current work:
 - [Phase T1]: Agg matplotlib backend for headless rendering in all benchmark scripts
 - [Phase T1]: Same CNN architecture as MNIST encoder (SmallCNN with feature_dim=8) for Fashion-MNIST benchmark
 - [Phase T1]: Three encoder sizes: 2-layer (20 epochs), 4-layer (30 epochs), ResNet-8 (50 epochs, cosine annealing)
+- [Phase T1]: TruncatedSVD (not PCA) for sparse TF-IDF matrices to avoid densification OOM
+- [Phase T1]: Full TF-IDF LogReg as upper bound replaces CNN head for text (no neural encoder)
 
 ### Pending Todos
 
@@ -208,6 +211,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T18:46:30.714Z
-Stopped at: Completed T1-03-PLAN.md
+Last session: 2026-03-29T18:48:24.669Z
+Stopped at: Completed T1-04-PLAN.md
 Resume file: None
