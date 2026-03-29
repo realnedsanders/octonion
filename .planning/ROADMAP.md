@@ -2,7 +2,9 @@
 
 ## Overview
 
-This roadmap validates the octonionic ML thesis bottom-up: build verified algebra, extend calculus to octonions, characterize numerical stability, build fair baselines, then hit the go/no-go gate on optimization landscape viability. If the gate passes, validate the three core claims (reversibility, density advantage, geometric signal detection), then tackle the advanced differentiators (G2 equivariance, hyperbolic hybrid, associator architecture, subalgebra analysis). Every phase produces observable experimental outcomes with statistical rigor.
+This roadmap validates the octonionic ML thesis bottom-up through two lines of inquiry. **Foundation phases (1-5)** build verified algebra, extend calculus to octonions, characterize numerical stability, build fair baselines, and hit the go/no-go gate on optimization landscape viability. **Trie phases (T1-T7)** develop the self-organizing octonionic trie, which achieved 95.2% on MNIST with zero gradient descent in the classifier and zero catastrophic forgetting. The trie direction is the primary research focus following the MNIST result.
+
+Gradient-trained network experiments (originally Phases 6-13) are deprioritized. Several of their claims (reversibility, associator as signal, subalgebra specialization) are validated more directly by the trie.
 
 ## Phases
 
@@ -17,14 +19,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Baseline Implementations** - Fair R/C/H comparison networks with matched parameter counts (completed 2026-03-13)
 - [ ] **Phase 4: Numerical Stability** - Precision characterization across depths, float widths, and operation chains
 - [ ] **Phase 5: Optimization Landscape** - Quantitative landscape characterization determining project viability
-- [ ] **Phase 6: Reversibility Claim** - Algebraic inversion quality vs RevNet/INN baselines across depth and noise
-- [ ] **Phase 7: Density & Geometric Claims** - Matched-parameter density advantage and geometric signal detection experiments
-- [ ] **Phase 8: G2 Equivariance & Hyperbolic Hybrid** - Novel G2-equivariant layers and hyperboloid-octonionic model
-- [ ] **Phase 9: Associator & Subalgebra Analysis** - Associator-aware architecture and Fano plane decomposition of learned representations
-- [ ] **Phase 10: Predict-and-Fill Benchmarks** - Reversible conjecture at scale with missing-data identification and completion tasks
-- [ ] **Phase 11: Applied Single-Stream Benchmarks** - Anomaly detection and time series prediction vs LSTM/Transformer baselines
-- [ ] **Phase 12: Hyperboloid Projection Stability** - Empirical characterization of the Euclidean-Lorentzian projection distortion problem
-- [ ] **Phase 13: Multi-Stream Data Fusion** - ORE proof-of-concept ingesting heterogeneous real-time data streams
+- [ ] **Phase T1: Benchmark Generalization** - Fashion-MNIST, CIFAR-10, text classification with the octonionic trie
+- [ ] **Phase T2: Adaptive Thresholds** - Data-driven associator thresholds (per-node, context-specific, or provably global)
+- [ ] **Phase T3: Algebraic Encoder** - Unsupervised/algebraic encoding to eliminate CNN dependency
+- [ ] **Phase T4: Scaling Analysis** - Accuracy, node count, query time vs data size and number of categories
+- [ ] **Phase T5: Continual Learning Comparison** - Formal comparison against EWC, PackNet, Progressive Nets on sequential benchmarks
+- [ ] **Phase T6: Cascaded O^n Routing** - Multi-resolution trie with cascaded octonionic views
+- [ ] **Phase T7: Streaming Classification** - Online classification with rumination and consolidation on live data
+- [ ] **Phase T8: Multi-Stream Fusion** - ORE proof-of-concept with heterogeneous data streams via trie
 
 ## Phase Details
 
@@ -131,147 +133,118 @@ Plans:
 - [x] 05-07-PLAN.md — [GAP CLOSURE] Fix intermediate checkpoint saving, create post-training analysis script (Hessian/curvature/gradient)
 - [x] 05-08-PLAN.md — [GAP CLOSURE] Integration tests verifying post-training analysis produces expected data
 
-### Phase 6: Reversibility Claim
-**Goal**: Determine whether octonionic algebraic inversion provides meaningful backward inference that outperforms trained invertible networks
-**Depends on**: Phase 1, Phase 2, Phase 5 (must pass go/no-go)
-**Requirements**: CLAIM-01
+### Phase T1: Benchmark Generalization
+**Goal**: Determine whether the trie's 95.2% MNIST result generalizes to other standard benchmarks
+**Depends on**: Phase 5 (foundation validation)
+**Requirements**: TRIE-01
 **Success Criteria** (what must be TRUE):
-  1. Synthetic task with known forward model and ground-truth inverse is defined and validated (forward model recoverable to < 1e-6 error)
-  2. Octonionic algebraic inversion reconstruction fidelity is measured as a function of network depth (1, 5, 10, 20 layers)
-  3. Reconstruction fidelity is measured as a function of input noise level (0%, 1%, 5%, 10%, 25%)
-  4. Comparison against RevNet (trained invertible), INN (coupling-layer), and standard-net + optimization-based inversion is statistically significant (p < 0.05)
-**Plans**: TBD
+  1. Fashion-MNIST accuracy measured with CNN encoder, compared against kNN and sklearn baselines on same 8D features
+  2. CIFAR-10 accuracy measured with multiple encoder sizes (2-layer, 4-layer, ResNet-8) showing encoder capacity effect
+  3. 20 Newsgroups text classification tested with fully gradient-free pipeline (TF-IDF + TruncatedSVD to 8D)
+  4. Per-benchmark analysis of which categories the trie handles well vs poorly, with confusion matrices and failure mode characterization
+**Plans**: 5 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] T1-01-PLAN.md — Install scikit-learn, shared benchmark utilities (sklearn baselines, metrics, plotting), unit tests
+- [ ] T1-02-PLAN.md — Fashion-MNIST benchmark (CNN encoder + trie + all baselines + learning curves)
+- [ ] T1-03-PLAN.md — CIFAR-10 benchmark (3 CNN encoder sizes + trie + all baselines + encoder comparison)
+- [ ] T1-04-PLAN.md — 20 Newsgroups text benchmark (TF-IDF + TruncatedSVD, fully gradient-free, 20-class + 4-class subset)
+- [ ] T1-05-PLAN.md — Cross-benchmark summary script + human verification checkpoint
 
-### Phase 7: Density & Geometric Claims
-**Goal**: Determine whether octonionic representations achieve better parameter efficiency and whether they have genuine geometric structure affinity
-**Depends on**: Phase 3, Phase 5 (must pass go/no-go)
-**Requirements**: BASE-04, CLAIM-02
+### Phase T2: Adaptive Thresholds
+**Goal**: Determine whether the associator threshold should be global, per-node, context-specific, or whether a global value can be theoretically justified
+**Depends on**: Phase T1 (need multiple benchmarks to test generalization of threshold)
 **Success Criteria** (what must be TRUE):
-  1. Matched-parameter density comparison across R/C/H/O runs on at least 3 tasks (synthetic pattern recognition, time series, classification) with accuracy, convergence speed, and sample efficiency measured
-  2. Statistical significance testing (p < 0.05) applied to all pairwise comparisons with correction for multiple testing
-  3. Geometric signal detection experiment on synthetic data with known planted geometric structure shows octonionic detection accuracy vs R8/C4/H2 baselines
-  4. R8-dense-mixing baseline included in every comparison to guard against the "Why Not Just R8?" trap
+  1. Per-node adaptive threshold (e.g., based on running mean of associator norms at that node) tested and compared against global threshold
+  2. Context-specific threshold (e.g., depth-dependent, or based on the node's category purity) tested
+  3. If global threshold works: mathematical justification for why (e.g., associator norm distribution is invariant to data distribution for unit octonions)
+  4. If adaptive is better: the adaptation rule is characterized and the improvement is statistically significant across benchmarks
+  5. Sensitivity analysis: accuracy vs threshold across a continuous range for each benchmark
 **Plans**: TBD
 
-Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-
-### Phase 8: G2 Equivariance & Hyperbolic Hybrid
-**Goal**: Implement and validate the two most novel architectural contributions -- G2-equivariant layers and hyperboloid-octonionic model
-**Depends on**: Phase 5 (must pass go/no-go)
-**Requirements**: ADV-01, ADV-02
+### Phase T3: Algebraic Encoder
+**Goal**: Develop an encoding pipeline that does not require gradient-trained neural networks, completing the "zero gradients end-to-end" vision
+**Depends on**: Phase T1 (need benchmarks to evaluate encoder quality)
 **Success Criteria** (what must be TRUE):
-  1. G2-equivariant layer satisfies numerical equivariance test: applying random G2 transform before vs after layer produces deviation < 1e-5
-  2. G2 layer improves performance on a task with known G2 symmetry compared to unconstrained octonionic layer
-  3. Hyperboloid-octonionic hybrid model (Option B: Lorentzian inner product, H7) trains stably on hierarchical data (trees or DAGs)
-  4. Algebraic integrity metric |project(a*b) - project(a) *_H project(b)| is tracked throughout training and remains below a pre-defined threshold
-  5. Hybrid model matches or exceeds Poincare embeddings baseline on hierarchical structure preservation
+  1. PCA-based hierarchical encoding tested (different PCA components at different trie depths)
+  2. Random projection encoding tested (Johnson-Lindenstrauss style)
+  3. At least one algebraic encoding method (e.g., octonionic Fourier features, structure-constant-based projection) tested
+  4. Best algebraic encoder achieves within 10pp of CNN encoder accuracy on MNIST
+  5. Full pipeline (algebraic encoder + trie) runs with zero gradient computation end-to-end
 **Plans**: TBD
 
-Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
-- [ ] 08-03: TBD
-
-### Phase 9: Associator & Subalgebra Analysis
-**Goal**: Determine whether non-associativity carries useful information and whether trained octonionic networks develop interpretable subalgebra specialization
-**Depends on**: Phase 5, Phase 7 (needs trained models to analyze)
-**Requirements**: ADV-03, ADV-04
+### Phase T4: Scaling Analysis
+**Goal**: Characterize how the trie scales with data size, number of categories, and input dimensionality
+**Depends on**: Phase T1 (need benchmarks at different scales)
 **Success Criteria** (what must be TRUE):
-  1. Associator-aware architecture (using [a,b,c] as attention, regularization, or gating signal) trains successfully and the associator signal correlates with task-relevant structure
-  2. Comparison shows associator-aware architecture outperforms associator-ignoring variant on at least one task
-  3. Fano plane subalgebra decomposition of trained weights shows non-uniform subalgebra activity distribution (Gini coefficient > 0.3)
-  4. Subalgebra ablation test: removing the most-active subalgebra degrades performance more than removing the least-active (demonstrating specialization)
+  1. Accuracy vs training set size curve (1K to 60K) with power-law or logarithmic fit
+  2. Node count and query time vs training set size characterized
+  3. Accuracy vs number of categories (10, 50, 100, 1000) with fixed data per category
+  4. Memory usage characterized: bytes per node, total memory vs dataset size
+  5. Comparison of trie query time vs kNN query time at each scale
 **Plans**: TBD
 
-Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
-
-### Phase 10: Predict-and-Fill Benchmarks
-**Goal**: Validate the "geometry of absence" concept and test reversible conjecture on practical missing-data tasks
-**Depends on**: Phase 6 (reversibility), Phase 8 (hyperbolic geometry for uncertainty manifold structure)
-**Requirements**: CLAIM-01 (extended)
+### Phase T5: Continual Learning Comparison
+**Goal**: Formally compare the trie's zero-forgetting property against established continual learning methods
+**Depends on**: Phase T1 (need standard benchmarks), Phase T4 (need scaling understanding)
 **Success Criteria** (what must be TRUE):
-  1. Predict-and-fill task defined where the model must identify which dimensions of input are missing and generate plausible completions using inverse projection
-  2. Octonionic inverse projection produces lower reconstruction error than optimization-based inversion baselines on structured missing data
-  3. Uncertainty manifold geometry (dimension, curvature) correlates with the amount and type of missing information
-  4. The model accurately distinguishes "what it knows" from "what it doesn't know" as measured by calibration of uncertainty estimates
+  1. Split-MNIST and Permuted-MNIST benchmarks reproduced with EWC, PackNet, and Progressive Nets baselines
+  2. Octonionic trie evaluated on the same protocols with identical train/test splits
+  3. Forgetting measured using standard continual learning metrics (backward transfer, forward transfer)
+  4. Statistical significance testing across 10+ random seeds
+  5. Analysis of trie growth pattern during sequential tasks (does the trie structure reflect task boundaries?)
 **Plans**: TBD
 
-Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
-
-### Phase 11: Applied Single-Stream Benchmarks
-**Goal**: Test octonionic representations on practical time series tasks beyond synthetic data, comparing against standard sequence model baselines
-**Depends on**: Phase 5 (gate must pass), Phase 7 (density comparison infrastructure)
-**Requirements**: BASE-04 (extended)
+### Phase T6: Cascaded O^n Routing
+**Goal**: Develop cascaded multi-octonion routing into a production-quality multi-resolution trie
+**Depends on**: Phase T2 (need adaptive thresholds for multi-level routing)
 **Success Criteria** (what must be TRUE):
-  1. Anomaly detection benchmark on noisy time series with planted anomalies, comparing octonionic network vs LSTM vs Transformer baselines with matched parameter counts
-  2. Time series prediction benchmark (e.g., multi-step forecasting) with statistical significance testing across all algebra variants
-  3. Geometric signal hypothesis (associator coherence distinguishes signal from noise) is tested quantitatively on real-valued time series data
-  4. Results document whether the octonionic density advantage observed on synthetic tasks transfers to applied tasks
+  1. Cascaded routing achieves higher accuracy than single-octonion trie on at least 2 benchmarks
+  2. Optimal number of octonions characterized per benchmark (diminishing returns analysis)
+  3. Depth cycling strategy (which octonion at which depth) is analyzed and optimized
+  4. Memory and compute overhead of cascaded routing quantified relative to single-octonion
 **Plans**: TBD
 
-Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
-
-### Phase 12: Hyperboloid Projection Stability
-**Goal**: Empirically characterize the central open problem of the hyperboloid-octonionic synthesis: does re-projection after octonionic multiplication preserve useful algebraic properties?
-**Depends on**: Phase 8 (hyperboloid-octonionic hybrid implementation)
-**Requirements**: ADV-02 (extended)
+### Phase T7: Streaming Classification
+**Goal**: Test the trie as an online classifier on streaming data with concept drift
+**Depends on**: Phase T5 (need continual learning validation), Phase T2 (need adaptive thresholds)
 **Success Criteria** (what must be TRUE):
-  1. Projection distortion |project(a*b) - project(a) *_H project(b)| measured for random and structured octonionic inputs across varying hyperboloid radii
-  2. Distortion characterized as a function of distance from the hyperboloid apex (abstraction level)
-  3. Invertibility degradation after N re-projection cycles is quantified (does forward-inverse round-trip error accumulate?)
-  4. At least one mitigation strategy (learned projection, tangent-space approximation, or frequency of re-projection) reduces distortion by a measurable factor
+  1. Streaming classification benchmark with known concept drift points (e.g., rotating MNIST, gradual class distribution shift)
+  2. Rumination mechanism implemented and tested: does consistency checking improve accuracy on drifting data?
+  3. Consolidation mechanism tested: does pruning/merging improve memory efficiency without accuracy loss?
+  4. Comparison against online learning baselines (online SGD, streaming random forests)
 **Plans**: TBD
 
-Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
-
-### Phase 13: Multi-Stream Data Fusion
-**Goal**: Build an ORE proof-of-concept that ingests heterogeneous real-time data streams and demonstrates cross-stream geometric signal detection
-**Depends on**: Phases 6-12 (requires validated components)
-**Requirements**: APP-01, APP-02 (promoted from v2)
+### Phase T8: Multi-Stream Fusion
+**Goal**: ORE proof-of-concept: trie ingesting heterogeneous real-time data streams
+**Depends on**: Phase T7 (streaming infrastructure), Phase T6 (multi-resolution routing)
 **Success Criteria** (what must be TRUE):
-  1. At least 3 heterogeneous data streams (e.g., financial market data, news text sentiment, temporal event sequences) encoded into octonionic representations via learned projections
-  2. Cross-stream signal detection demonstrates that octonionic geometric coherence (subalgebra alignment, associator structure) identifies genuine cross-domain correlations
-  3. Fano plane subalgebra decomposition reveals interpretable specialization across stream types
-  4. System produces actionable predictions or alerts that outperform single-stream baselines on at least one cross-domain task
+  1. At least 3 heterogeneous data streams encoded into octonionic representations
+  2. Cross-stream signal detection via subalgebra alignment and associator structure
+  3. Fano plane subalgebra decomposition reveals specialization across stream types
+  4. System produces predictions that outperform single-stream baselines on a cross-domain task
 **Plans**: TBD
-
-Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 (gate) -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13
-Note: Phase 3 (Baselines) can execute in parallel with Phases 2 and 4.
-Note: Phases 10 and 11 can execute in parallel after their dependencies are met.
+
+Foundation: 1 -> 2 -> 3 -> 4 -> 5 (gate, experiments running)
+Trie: T1 -> T2 -> T3 -> T4 -> T5 -> T6 -> T7 -> T8
+Note: T1-T4 can partially overlap. T5 requires T1 and T4. T7 requires T2 and T5.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Octonionic Algebra | 4/6 | Gap closure | - |
-| 2. GHR Calculus | 1/4 | In progress | - |
-| 3. Baseline Implementations | 12/15 | UAT gap closure | - |
-| 4. Numerical Stability | 2/3 | UAT gap closure | - |
-| 5. Optimization Landscape (GO/NO-GO) | 5/8 | Gap closure | - |
-| 6. Reversibility Claim | 0/? | Not started | - |
-| 7. Density & Geometric Claims | 0/? | Not started | - |
-| 8. G2 Equivariance & Hyperbolic Hybrid | 0/? | Not started | - |
-| 9. Associator & Subalgebra Analysis | 0/? | Not started | - |
-| 10. Predict-and-Fill Benchmarks | 0/? | Not started | - |
-| 11. Applied Single-Stream Benchmarks | 0/? | Not started | - |
-| 12. Hyperboloid Projection Stability | 0/? | Not started | - |
-| 13. Multi-Stream Data Fusion | 0/? | Not started | - |
+| 1. Octonionic Algebra | 4/6 | Complete (gap closure cosmetic) | - |
+| 2. GHR Calculus | 4/4 | Complete | - |
+| 3. Baseline Implementations | 12/15 | Complete (gap closure cosmetic) | - |
+| 4. Numerical Stability | 3/3 | Complete | - |
+| 5. Optimization Landscape | 7/8 | Experiments running | - |
+| T1. Benchmark Generalization | 0/5 | Planned | - |
+| T2. Adaptive Thresholds | 0/? | Not started | - |
+| T3. Algebraic Encoder | 0/? | Not started | - |
+| T4. Scaling Analysis | 0/? | Not started | - |
+| T5. Continual Learning Comparison | 0/? | Not started | - |
+| T6. Cascaded O^n Routing | 0/? | Not started | - |
+| T7. Streaming Classification | 0/? | Not started | - |
+| T8. Multi-Stream Fusion | 0/? | Not started | - |
