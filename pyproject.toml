@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.10.8",
     "optuna>=4.7.0",
     "pytorch-optimizer>=3.10.0",
+    "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
     "tensorboard>=2.20.0",
