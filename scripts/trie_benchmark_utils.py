@@ -201,18 +201,10 @@ def compute_per_class_accuracy(
     """
     result: dict[str, dict[str, int | float]] = {}
 
-    # Build a mapping from class name to the actual label value
-    # Class names are string representations of unique sorted labels
-    unique_labels = sorted(set(y_true))
-
+    # Map each class name to its label index (0, 1, 2, ...)
+    # This follows the convention that class_names[i] corresponds to label i.
     for idx, name in enumerate(class_names):
-        if idx < len(unique_labels):
-            label = unique_labels[idx]
-        else:
-            # If more class names than unique labels, use the name as int
-            label = int(name)
-
-        mask = y_true == label
+        mask = y_true == idx
         total = int(mask.sum())
         correct = int(((y_true == y_pred) & mask).sum())
         accuracy = correct / total if total > 0 else 0.0
