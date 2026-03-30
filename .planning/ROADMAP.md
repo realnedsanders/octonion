@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Baseline Implementations** - Fair R/C/H comparison networks with matched parameter counts (completed 2026-03-13)
 - [ ] **Phase 4: Numerical Stability** - Precision characterization across depths, float widths, and operation chains
 - [ ] **Phase 5: Optimization Landscape** - Quantitative landscape characterization determining project viability
-- [ ] **Phase T1: Benchmark Generalization** - Fashion-MNIST, CIFAR-10, text classification with the octonionic trie
+- [x] **Phase T1: Benchmark Generalization** - Fashion-MNIST, CIFAR-10, text classification with the octonionic trie (completed 2026-03-29)
 - [ ] **Phase T2: Adaptive Thresholds** - Data-driven associator thresholds (per-node, context-specific, or provably global)
 - [ ] **Phase T3: Algebraic Encoder** - Unsupervised/algebraic encoding to eliminate CNN dependency
 - [ ] **Phase T4: Scaling Analysis** - Accuracy, node count, query time vs data size and number of categories
@@ -149,10 +149,10 @@ Plans:
 - [x] T1-02-PLAN.md — Fashion-MNIST benchmark (CNN encoder + trie + all baselines + learning curves)
 - [x] T1-03-PLAN.md — CIFAR-10 benchmark (3 CNN encoder sizes + trie + all baselines + encoder comparison)
 - [x] T1-04-PLAN.md — 20 Newsgroups text benchmark (TF-IDF + TruncatedSVD, fully gradient-free, 20-class + 4-class subset)
-- [ ] T1-05-PLAN.md — Cross-benchmark summary script + human verification checkpoint
+- [x] T1-05-PLAN.md — Cross-benchmark summary script + human verification checkpoint
 
 ### Phase T2: Adaptive Thresholds
-**Goal**: Determine whether the associator threshold should be global, per-node, context-specific, or whether a global value can be theoretically justified
+**Goal**: Determine whether the associator threshold should be global, per-node, context-specific, meta-trie-optimized, or whether a global value can be theoretically justified
 **Depends on**: Phase T1 (need multiple benchmarks to test generalization of threshold)
 **Success Criteria** (what must be TRUE):
   1. Per-node adaptive threshold (e.g., based on running mean of associator norms at that node) tested and compared against global threshold
@@ -160,7 +160,20 @@ Plans:
   3. If global threshold works: mathematical justification for why (e.g., associator norm distribution is invariant to data distribution for unit octonions)
   4. If adaptive is better: the adaptation rule is characterized and the improvement is statistically significant across benchmarks
   5. Sensitivity analysis: accuracy vs threshold across a continuous range for each benchmark
-**Plans**: TBD
+**Plans**: 11 plans
+
+Plans:
+- [ ] T2-01-PLAN.md — ThresholdPolicy abstraction, 8 strategy classes, trie.py refactor, backward compat tests
+- [ ] T2-02-PLAN.md — Feature caching for all 5 T1 benchmarks (MNIST, Fashion-MNIST, CIFAR-10, Text 4/20-class)
+- [ ] T2-03-PLAN.md — Reusable parallel sweep framework with SQLite storage and tqdm progress
+- [ ] T2-04-PLAN.md — Global threshold sensitivity sweep (4D grid) and visualization functions
+- [ ] T2-05-PLAN.md — Adaptive strategies 1-3 sweep (EMA, mean+std, depth-dependent) with hyperparameter tuning
+- [ ] T2-06-PLAN.md — Algebraic purity strategy sweep with noise interaction characterization
+- [ ] T2-07-PLAN.md — Meta-trie optimizer implementation and sweep (input encodings, feedback signals, self-referential)
+- [ ] T2-08-PLAN.md — Hybrid strategy implementation, multi-seed validation, full-scale generalization gap
+- [ ] T2-09-PLAN.md — Automated statistical analysis (Wilcoxon, Friedman, bootstrap CI, Cohen's d, auto-recommendation)
+- [ ] T2-10-PLAN.md — Monte Carlo associator distribution analysis and threshold theory section in oct-trie.tex
+- [ ] T2-11-PLAN.md — Diagnostic visualizations, trie.py defaults update, human verification checkpoint
 
 ### Phase T3: Algebraic Encoder
 **Goal**: Develop an encoding pipeline that does not require gradient-trained neural networks, completing the "zero gradients end-to-end" vision
@@ -240,8 +253,8 @@ Note: T1-T4 can partially overlap. T5 requires T1 and T4. T7 requires T2 and T5.
 | 3. Baseline Implementations | 12/15 | Complete (gap closure cosmetic) | - |
 | 4. Numerical Stability | 3/3 | Complete | - |
 | 5. Optimization Landscape | 7/8 | Experiments running | - |
-| T1. Benchmark Generalization | 4/5 | In Progress|  |
-| T2. Adaptive Thresholds | 0/? | Not started | - |
+| T1. Benchmark Generalization | 5/5 | Complete   | 2026-03-29 |
+| T2. Adaptive Thresholds | 0/11 | Planned | - |
 | T3. Algebraic Encoder | 0/? | Not started | - |
 | T4. Scaling Analysis | 0/? | Not started | - |
 | T5. Continual Learning Comparison | 0/? | Not started | - |
