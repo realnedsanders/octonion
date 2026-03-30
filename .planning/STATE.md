@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed T2-02-PLAN.md
-last_updated: "2026-03-30T02:06:04.716Z"
+stopped_at: Completed T2-03-PLAN.md
+last_updated: "2026-03-30T02:13:46.908Z"
 progress:
   total_phases: 13
   completed_phases: 3
@@ -78,7 +78,7 @@ Plan: 4 of 8
 | Phase 05 P05 | 7min | 2 tasks | 5 files |
 | Phase 05 P07 | 3min | 2 tasks | 2 files |
 | Phase 05 P08 | 1min | 1 tasks | 1 files |
-| Phase T2 P02 | 13min | 1 tasks | 3 files |
+| Phase T2 P03 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -189,7 +189,8 @@ Recent decisions affecting current work:
 - [Phase 05]: checkpoint_every set to epochs//4 for hessian seeds to capture intermediate fractions (0.25, 0.50)
 - [Phase 05]: Post-analysis is standalone script (not integrated into experiment runner) for re-runnability
 - [Phase 05]: sys.path.insert to import run_post_analysis from scripts/ (not a package)
-- [Phase T2]: 10K subset PCA fit on subsampled 10K training data to match T1 pipeline exactly
+- [Phase T2]: Per-process SQLite connections with timeout=30s and WAL mode for concurrent sweep writes
+- [Phase T2]: Combined geomspace+linspace for 25 assoc threshold values with dense 0.05-1.0 coverage
 
 ### Pending Todos
 
@@ -203,6 +204,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:06:04.714Z
-Stopped at: Completed T2-02-PLAN.md
+Last session: 2026-03-30T02:13:46.906Z
+Stopped at: Completed T2-03-PLAN.md
 Resume file: None
