@@ -19,6 +19,10 @@
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{conjecture}[theorem]{Conjecture}
 \theoremstyle{remark}
 \newtheorem{remark}[theorem]{Remark}
 
@@ -28,6 +32,8 @@
 \DeclareMathOperator{\SU}{SU}
 \DeclareMathOperator{\Ima}{Im}
 \DeclareMathOperator{\proj}{proj}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\argmin}{argmin}
 \newcommand{\Oct}{\mathbb{O}}
 \newcommand{\Real}{\mathbb{R}}
 \newcommand{\Comp}{\mathbb{C}}
@@ -589,6 +595,287 @@ The associator compatibility threshold, rumination consistency threshold, and de
   \item \textbf{Composition order:} The choice between $o' = o \cdot x$ and $o' = x \cdot o$ affects subalgebra activation patterns and should be characterized empirically.
   \item \textbf{Adaptive thresholds:} Whether associator and consistency thresholds should be global constants, per-node adaptive, or data-derived is an open question.
 \end{itemize}
+
+%% ====================================================================
+\section{Adaptive Thresholds and Self-Organization}
+\label{sec:adaptive-thresholds}
+%% ====================================================================
+
+The associator threshold $\tau$ governing the compatibility decision ($\lVert [x, c, n] \rVert < \tau$?) is the single most consequential parameter of the octonionic trie. This section develops the theoretical foundations for understanding, setting, and adapting this threshold. We establish the natural scale of associator norms on the unit 7-sphere, characterize how Fano plane geometry constrains threshold behavior, analyze the stability-plasticity tradeoff in threshold selection, and examine conditions under which a global threshold suffices versus when adaptive strategies are necessary.
+
+The central narrative is one of \emph{self-organization}: the trie discovers its own operating parameters through algebraic feedback, using the same octonionic structure that governs routing and growth.
+
+\subsection{Associator Norm Distribution on $S^7$}
+\label{sec:assoc-distribution}
+
+The first question is: what is the ``natural'' scale of the associator for random unit octonions? This establishes the baseline against which all threshold choices are measured.
+
+\begin{definition}[Associator norm on $S^7$]
+For unit octonions $a, b, c \in S^7 \subset \Oct$, define the \textbf{associator norm function} $\phi: S^7 \times S^7 \times S^7 \to [0, 2]$ by
+\begin{equation}
+  \phi(a, b, c) = \lVert [a, b, c] \rVert = \lVert (ab)c - a(bc) \rVert.
+  \label{eq:assoc-norm}
+\end{equation}
+The range $[0, 2]$ follows from the norm bound $\lVert [a,b,c] \rVert \leq 2\lVert a \rVert \lVert b \rVert \lVert c \rVert$ with unit inputs.
+\end{definition}
+
+\begin{theorem}[Egan's mean associator norm]
+\label{thm:egan}
+Let $a, b, c$ be independently and uniformly distributed on $S^7$. Then the expected associator norm is:
+\begin{equation}
+  \mathbb{E}[\phi(a, b, c)] = \frac{147456}{42875\pi} \approx 1.0947.
+  \label{eq:egan-mean}
+\end{equation}
+\end{theorem}
+
+This result, due to Greg Egan~\citep{Egan2024} and independently verified by Cook, is computed by integrating the associator norm over the product measure on $(S^7)^3$ using the Haar measure on the 7-sphere. The key steps involve:
+\begin{enumerate}[nosep]
+  \item Expressing the associator norm squared as a polynomial in the components of $a, b, c$.
+  \item Using the rotational invariance of the Haar measure to reduce the integral.
+  \item Evaluating the remaining integrals using known moments of the uniform distribution on $S^{n-1}$.
+\end{enumerate}
+
+\begin{remark}
+The value $\mathbb{E}[\phi] \approx 1.0947$ is surprisingly close to~1, the geometric midpoint of the range $[0, 2]$. This means that for random unit octonions, the associator norm is typically of order unity. Any trie operating on structured (non-random) data should exhibit a qualitatively different distribution, with within-class triples producing smaller norms and between-class triples producing larger norms. The degree of this separation determines whether a global threshold can be effective.
+\end{remark}
+
+Monte Carlo validation (sampling $10^5$ triples uniformly from $S^7$ via Gaussian normalization) confirms \cref{thm:egan} to within $0.5\%$ relative error (see~\cref{sec:experiments}).
+
+\subsection{Fano Plane Geometry and Subalgebra Routing}
+\label{sec:fano-geometry}
+
+The 7 quaternionic subalgebras of $\Oct$ are indexed by the lines of the Fano plane. Each line $(e_i, e_j, e_k)$ defines a quaternionic subalgebra $\mathcal{S}_\ell = \text{span}_\Real\{1, e_i, e_j, e_k\} \cong \Quat$, and within any such subalgebra the algebra is associative.
+
+\begin{definition}[Angular distance from a subalgebra]
+\label{def:angular-dist}
+For a unit octonion $x \in S^7$ and quaternionic subalgebra $\mathcal{S}_\ell$, define the \textbf{angular distance} from $x$ to $\mathcal{S}_\ell$ as:
+\begin{equation}
+  \theta(x, \mathcal{S}_\ell) = \arccos\left( \frac{\lVert \proj_{\mathcal{S}_\ell}(x) \rVert}{\lVert x \rVert} \right),
+\end{equation}
+where $\proj_{\mathcal{S}_\ell}$ denotes orthogonal projection onto the 4-dimensional subspace spanned by $\mathcal{S}_\ell$. When $x \in \mathcal{S}_\ell$, we have $\theta = 0$.
+\end{definition}
+
+\begin{proposition}[Subalgebra proximity bound]
+\label{prop:proximity}
+Let $a, b, c \in S^7$ be unit octonions, each within angular distance $\epsilon$ of a common quaternionic subalgebra $\mathcal{S}_\ell$. Then:
+\begin{equation}
+  \lVert [a, b, c] \rVert = O(\epsilon^2) \quad \text{as } \epsilon \to 0.
+  \label{eq:proximity-bound}
+\end{equation}
+More precisely, there exists a constant $K > 0$ (depending only on the structure constants of $\Oct$) such that $\lVert [a, b, c] \rVert \leq K \epsilon^2$ for all $\epsilon < 1$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+Write each unit octonion as the sum of its projection onto $\mathcal{S}_\ell$ and a perpendicular component: $a = a_\parallel + a_\perp$, where $\lVert a_\perp \rVert = \sin\theta(a, \mathcal{S}_\ell) \leq \epsilon$. Since the algebra restricted to $\mathcal{S}_\ell$ is associative, the associator $[a_\parallel, b_\parallel, c_\parallel] = 0$. Expanding $[a, b, c]$ by trilinearity:
+\begin{align}
+  [a, b, c] &= [a_\parallel + a_\perp, b_\parallel + b_\perp, c_\parallel + c_\perp] \notag \\
+            &= \underbrace{[a_\parallel, b_\parallel, c_\parallel]}_{= 0}
+               + \text{terms with at least one $\perp$ factor}.
+\end{align}
+Every nonzero term in the expansion contains at least two perpendicular components (by the alternativity identity $[a_\parallel, b_\parallel, c_\perp] = -[a_\parallel, c_\perp, b_\parallel] = [c_\perp, a_\parallel, b_\parallel]$, which itself involves one parallel-parallel pair that can be further reduced using the subalgebra structure). Since each perpendicular component has norm $O(\epsilon)$ and the associator is bounded by the product of input norms, each term contributes $O(\epsilon^2)$.
+\end{proof}
+
+The $O(\epsilon^2)$ scaling has a crucial implication for the trie: \emph{inputs that are routed to the same subalgebra channel at a given node will have small associator norms, bounded quadratically by how ``spread out'' they are from the subalgebra axis.} This provides a geometric justification for the threshold: $\tau$ should be set large enough to accommodate the natural spread of a class's data around its preferred subalgebra, but small enough to reject genuinely novel inputs from different subalgebras.
+
+\begin{definition}[Fano angular separation]
+\label{def:fano-sep}
+The \textbf{angular separation} between two quaternionic subalgebras $\mathcal{S}_i$ and $\mathcal{S}_j$ is the minimum principal angle between their respective 3-dimensional subspaces in the imaginary octonion space $\Ima(\Oct) \cong \Real^7$:
+\begin{equation}
+  \Delta(\mathcal{S}_i, \mathcal{S}_j) = \min_{\substack{u \in \mathcal{S}_i \cap S^6 \\ v \in \mathcal{S}_j \cap S^6}} \arccos\lvert \langle u, v \rangle \rvert.
+\end{equation}
+\end{definition}
+
+The 7 subalgebras are not uniformly distributed in $\Real^7$. Each pair of Fano lines shares exactly one point (one imaginary basis unit), meaning every pair of subalgebras has a 1-dimensional intersection in $\Real^7$. Consequently, the minimum principal angle between any two subalgebras is exactly~$0$ (they share a direction). However, the \emph{second} principal angle is always nonzero and provides the relevant separation for routing: it measures how distinct the subalgebras are in the directions orthogonal to their shared axis.
+
+This geometric structure imposes a fundamental constraint on the trie's routing: subalgebras are ``adjacent'' in the sense that they always share one direction, but ``separated'' in the remaining dimensions. The trie's hierarchical depth compensates for this overlap -- categories that cannot be separated at Level~0 by subalgebra choice alone are separated at deeper levels by different routing keys that rotate the input into different relative positions with respect to the subalgebras.
+
+\subsection{Global Threshold Justification}
+\label{sec:global-threshold}
+
+Under what conditions does a single threshold $\tau^*$ suffice for the entire trie?
+
+\begin{conjecture}[Global threshold separability]
+\label{conj:global-threshold}
+Let $\{X_1, \ldots, X_K\}$ be $K$ classes of unit octonions with class-conditional means $\mu_1, \ldots, \mu_K \in S^7$ satisfying:
+\begin{enumerate}[nosep]
+  \item Each $\mu_k$ lies near a distinct quaternionic subalgebra $\mathcal{S}_{\ell(k)}$, with angular distance $\theta(\mu_k, \mathcal{S}_{\ell(k)}) < \delta$.
+  \item The within-class spread satisfies $\max_{x \in X_k} \lVert x - \mu_k \rVert < \sigma$ for all $k$.
+  \item The subalgebra assignment $\ell: \{1, \ldots, K\} \to \{1, \ldots, 7\}$ is injective (distinct classes map to distinct subalgebras).
+\end{enumerate}
+Then there exists a global threshold $\tau^*$ such that:
+\begin{equation}
+  \sup_{a, b, c \in X_k} \lVert [a, b, c] \rVert < \tau^* < \inf_{\substack{a \in X_i, b \in X_j, c \in X_k \\ i \neq j \neq k}} \lVert [a, b, c] \rVert
+\end{equation}
+for all classes $k$ and all distinct class triples $i, j, k$, provided $\sigma$ and $\delta$ are sufficiently small relative to the Fano angular separations.
+\end{conjecture}
+
+\textbf{Evidence for the conjecture.} The within-class bound follows from \cref{prop:proximity}: if all elements of class $k$ are within angular distance $\delta + \sigma$ of subalgebra $\mathcal{S}_{\ell(k)}$, then within-class associator norms are $O((\delta + \sigma)^2)$. The between-class lower bound follows from the fact that elements from classes assigned to different subalgebras span genuinely non-associative structure; the associator norm is bounded away from zero by the inter-subalgebra separation.
+
+\textbf{When the conjecture fails.} The injectivity condition (condition~3) is the most restrictive. With more than 7 classes, at least two classes must share a subalgebra assignment at some trie level, and a global threshold cannot separate within-class from between-class triples for those colliding classes. This is precisely the regime where \emph{adaptive} thresholds or hierarchical depth are needed: the trie resolves the collision at a deeper level with a different routing key, effectively providing a different ``view'' of the subalgebra structure.
+
+\begin{remark}
+The boundary between the ``global suffices'' and ``adaptive needed'' regimes is geometrically precise: it is determined by the number of classes relative to the number of subalgebras ($K \leq 7$ vs $K > 7$) and by the angular separation between class means within the subalgebra space. This boundary is itself an interesting structural property of the data, independent of the threshold value.
+\end{remark}
+
+\subsection{$G_2$ Symmetry and Threshold Invariance}
+\label{sec:g2-thresholds}
+
+The automorphism group of the octonions is the exceptional Lie group $G_2$, a 14-dimensional compact group that preserves the octonionic multiplication table~\citep{Baez2002}.
+
+\begin{proposition}[$G_2$ invariance of the associator]
+\label{prop:g2-invariance}
+For any $g \in G_2$ and any $a, b, c \in \Oct$:
+\begin{equation}
+  \lVert [g(a), g(b), g(c)] \rVert = \lVert [a, b, c] \rVert.
+\end{equation}
+That is, the associator norm is invariant under $G_2$ automorphisms.
+\end{proposition}
+
+\begin{proof}
+Since $g \in G_2 = \Aut(\Oct)$, we have $g(xy) = g(x)g(y)$ for all $x, y \in \Oct$. Therefore:
+\begin{align}
+  [g(a), g(b), g(c)] &= (g(a) \cdot g(b)) \cdot g(c) - g(a) \cdot (g(b) \cdot g(c)) \notag \\
+                      &= g(ab) \cdot g(c) - g(a) \cdot g(bc) \notag \\
+                      &= g((ab)c) - g(a(bc)) \notag \\
+                      &= g((ab)c - a(bc)) = g([a, b, c]).
+\end{align}
+Since $G_2$ preserves the octonionic norm ($\lVert g(x) \rVert = \lVert x \rVert$ for all $x$), we obtain $\lVert [g(a), g(b), g(c)] \rVert = \lVert g([a, b, c]) \rVert = \lVert [a, b, c] \rVert$.
+\end{proof}
+
+\begin{corollary}[$G_2$ invariance of optimal thresholds]
+\label{cor:g2-threshold}
+Any optimal threshold function $\tau^*: \Oct \to \Real$ (mapping a node's state to its threshold) must be $G_2$-invariant: $\tau^*(g(x)) = \tau^*(x)$ for all $g \in G_2$.
+\end{corollary}
+
+\begin{proof}
+If $\tau^*$ were not $G_2$-invariant, then there would exist $g \in G_2$ and a node state $x$ such that $\tau^*(g(x)) \neq \tau^*(x)$. But the classification problem is identical under $g$ (the associator norms are unchanged by \cref{prop:g2-invariance}), so the optimal threshold for node state $g(x)$ must equal that for $x$. Contradiction.
+\end{proof}
+
+This result constrains the functional form of adaptive threshold policies. $G_2$ acts transitively on $S^6$ (the unit imaginary octonions)~\citep{Harvey1990}, meaning any $G_2$-invariant function of a unit imaginary octonion is necessarily constant. For unit octonions with nonzero real part, $G_2$-invariant functions depend only on the real component $x_0$ (equivalently, the norm of the imaginary part $\lVert \Ima(x) \rVert = \sqrt{1 - x_0^2}$).
+
+\textbf{Implication for adaptive policies.} A threshold that depends on the \emph{direction} of a node's imaginary part violates $G_2$ invariance and is therefore suboptimal in the algebraic sense. Legitimate dependences include: the node's depth, the number of children, the empirical mean and variance of observed associator norms (all of which are $G_2$-invariant statistics). This provides a principled basis for the adaptive threshold strategies explored experimentally.
+
+\subsection{Stability-Plasticity Tradeoff}
+\label{sec:stability-plasticity}
+
+The threshold $\tau$ directly controls the stability-plasticity tradeoff of the trie:
+
+\begin{itemize}[nosep]
+  \item \textbf{Tight threshold} (small $\tau$): High stability (existing branches rarely accept new data that might alter their structure), low plasticity (the trie creates many new branches, even for data that is only slightly novel). Results in larger, more fragmented trie structures.
+  \item \textbf{Loose threshold} (large $\tau$): Low stability (branches accept data that may be genuinely different from existing content), high plasticity (the trie accommodates more variation within each branch). Results in smaller, more compressed trie structures at the risk of mixing dissimilar data.
+\end{itemize}
+
+This tradeoff admits a formal connection to statistical hypothesis testing, specifically the Neyman-Pearson framework.
+
+\begin{proposition}[Neyman-Pearson analogy]
+\label{prop:neyman-pearson}
+At each node $n$ with child $c$, the routing decision for input $x$ can be framed as a hypothesis test:
+\begin{align}
+  H_0 &: x \text{ belongs in the branch rooted at } c \quad (\text{accept if } \lVert [x, c, n] \rVert < \tau), \\
+  H_1 &: x \text{ does not belong} \quad (\text{reject if } \lVert [x, c, n] \rVert \geq \tau).
+\end{align}
+The threshold $\tau$ controls the tradeoff between:
+\begin{itemize}[nosep]
+  \item \textbf{Type I error} (false acceptance): Accepting $x$ into branch $c$ when it does not belong. Rate: $\text{FPR}(\tau)$.
+  \item \textbf{Type II error} (false rejection): Rejecting $x$ from branch $c$ when it does belong. Rate: $\text{FNR}(\tau)$.
+\end{itemize}
+\end{proposition}
+
+The optimal threshold minimizes the weighted classification error:
+\begin{equation}
+  \tau^* = \argmin_\tau \left[ w_1 \cdot \text{FPR}(\tau) + w_2 \cdot \text{FNR}(\tau) \right],
+  \label{eq:optimal-tau}
+\end{equation}
+where $w_1$ and $w_2$ encode the relative cost of false acceptance (stability violation) versus false rejection (plasticity violation). In the unsupervised setting of the octonionic trie, these weights depend on the class priors and the structural cost of creating unnecessary branches.
+
+\textbf{Connection to self-organization.} In conventional systems, the weights $w_1$ and $w_2$ are set by the designer. In the octonionic trie, they emerge from the algebra: the ``cost'' of false acceptance is measured by the prediction consistency invariant (\cref{sec:invariants}), and the ``cost'' of false rejection is measured by the compression efficiency. Both are algebraic signals that require no labeled data.
+
+\subsection{Complexity Analysis}
+\label{sec:complexity}
+
+Each threshold policy has distinct computational complexity characteristics. Let $N$ denote the number of nodes, $D$ the maximum depth, and $B$ the buffer size per node.
+
+\begin{table}[ht]
+\centering
+\caption{Computational complexity of threshold policies.}
+\label{tab:complexity}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Policy & Query & Update & Space (per node) & Space (total) \\
+\midrule
+\textsc{Global}          & $O(1)$ & $O(0)$ & $O(1)$ & $O(1)$ \\
+\textsc{PerNodeEMA}      & $O(1)$ & $O(1)$ & $O(1)$ & $O(N)$ \\
+\textsc{PerNodeMeanStd}  & $O(1)$ & $O(1)$ & $O(1)$ & $O(N)$ \\
+\textsc{Depth}           & $O(1)$ & $O(0)$ & $O(0)$ & $O(D)$ \\
+\textsc{AlgebraicPurity} & $O(B)$ & $O(1)$ & $O(B)$ & $O(NB)$ \\
+\textsc{MetaTrie}        & $O(D_m \cdot 7)$ & $O(D_m \cdot 7)$ & $O(1)$ & $O(N_m)$ \\
+\textsc{Hybrid}          & $O(P_1 + P_2)$ & $O(P_1 + P_2)$ & sum & sum \\
+\bottomrule
+\end{tabular}
+\smallskip
+
+\noindent\footnotesize $D_m$ = meta-trie depth, $N_m$ = meta-trie nodes. $P_1, P_2$ = complexities of constituent sub-policies. PerNodeMeanStd uses Welford's online algorithm ($O(1)$ per update with running mean and variance). AlgebraicPurity computes variance over the node's buffer of recent associator norms.
+\end{table}
+
+All policies have $O(1)$ query time except AlgebraicPurity (which scans the node buffer) and MetaTrie (which performs a trie query in the meta-trie). Since the trie already performs $O(D \cdot 7)$ work per routing decision (computing subalgebra activations at each level), the per-query overhead of all policies is dominated by the routing computation itself. The MetaTrie policy is the most expensive, adding a second trie traversal per threshold query, but this cost is bounded by the meta-trie's depth $D_m$, which is typically small (empirically $D_m \leq 5$).
+
+\subsection{Self-Organization Narrative}
+\label{sec:self-org}
+
+The adaptive threshold framework reveals a deeper property of the octonionic trie: \emph{the trie discovers its own operating parameters through algebraic feedback.}
+
+In conventional self-organizing systems (SOMs, growing neural gas, adaptive resonance theory), the adaptation mechanism is engineered separately from the representation. Learning rates, vigilance parameters, and growth thresholds are hyperparameters set by the designer, tuned by cross-validation, and fixed during operation.
+
+The octonionic trie offers an alternative: the associator --- the same algebraic signal that governs routing and novelty detection --- also provides the feedback signal for threshold adaptation. The per-node EMA policy, for instance, adapts the threshold based on the running average of associator norms observed at that node. This is not a separate adaptation mechanism; it is the same algebraic measurement used for routing, reused for self-calibration.
+
+The meta-trie optimizer (\cref{sec:meta-trie-convergence}) takes this principle to its logical extreme: a second octonionic trie adapts the first trie's thresholds using the same octonionic algebra, the same subalgebra routing, and the same associator-based novelty detection. The optimizer and the optimized system are instances of the same structure. If the meta-trie's own thresholds are also adapted (the self-referential variant), the system becomes a fixed point of its own optimization dynamics.
+
+This recursive self-organization --- where the mechanism of adaptation is an instance of the mechanism being adapted --- is, to our knowledge, novel in the self-organizing systems literature.
+
+\subsection{Convergence of Meta-Trie Feedback}
+\label{sec:meta-trie-convergence}
+
+The meta-trie optimizer can be modeled as a discrete dynamical system. Let $\tau_t \in \Real^N$ denote the vector of per-node thresholds at time step $t$, and let $f: \Real^N \times \mathcal{D} \to \Real^N$ denote the meta-trie update function, which maps the current thresholds and a batch of data $d_t \in \mathcal{D}$ to updated thresholds:
+\begin{equation}
+  \tau_{t+1} = f(\tau_t, d_t).
+\end{equation}
+
+\begin{definition}[Meta-trie fixed point]
+A threshold configuration $\tau^*$ is a \textbf{fixed point} of the meta-trie dynamics if, for the stationary data distribution $\mathcal{D}$:
+\begin{equation}
+  \mathbb{E}_{d \sim \mathcal{D}}[f(\tau^*, d)] = \tau^*.
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Sufficient conditions for convergence]
+\label{prop:convergence}
+The meta-trie dynamics converge to a fixed point $\tau^*$ if the update function $f$ satisfies:
+\begin{enumerate}[nosep]
+  \item \textbf{Contraction:} $\lVert \mathbb{E}[f(\tau_1, d)] - \mathbb{E}[f(\tau_2, d)] \rVert \leq \gamma \lVert \tau_1 - \tau_2 \rVert$ for some $\gamma < 1$.
+  \item \textbf{Bounded noise:} $\Var[f(\tau, d)] \leq \sigma^2$ uniformly in $\tau$.
+\end{enumerate}
+Under these conditions, $\tau_t \to \tau^*$ in mean square at rate $O(\gamma^t)$.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+This is a standard result in stochastic approximation theory (Robbins-Monro). The contraction condition ensures the expected update moves toward the fixed point, while bounded noise ensures fluctuations do not accumulate. The EMA-based policies naturally satisfy contraction with $\gamma = 1 - \alpha$ (the EMA decay rate). The bounded noise condition follows from the bounded range of associator norms ($[0, 2]$ for unit octonions).
+\end{proof}
+
+For the \textbf{self-referential variant} (meta-trie adapts its own thresholds), the dynamics become:
+\begin{equation}
+  (\tau_t^{\text{cls}}, \tau_t^{\text{meta}}) = F(\tau_{t-1}^{\text{cls}}, \tau_{t-1}^{\text{meta}}, d_t),
+\end{equation}
+where $\tau^{\text{cls}}$ are the classifier trie's thresholds and $\tau^{\text{meta}}$ are the meta-trie's own thresholds. Convergence of this coupled system requires the contraction condition to hold jointly on the product space, which is a stronger requirement. Empirical characterization of convergence behavior is deferred to experimental validation.
+
+\textbf{Convergence criterion.} In practice, convergence is declared when the maximum relative threshold change falls below 1\%:
+\begin{equation}
+  \max_i \frac{\lvert \tau_{t+1}^{(i)} - \tau_t^{(i)} \rvert}{\lvert \tau_t^{(i)} \rvert + \epsilon} < 0.01,
+\end{equation}
+where $\epsilon > 0$ prevents division by zero. The convergence curve (maximum relative change vs.\ update step) is tracked to verify monotonic decrease.
+
+\begin{epistemicnote}
+The formal convergence analysis assumes stationary data distribution. In practice, the data distribution may be non-stationary (concept drift, new classes appearing). Whether the meta-trie can track a slowly-varying optimal threshold is an empirical question that depends on the relationship between the EMA time constant and the rate of distribution change.
+\end{epistemicnote}
 
 %% ====================================================================
 \section{MNIST Benchmark}
