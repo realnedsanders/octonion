@@ -163,16 +163,16 @@ Plans:
 **Plans**: 11 plans
 
 Plans:
-- [ ] T2-01-PLAN.md — ThresholdPolicy abstraction, 8 strategy classes, trie.py refactor, backward compat tests
-- [ ] T2-02-PLAN.md — Feature caching for all 5 T1 benchmarks (MNIST, Fashion-MNIST, CIFAR-10, Text 4/20-class)
-- [ ] T2-03-PLAN.md — Reusable parallel sweep framework with SQLite storage and tqdm progress
-- [ ] T2-04-PLAN.md — Global threshold sensitivity sweep (4D grid) and visualization functions
-- [ ] T2-05-PLAN.md — Adaptive strategies 1-3 sweep (EMA, mean+std, depth-dependent) with hyperparameter tuning
-- [ ] T2-06-PLAN.md — Algebraic purity strategy sweep with noise interaction characterization
-- [ ] T2-07-PLAN.md — Meta-trie optimizer implementation and sweep (input encodings, feedback signals, self-referential)
-- [ ] T2-08-PLAN.md — Hybrid strategy implementation, multi-seed validation, full-scale generalization gap
-- [ ] T2-09-PLAN.md — Automated statistical analysis (Wilcoxon, Friedman, bootstrap CI, Cohen's d, auto-recommendation)
-- [ ] T2-10-PLAN.md — Monte Carlo associator distribution analysis and threshold theory section in oct-trie.tex
+- [x] T2-01-PLAN.md — ThresholdPolicy abstraction, 8 strategy classes, trie.py refactor, backward compat tests
+- [x] T2-02-PLAN.md — Feature caching for all 5 T1 benchmarks (MNIST, Fashion-MNIST, CIFAR-10, Text 4/20-class)
+- [x] T2-03-PLAN.md — Reusable parallel sweep framework with SQLite storage and tqdm progress
+- [x] T2-04-PLAN.md — Global threshold sensitivity sweep (4D grid) and visualization functions
+- [x] T2-05-PLAN.md — Adaptive strategies 1-3 sweep (EMA, mean+std, depth-dependent) with hyperparameter tuning
+- [x] T2-06-PLAN.md — Algebraic purity strategy sweep with noise interaction characterization
+- [x] T2-07-PLAN.md — Meta-trie optimizer implementation and sweep (input encodings, feedback signals, self-referential)
+- [x] T2-08-PLAN.md — Hybrid strategy implementation, multi-seed validation, full-scale generalization gap
+- [x] T2-09-PLAN.md — Automated statistical analysis (Wilcoxon, Friedman, bootstrap CI, Cohen's d, auto-recommendation)
+- [x] T2-10-PLAN.md — Monte Carlo associator distribution analysis and threshold theory section in oct-trie.tex
 - [ ] T2-11-PLAN.md — Diagnostic visualizations, trie.py defaults update, human verification checkpoint
 
 ### Phase T3: Algebraic Encoder
@@ -254,7 +254,7 @@ Note: T1-T4 can partially overlap. T5 requires T1 and T4. T7 requires T2 and T5.
 | 4. Numerical Stability | 3/3 | Complete | - |
 | 5. Optimization Landscape | 7/8 | Experiments running | - |
 | T1. Benchmark Generalization | 5/5 | Complete   | 2026-03-29 |
-| T2. Adaptive Thresholds | 0/11 | Planned | - |
+| T2. Adaptive Thresholds | 10/11 | In Progress|  |
 | T3. Algebraic Encoder | 0/? | Not started | - |
 | T4. Scaling Analysis | 0/? | Not started | - |
 | T5. Continual Learning Comparison | 0/? | Not started | - |
