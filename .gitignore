@@ -9,4 +9,4 @@ events.out.tfevents.*
 results
 results/*
 .remember
-.data/
+scripts/sweep/sweep_runner.py

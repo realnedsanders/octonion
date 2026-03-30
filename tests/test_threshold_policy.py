@@ -387,22 +387,110 @@ def test_meta_trie_converged_property():
     assert policy.converged
 
 
-# -- Test 10: HybridPolicy stub raises ------------------------------------
+# -- Test 10: HybridPolicy mean combination --------------------------------
 
 
-def test_hybrid_stub_raises():
-    """HybridPolicy stub raises NotImplementedError on get_assoc_threshold."""
-    policy = HybridPolicy()
+def test_hybrid_mean_combines():
+    """HybridPolicy 'mean' averages thresholds from two GlobalPolicies."""
+    policy_a = GlobalPolicy(assoc_threshold=0.2, sim_threshold=0.1)
+    policy_b = GlobalPolicy(assoc_threshold=0.6, sim_threshold=0.3)
+    hybrid = HybridPolicy(policy_a=policy_a, policy_b=policy_b, combination="mean")
+
     node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
 
-    with pytest.raises(NotImplementedError, match="configure.*two base policies"):
-        policy.get_assoc_threshold(node, 0)
+    # Mean of assoc thresholds: (0.2 + 0.6) / 2 = 0.4
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.4)
+    # Mean of sim thresholds: (0.1 + 0.3) / 2 = 0.2
+    assert hybrid.get_sim_threshold(node, 0) == pytest.approx(0.2)
+    # Consolidation: mean of (0.05, 0.05) and int(mean of (3, 3))
+    ms, mc = hybrid.get_consolidation_params(node, 0)
+    assert ms == pytest.approx(0.05)
+    assert mc == 3
 
-    with pytest.raises(NotImplementedError, match="configure.*two base policies"):
-        policy.get_sim_threshold(node, 0)
 
-    with pytest.raises(NotImplementedError, match="configure.*two base policies"):
-        policy.get_consolidation_params(node, 0)
+# -- Test 10b: HybridPolicy min combination --------------------------------
+
+
+def test_hybrid_min_conservative():
+    """HybridPolicy 'min' returns the tighter threshold."""
+    policy_a = GlobalPolicy(assoc_threshold=0.2, sim_threshold=0.1)
+    policy_b = GlobalPolicy(assoc_threshold=0.6, sim_threshold=0.3)
+    hybrid = HybridPolicy(policy_a=policy_a, policy_b=policy_b, combination="min")
+
+    node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
+
+    # Min of assoc: min(0.2, 0.6) = 0.2
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.2)
+    # Min of sim: min(0.1, 0.3) = 0.1
+    assert hybrid.get_sim_threshold(node, 0) == pytest.approx(0.1)
+
+
+# -- Test 10c: HybridPolicy max combination --------------------------------
+
+
+def test_hybrid_max_permissive():
+    """HybridPolicy 'max' returns the looser threshold."""
+    policy_a = GlobalPolicy(assoc_threshold=0.2, sim_threshold=0.1)
+    policy_b = GlobalPolicy(assoc_threshold=0.6, sim_threshold=0.3)
+    hybrid = HybridPolicy(policy_a=policy_a, policy_b=policy_b, combination="max")
+
+    node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
+
+    # Max of assoc: max(0.2, 0.6) = 0.6
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.6)
+    # Max of sim: max(0.1, 0.3) = 0.3
+    assert hybrid.get_sim_threshold(node, 0) == pytest.approx(0.3)
+
+
+# -- Test 10d: HybridPolicy adaptive transition ----------------------------
+
+
+def test_hybrid_adaptive_transition():
+    """HybridPolicy 'adaptive' starts with policy_a, transitions to policy_b."""
+    policy_a = GlobalPolicy(assoc_threshold=0.2)
+    policy_b = GlobalPolicy(assoc_threshold=0.8)
+    hybrid = HybridPolicy(
+        policy_a=policy_a,
+        policy_b=policy_b,
+        combination="adaptive",
+        transition_inserts=100,
+    )
+
+    node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
+    x = torch.randn(8, dtype=torch.float64)
+
+    # At start (0 inserts): should be close to policy_a
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.2)
+
+    # After 50 inserts (alpha=0.5): midpoint
+    for _ in range(50):
+        hybrid.on_insert(node, x, 0.3)
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.5, abs=0.01)
+
+    # After 100 inserts (alpha=1.0): should be policy_b
+    for _ in range(50):
+        hybrid.on_insert(node, x, 0.3)
+    assert hybrid.get_assoc_threshold(node, 0) == pytest.approx(0.8)
+
+
+# -- Test 10e: HybridPolicy on_insert delegates ----------------------------
+
+
+def test_hybrid_on_insert_delegates():
+    """HybridPolicy.on_insert delegates to both sub-policies."""
+    policy_a = PerNodeEMAPolicy(alpha=0.1, k=1.5, base_assoc=0.3)
+    policy_b = PerNodeEMAPolicy(alpha=0.2, k=2.0, base_assoc=0.5)
+    hybrid = HybridPolicy(policy_a=policy_a, policy_b=policy_b, combination="mean")
+
+    node = TrieNode(routing_key=torch.randn(8), content=torch.randn(8))
+    x = torch.randn(8, dtype=torch.float64)
+
+    hybrid.on_insert(node, x, 0.25)
+
+    # Both EMA policies share the same node._policy_state dict, so both
+    # call on_insert and both increment ema_count (count=2 after one hybrid insert)
+    assert node._policy_state.get("ema_count") == 2
+    assert hybrid._total_inserts == 1
 
 
 # -- Test 11: Adaptive changes tree structure --------------------------------

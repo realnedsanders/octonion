@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed T2-07-PLAN.md
-last_updated: "2026-03-30T02:49:35.417Z"
+stopped_at: Completed T2-08-PLAN.md
+last_updated: "2026-03-30T03:00:32.736Z"
 progress:
   total_phases: 13
   completed_phases: 3
@@ -78,7 +78,7 @@ Plan: 4 of 8
 | Phase 05 P05 | 7min | 2 tasks | 5 files |
 | Phase 05 P07 | 3min | 2 tasks | 2 files |
 | Phase 05 P08 | 1min | 1 tasks | 1 files |
-| Phase T2 P07 | 5min | 2 tasks | 3 files |
+| Phase T2 P08 | 7min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -189,7 +189,7 @@ Recent decisions affecting current work:
 - [Phase 05]: checkpoint_every set to epochs//4 for hessian seeds to capture intermediate fractions (0.25, 0.50)
 - [Phase 05]: Post-analysis is standalone script (not integrated into experiment runner) for re-runnability
 - [Phase 05]: sys.path.insert to import run_post_analysis from scripts/ (not a package)
-- [Phase T2]: MetaTriePolicy uses id(node) for per-node adjustment tracking; self-referential mode updates meta_trie.assoc_threshold via backward-compatible GlobalPolicy setter
+- [Phase T2]: HybridPolicy defaults to GlobalPolicy() for both sub-policies when None; adaptive mode uses linear interpolation over N inserts
 
 ### Pending Todos
 
@@ -203,6 +203,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:49:35.415Z
-Stopped at: Completed T2-07-PLAN.md
+Last session: 2026-03-30T03:00:32.734Z
+Stopped at: Completed T2-08-PLAN.md
 Resume file: None

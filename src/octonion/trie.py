@@ -541,31 +541,64 @@ class MetaTriePolicy(ThresholdPolicy):
 
 
 class HybridPolicy(ThresholdPolicy):
-    """Hybrid policy combining two ThresholdPolicy instances (stub).
+    """Combines two ThresholdPolicy instances per D-09.
 
-    Combines two base policies via a configurable combination strategy
-    (mean, min, max, etc.). Full implementation deferred to Plan T2-06.
+    Combination modes:
+    - "mean": average of both policies' thresholds
+    - "min": minimum (more conservative / tighter)
+    - "max": maximum (more permissive / looser)
+    - "adaptive": use policy_a in early epochs, transition to policy_b
     """
 
-    def __init__(self) -> None:
-        self.policy_a: ThresholdPolicy | None = None
-        self.policy_b: ThresholdPolicy | None = None
-        self.combination: str = "mean"
+    def __init__(
+        self,
+        policy_a: ThresholdPolicy | None = None,
+        policy_b: ThresholdPolicy | None = None,
+        combination: str = "mean",
+        transition_inserts: int = 0,  # for "adaptive" mode: switch after N inserts
+    ):
+        self.policy_a = policy_a if policy_a is not None else GlobalPolicy()
+        self.policy_b = policy_b if policy_b is not None else GlobalPolicy()
+        self.combination = combination
+        self.transition_inserts = transition_inserts
+        self._total_inserts = 0
+
+    def _combine(self, val_a: float, val_b: float) -> float:
+        if self.combination == "mean":
+            return (val_a + val_b) / 2.0
+        elif self.combination == "min":
+            return min(val_a, val_b)
+        elif self.combination == "max":
+            return max(val_a, val_b)
+        elif self.combination == "adaptive":
+            # Smooth transition from policy_a to policy_b
+            if self.transition_inserts <= 0:
+                return val_b
+            alpha = min(1.0, self._total_inserts / self.transition_inserts)
+            return (1 - alpha) * val_a + alpha * val_b
+        return (val_a + val_b) / 2.0
 
     def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
-        raise NotImplementedError(
-            "HybridPolicy requires configure() with two base policies"
+        return self._combine(
+            self.policy_a.get_assoc_threshold(node, depth),
+            self.policy_b.get_assoc_threshold(node, depth),
         )
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
-        raise NotImplementedError(
-            "HybridPolicy requires configure() with two base policies"
+        return self._combine(
+            self.policy_a.get_sim_threshold(node, depth),
+            self.policy_b.get_sim_threshold(node, depth),
         )
 
     def get_consolidation_params(self, node: TrieNode, depth: int) -> tuple[float, int]:
-        raise NotImplementedError(
-            "HybridPolicy requires configure() with two base policies"
-        )
+        ms_a, mc_a = self.policy_a.get_consolidation_params(node, depth)
+        ms_b, mc_b = self.policy_b.get_consolidation_params(node, depth)
+        return self._combine(ms_a, ms_b), int(self._combine(mc_a, mc_b))
+
+    def on_insert(self, node: TrieNode, x: torch.Tensor, assoc_norm: float) -> None:
+        self._total_inserts += 1
+        self.policy_a.on_insert(node, x, assoc_norm)
+        self.policy_b.on_insert(node, x, assoc_norm)
 
 
 # ── OctonionTrie ─────────────────────────────────────────────────────
