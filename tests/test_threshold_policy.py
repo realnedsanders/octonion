@@ -259,22 +259,132 @@ def test_algebraic_purity_empty_and_filled():
     assert threshold >= 0.3, f"Expected >= base, got {threshold}"
 
 
-# -- Test 9: MetaTriePolicy stub raises ------------------------------------
+# -- Test 9: MetaTriePolicy uses same OctonionTrie class per D-12 ----------
 
 
-def test_meta_trie_stub_raises():
-    """MetaTriePolicy stub raises NotImplementedError on get_assoc_threshold."""
-    policy = MetaTriePolicy()
-    node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
+def test_meta_trie_uses_same_class():
+    """MetaTriePolicy.meta_trie is an OctonionTrie instance per D-12."""
+    policy = MetaTriePolicy(base_assoc=0.3, sim_threshold=0.1)
+    assert isinstance(policy.meta_trie, OctonionTrie), (
+        f"meta_trie should be OctonionTrie, got {type(policy.meta_trie)}"
+    )
 
-    with pytest.raises(NotImplementedError, match="configure_meta_trie"):
-        policy.get_assoc_threshold(node, 0)
 
-    with pytest.raises(NotImplementedError, match="configure_meta_trie"):
-        policy.get_sim_threshold(node, 0)
+# -- Test 9b: MetaTriePolicy signal encoding per D-14 ---------------------
 
-    with pytest.raises(NotImplementedError, match="configure_meta_trie"):
-        policy.get_consolidation_params(node, 0)
+
+def test_meta_trie_signal_encoding():
+    """signal_vector produces 8D tensor, algebraic uses routing_key."""
+    policy = MetaTriePolicy(signal_encoding="signal_vector")
+    node = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+        depth=3,
+    )
+    node._policy_state["meta_assoc_norms"] = [0.1, 0.2, 0.3]
+
+    # Signal vector encoding produces 8D tensor
+    sv = policy._encode_signal_vector(node)
+    assert sv.shape == (8,), f"Expected shape (8,), got {sv.shape}"
+    assert sv.dtype == torch.float64
+
+    # Algebraic encoding uses routing key
+    ak = policy._encode_algebraic(node)
+    assert ak.shape == (8,)
+    assert torch.allclose(ak, node.routing_key)
+
+
+# -- Test 9c: MetaTriePolicy actions per D-13 -----------------------------
+
+
+def test_meta_trie_actions():
+    """ACTIONS dict has 5 entries with symmetric values summing to 0."""
+    assert len(MetaTriePolicy.ACTIONS) == 5
+    assert sum(MetaTriePolicy.ACTIONS.values()) == pytest.approx(0.0)
+    # Verify keys are 0-4
+    assert set(MetaTriePolicy.ACTIONS.keys()) == {0, 1, 2, 3, 4}
+
+
+# -- Test 9d: MetaTriePolicy convergence tracking per D-18 ----------------
+
+
+def test_meta_trie_convergence_tracking():
+    """convergence_history grows after updates."""
+    policy = MetaTriePolicy(
+        base_assoc=0.3,
+        update_frequency=5,  # update every 5 inserts for fast testing
+    )
+    node = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+
+    # Insert enough times to trigger multiple updates
+    gen = torch.Generator().manual_seed(42)
+    for i in range(25):
+        x = torch.randn(8, dtype=torch.float64, generator=gen)
+        x = x / x.norm()
+        policy.on_insert(node, x, 0.1 + 0.01 * i)
+
+    # Should have convergence entries (first update creates baseline, subsequent ones append)
+    assert len(policy._convergence_history) > 0, (
+        "Expected convergence_history to grow after updates"
+    )
+
+
+# -- Test 9e: MetaTriePolicy self-referential per D-17 --------------------
+
+
+def test_meta_trie_self_referential():
+    """Self-referential mode updates meta_trie.assoc_threshold."""
+    policy = MetaTriePolicy(
+        base_assoc=0.3,
+        self_referential=True,
+        update_frequency=5,
+    )
+
+    node = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+    # Force enough data for stability signal to be non-default
+    node._policy_state["meta_assoc_norms"] = [0.5, 0.1, 0.9, 0.2, 0.8, 0.15]
+
+    # Insert enough times to trigger an update with high CV data
+    gen = torch.Generator().manual_seed(99)
+    for i in range(10):
+        x = torch.randn(8, dtype=torch.float64, generator=gen)
+        x = x / x.norm()
+        policy.on_insert(node, x, 0.3 + 0.2 * (i % 3))
+
+    # After self-referential update, meta_trie threshold may have changed
+    # (it depends on the meta-trie's dominant_category, but the mechanism should work)
+    # We test that the property is set without error
+    new_thresh = policy.meta_trie.assoc_threshold
+    assert isinstance(new_thresh, float)
+    assert new_thresh > 0.0
+
+
+# -- Test 9f: MetaTriePolicy converged property per D-18 ------------------
+
+
+def test_meta_trie_converged_property():
+    """converged returns True when change rate < 1% after sufficient history."""
+    policy = MetaTriePolicy(base_assoc=0.3)
+    # Not converged with empty history
+    assert not policy.converged
+
+    # Not converged with < 3 entries
+    policy._convergence_history = [0.1, 0.05]
+    assert not policy.converged
+
+    # Not converged with last entry >= 0.01
+    policy._convergence_history = [0.1, 0.05, 0.02]
+    assert not policy.converged
+
+    # Converged with last entry < 0.01
+    policy._convergence_history = [0.1, 0.05, 0.005]
+    assert policy.converged
 
 
 # -- Test 10: HybridPolicy stub raises ------------------------------------

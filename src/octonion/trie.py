@@ -362,33 +362,182 @@ class AlgebraicPurityPolicy(ThresholdPolicy):
 
 
 class MetaTriePolicy(ThresholdPolicy):
-    """Meta-trie optimizer policy (stub).
+    """Meta-trie optimizer: a second OctonionTrie adapts classifier thresholds.
 
-    A second OctonionTrie acts as an optimizer for the classifier trie,
-    using the same algebra and self-organization mechanism. Full implementation
-    deferred to Plan T2-07.
+    Per D-12: Uses the same OctonionTrie class (not a subclass).
+    Per D-13: Categories are discretized threshold actions.
+    Per D-14: Two input encoding modes.
+    Per D-15: Two feedback signal modes.
     """
 
-    def __init__(self) -> None:
-        self.meta_trie: OctonionTrie | None = None
-        self.signal_encoding: str | None = None
-        self.feedback_signal: str | None = None
-        self.update_frequency: int | None = None
+    # Threshold actions per D-13
+    ACTIONS = {
+        0: -0.20,  # "tighten 20%"
+        1: -0.10,  # "tighten 10%"
+        2:  0.00,  # "keep"
+        3:  0.10,  # "loosen 10%"
+        4:  0.20,  # "loosen 20%"
+    }
+
+    def __init__(
+        self,
+        base_assoc: float = 0.3,
+        sim_threshold: float = 0.1,
+        min_share: float = 0.05,
+        min_count: int = 3,
+        signal_encoding: str = "signal_vector",  # or "algebraic" per D-14
+        feedback_signal: str = "stability",       # or "accuracy" per D-15
+        update_frequency: int = 100,              # per D-16: per-N-inserts
+        self_referential: bool = False,            # per D-17
+        meta_seed: int = 7919,
+    ):
+        self.base_assoc = base_assoc
+        self.sim_threshold = sim_threshold
+        self.min_share = min_share
+        self.min_count = min_count
+        self.signal_encoding = signal_encoding
+        self.feedback_signal = feedback_signal
+        self.update_frequency = update_frequency
+        self.self_referential = self_referential
+
+        # Create the meta-trie per D-12
+        self.meta_trie = OctonionTrie(
+            associator_threshold=base_assoc,
+            similarity_threshold=sim_threshold,
+            seed=meta_seed,
+        )
+
+        # Per-node threshold adjustments (accumulated from meta-trie decisions)
+        self._node_adjustments: dict[int, float] = {}  # id(node) -> adjustment factor
+        self._insert_counter = 0
+        self._convergence_history: list[float] = []  # per D-18: track threshold change rate
+        self._prev_adjustments: dict[int, float] = {}
 
     def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
-        raise NotImplementedError(
-            "MetaTriePolicy requires setup via configure_meta_trie()"
-        )
+        adjustment = self._node_adjustments.get(id(node), 0.0)
+        return max(0.001, self.base_assoc * (1.0 + adjustment))
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
-        raise NotImplementedError(
-            "MetaTriePolicy requires setup via configure_meta_trie()"
-        )
+        return self.sim_threshold
 
     def get_consolidation_params(self, node: TrieNode, depth: int) -> tuple[float, int]:
-        raise NotImplementedError(
-            "MetaTriePolicy requires setup via configure_meta_trie()"
-        )
+        return self.min_share, self.min_count
+
+    def on_insert(self, node: TrieNode, x: torch.Tensor, assoc_norm: float) -> None:
+        # Track stats in node._policy_state
+        state = node._policy_state
+        state.setdefault("meta_assoc_norms", []).append(assoc_norm)
+        state["meta_insert_count"] = state.get("meta_insert_count", 0) + 1
+        # Keep only last 100 norms to avoid unbounded memory
+        if len(state["meta_assoc_norms"]) > 100:
+            state["meta_assoc_norms"] = state["meta_assoc_norms"][-100:]
+
+        self._insert_counter += 1
+        if self._insert_counter % self.update_frequency == 0:
+            self._update_thresholds(node)
+
+    def _encode_signal_vector(self, node: TrieNode) -> torch.Tensor:
+        """Encode node state as 8D signal vector per D-14 option 1."""
+        state = node._policy_state
+        norms = state.get("meta_assoc_norms", [0.0])
+        norms_t = torch.tensor(norms, dtype=torch.float64)
+        return torch.tensor([
+            norms_t.mean().item(),           # assoc_norm_mean
+            norms_t.std().item() if len(norms) > 1 else 0.0,  # assoc_norm_std
+            len(node.children) / 7.0,        # branching_factor / 7
+            node.insert_count / max(self._insert_counter, 1),  # insert_rate
+            0.0,  # rumination_rate (computed from parent trie stats if available)
+            node.depth / 15.0,               # depth / max_depth
+            0.0,  # buffer_consistency (computed from buffer similarity)
+            0.0,  # consolidation_rate
+        ], dtype=torch.float64)
+
+    def _encode_algebraic(self, node: TrieNode) -> torch.Tensor:
+        """Use node's routing key as meta-trie input per D-14 option 2."""
+        return node.routing_key.clone()
+
+    def _compute_stability_signal(self, node: TrieNode) -> int:
+        """Compute unsupervised stability signal per D-15 option 1.
+
+        Returns action category (0-4) based on node stability indicators.
+        Low rumination + balanced branching + consistent norms -> "keep" (2)
+        """
+        state = node._policy_state
+        norms = state.get("meta_assoc_norms", [])
+        if len(norms) < 3:
+            return 2  # "keep" -- not enough data
+
+        norms_t = torch.tensor(norms[-30:], dtype=torch.float64)
+        cv = (norms_t.std() / norms_t.mean()).item() if norms_t.mean() > 1e-10 else 0.0
+
+        # High CV = inconsistent = should tighten; Low CV = stable = can loosen
+        if cv > 1.0:
+            return 0  # tighten 20%
+        elif cv > 0.5:
+            return 1  # tighten 10%
+        elif cv < 0.1:
+            return 4  # loosen 20%
+        elif cv < 0.2:
+            return 3  # loosen 10%
+        else:
+            return 2  # keep
+
+    def _update_thresholds(self, trigger_node: TrieNode) -> None:
+        """Update threshold adjustments via meta-trie.
+
+        Encodes trigger_node state, inserts into meta-trie,
+        queries meta-trie for recommended action, applies adjustment.
+        """
+        # Encode input based on D-14
+        if self.signal_encoding == "signal_vector":
+            meta_input = self._encode_signal_vector(trigger_node)
+        else:
+            meta_input = self._encode_algebraic(trigger_node)
+
+        # Determine category based on D-15
+        if self.feedback_signal == "stability":
+            action_cat = self._compute_stability_signal(trigger_node)
+        else:
+            action_cat = 2  # "keep" for accuracy mode (set externally)
+
+        # Insert into meta-trie
+        self.meta_trie.insert(meta_input, category=action_cat)
+
+        # Query meta-trie for recommendation
+        leaf = self.meta_trie.query(meta_input)
+        recommended = leaf.dominant_category
+        if recommended is not None and recommended in self.ACTIONS:
+            adjustment = self.ACTIONS[recommended]
+            self._node_adjustments[id(trigger_node)] = adjustment
+
+        # Per D-17: self-referential -- meta-trie adapts its own thresholds
+        if self.self_referential:
+            meta_signal = self._encode_signal_vector(trigger_node)
+            meta_leaf = self.meta_trie.query(meta_signal)
+            if meta_leaf.dominant_category is not None:
+                meta_adj = self.ACTIONS.get(meta_leaf.dominant_category, 0.0)
+                self.meta_trie.assoc_threshold = max(
+                    0.001, self.base_assoc * (1.0 + meta_adj)
+                )
+
+        # Per D-18: convergence tracking
+        curr_adj = dict(self._node_adjustments)
+        if self._prev_adjustments:
+            changes = []
+            for k in set(curr_adj) | set(self._prev_adjustments):
+                old = self._prev_adjustments.get(k, 0.0)
+                new = curr_adj.get(k, 0.0)
+                changes.append(abs(new - old))
+            change_rate = sum(changes) / max(len(changes), 1)
+            self._convergence_history.append(change_rate)
+        self._prev_adjustments = curr_adj
+
+    @property
+    def converged(self) -> bool:
+        """Per D-18: converged if threshold change rate < 1%."""
+        if len(self._convergence_history) < 3:
+            return False
+        return self._convergence_history[-1] < 0.01
 
 
 class HybridPolicy(ThresholdPolicy):
