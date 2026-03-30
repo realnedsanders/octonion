@@ -627,6 +627,15 @@ class OctonionTrie:
         dtype: torch.dtype = torch.float64,
         policy: ThresholdPolicy | None = None,
     ):
+        # Default threshold/policy reviewed in Phase T2 (adaptive thresholds) based
+        # on cross-benchmark analysis. GlobalPolicy(assoc_threshold=0.3) remains the
+        # default: the Phase T2 ThresholdPolicy abstraction added 8 strategy
+        # implementations (EMA, MeanStd, Depth, AlgebraicPurity, MetaTrie, Hybrid),
+        # but the global baseline with threshold 0.3 provides robust performance
+        # across all 5 benchmarks (MNIST, Fashion-MNIST, CIFAR-10, Text 4/20-class).
+        # Adaptive strategies are available via the `policy` parameter for tasks
+        # where per-node or depth-dependent thresholds are beneficial.
+        # See results/T2/analysis/statistical_report.json for full analysis.
         gen = torch.Generator().manual_seed(seed)
         root_key = torch.randn(8, dtype=dtype, generator=gen)
         root_key = root_key / root_key.norm()
