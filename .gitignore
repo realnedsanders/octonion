@@ -9,3 +9,4 @@ events.out.tfevents.*
 results
 results/*
 .remember
+.data/

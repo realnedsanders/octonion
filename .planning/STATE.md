@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed T2-01-PLAN.md
-last_updated: "2026-03-30T01:57:19.795Z"
+stopped_at: Completed T2-02-PLAN.md
+last_updated: "2026-03-30T02:06:04.716Z"
 progress:
   total_phases: 13
   completed_phases: 3
@@ -78,7 +78,7 @@ Plan: 4 of 8
 | Phase 05 P05 | 7min | 2 tasks | 5 files |
 | Phase 05 P07 | 3min | 2 tasks | 2 files |
 | Phase 05 P08 | 1min | 1 tasks | 1 files |
-| Phase T2 P01 | 5min | 2 tasks | 2 files |
+| Phase T2 P02 | 13min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -189,9 +189,7 @@ Recent decisions affecting current work:
 - [Phase 05]: checkpoint_every set to epochs//4 for hessian seeds to capture intermediate fractions (0.25, 0.50)
 - [Phase 05]: Post-analysis is standalone script (not integrated into experiment runner) for re-runnability
 - [Phase 05]: sys.path.insert to import run_post_analysis from scripts/ (not a package)
-- [Phase T2]: Per-node state stored in _policy_state dict on TrieNode (not id()-based lookup) for pickling safety
-- [Phase T2]: Backward-compatible assoc_threshold/sim_threshold properties delegate to policy at root/depth=0
-- [Phase T2]: on_insert hook called after every insertion path for complete adaptive data coverage
+- [Phase T2]: 10K subset PCA fit on subsampled 10K training data to match T1 pipeline exactly
 
 ### Pending Todos
 
@@ -205,6 +203,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T01:57:19.793Z
-Stopped at: Completed T2-01-PLAN.md
+Last session: 2026-03-30T02:06:04.714Z
+Stopped at: Completed T2-02-PLAN.md
 Resume file: None
