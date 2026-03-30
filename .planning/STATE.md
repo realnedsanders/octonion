@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed T2-10-PLAN.md
-last_updated: "2026-03-30T02:34:03.500Z"
+stopped_at: Completed T2-06-PLAN.md
+last_updated: "2026-03-30T02:41:08.044Z"
 progress:
   total_phases: 13
   completed_phases: 3
@@ -78,7 +78,7 @@ Plan: 4 of 8
 | Phase 05 P05 | 7min | 2 tasks | 5 files |
 | Phase 05 P07 | 3min | 2 tasks | 2 files |
 | Phase 05 P08 | 1min | 1 tasks | 1 files |
-| Phase T2 P10 | 8min | 2 tasks | 5 files |
+| Phase T2 P06 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -189,9 +189,7 @@ Recent decisions affecting current work:
 - [Phase 05]: checkpoint_every set to epochs//4 for hessian seeds to capture intermediate fractions (0.25, 0.50)
 - [Phase 05]: Post-analysis is standalone script (not integrated into experiment runner) for re-runnability
 - [Phase 05]: sys.path.insert to import run_post_analysis from scripts/ (not a package)
-- [Phase T2]: Monte Carlo validates Egan's mean associator norm 147456/(42875*pi) to within 1% at n=1000
-- [Phase T2]: Global threshold separability framed as conjecture (full proof blocked on between-class lower bound)
-- [Phase T2]: G2 invariance constrains adaptive threshold policies to depend only on G2-invariant statistics (depth, child count, observed norms)
+- [Phase T2]: Config ID offset 900K for purity, 950K for noise interaction avoids collision with strategies 1-3
 
 ### Pending Todos
 
@@ -205,6 +203,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:34:03.497Z
-Stopped at: Completed T2-10-PLAN.md
+Last session: 2026-03-30T02:41:08.042Z
+Stopped at: Completed T2-06-PLAN.md
 Resume file: None
