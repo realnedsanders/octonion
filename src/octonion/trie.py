@@ -745,7 +745,18 @@ class OctonionTrie:
         return sum(sims) / len(sims) > sim_thresh * 0.3
 
     def insert(self, x: torch.Tensor, category: int | None = None) -> TrieNode:
-        """Insert an octonion into the trie, returning the destination node."""
+        """Insert an octonion into the trie, returning the destination node.
+
+        Policy notification: on_insert is called ONLY on the compatible routing
+        path — when a sample naturally routes to an existing node and passes
+        rumination. This gives policies clean associator norm statistics from
+        real routing events. New child creation, forced descent, and max-depth
+        placement do NOT trigger on_insert because:
+        - New children have assoc_norm=0 by construction (key=x, alternativity)
+        - Forced descent/branching passes wrong assoc_norm (from a different child)
+        - These events are structural, not informative for threshold adaptation
+        Nodes use base_assoc until min_obs real observations accumulate.
+        """
         x = x.to(self.dtype)
         norm = x.norm()
         if norm > 0:
@@ -758,16 +769,12 @@ class OctonionTrie:
         for _ in range(self.max_depth):
             if not node.children:
                 sub_idx, _, _ = self._find_best_child(node, x)
-                child = self._create_child(node, x, sub_idx, category)
-                self.policy.on_insert(child, x, float("inf"))
-                return child
+                return self._create_child(node, x, sub_idx, category)
 
             sub_idx, child, assoc_norm = self._find_best_child(node, x)
 
             if child is None:
-                new_child = self._create_child(node, x, sub_idx, category)
-                self.policy.on_insert(new_child, x, float("inf"))
-                return new_child
+                return self._create_child(node, x, sub_idx, category)
 
             threshold = self.policy.get_assoc_threshold(child, node.depth)
             if assoc_norm < threshold and self._ruminate(child, x):
@@ -788,9 +795,7 @@ class OctonionTrie:
                 for alt in activations.argsort(descending=True):
                     alt_idx = alt.item()
                     if alt_idx not in node.children:
-                        new_child = self._create_child(node, x, alt_idx, category)
-                        self.policy.on_insert(new_child, x, assoc_norm)
-                        return new_child
+                        return self._create_child(node, x, alt_idx, category)
                 # All occupied: descend into best
                 node = child
                 self._count(node, category)
@@ -805,16 +810,13 @@ class OctonionTrie:
                 for alt in activations.argsort(descending=True):
                     alt_idx = alt.item()
                     if alt_idx != sub_idx and alt_idx not in node.children:
-                        new_child = self._create_child(node, x, alt_idx, category)
-                        self.policy.on_insert(new_child, x, assoc_norm)
-                        return new_child
+                        return self._create_child(node, x, alt_idx, category)
                 node = child
                 self._count(node, category)
                 continue
 
         self._compose(node, x)
         node.buffer.append((x.clone(), category))
-        self.policy.on_insert(node, x, float("inf"))
         return node
 
     def query(self, x: torch.Tensor) -> TrieNode:
