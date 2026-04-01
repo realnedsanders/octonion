@@ -1,7 +1,7 @@
 DOCKER_IMAGE := texlive/texlive:latest
 DOCKER_RUN   := docker run --rm -v $(CURDIR):/work -w /work $(DOCKER_IMAGE)
 
-TARGETS := main oct-trie
+TARGETS := oct-neural-nets oct-trie
 
 .PHONY: all clean $(TARGETS)
 
