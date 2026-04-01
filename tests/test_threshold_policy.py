@@ -274,7 +274,7 @@ def test_meta_trie_uses_same_class():
 
 
 def test_meta_trie_signal_encoding():
-    """signal_vector produces 8D tensor, algebraic uses routing_key."""
+    """signal_vector produces balanced 8D tensor, algebraic uses routing_key."""
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
@@ -282,11 +282,14 @@ def test_meta_trie_signal_encoding():
     )
     node._policy_state["meta_obs_norms"] = [0.1, 0.2, 0.3]
 
-    # Signal vector encoding produces 8D tensor
+    # Signal vector encoding produces 8D tensor with balanced components
     policy_sv = MetaTriePolicy(signal_encoding="signal_vector")
     sv = policy_sv._encode(node)
     assert sv.shape == (8,), f"Expected shape (8,), got {sv.shape}"
     assert sv.dtype == torch.float64
+    # No single component should dominate (all scaled to roughly [0, 2])
+    normed = sv / sv.norm().clamp(min=1e-10)
+    assert normed.abs().max().item() < 0.99, "Signal vector has degenerate dimension dominance"
 
     # Algebraic encoding uses routing key
     policy_alg = MetaTriePolicy(signal_encoding="algebraic")
@@ -320,8 +323,6 @@ def test_meta_trie_convergence_tracking():
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
     )
-    policy._known_nodes.add(id(node))
-    policy._id_to_node[id(node)] = node
 
     # Insert enough times to trigger multiple updates
     gen = torch.Generator().manual_seed(42)
@@ -347,14 +348,11 @@ def test_meta_trie_self_referential():
         update_frequency=5,
         observation_window=3,
     )
-    initial_thresh = policy.meta_trie.assoc_threshold
 
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
     )
-    policy._known_nodes.add(id(node))
-    policy._id_to_node[id(node)] = node
 
     # Insert enough times to trigger multiple updates
     gen = torch.Generator().manual_seed(99)
