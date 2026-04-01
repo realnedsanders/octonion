@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  30 MAR 2026 03:35
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.11.9)  1 APR 2026 18:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -980,38 +980,49 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (./oct-trie.toc [1
 
 {/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
-al/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}])
+al/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
+[2])
 \tf@toc=\write5
 \openout5 = `oct-trie.toc'.
 
+ [3] [4{/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts
+1.enc}]
+Overfull \hbox (11.02788pt too wide) in paragraph at lines 135--136
+[]\T1/cmr/m/n/10.95 Computational im-ple-men-ta-tions of oc-to-nionic op-er-a-t
+ions face the chal-lenge of non-associativity:
+ []
 
-[2] [3{/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1
-.enc}] [4] [5] [6] [7] [8] [9]
-Overfull \hbox (57.27405pt too wide) in paragraph at lines 442--457
+[5]
+Overfull \hbox (2.68755pt too wide) in paragraph at lines 151--152
+\T1/cmr/m/n/10.95 troller. Neu-ral Tur-ing Ma-chines [[]Graves et al.[], []2014
+[]] and Dif-fer-en-tiable Neu-ral Com-put-ers [[]Graves
+ []
+
+[6] [7] [8] [9] [10] [11] [12] [13] [14] [15] [16]
+Overfull \hbox (57.27405pt too wide) in paragraph at lines 533--548
  [][] 
  []
 
-[10] [11] [12]
-Overfull \hbox (2.25606pt too wide) in paragraph at lines 589--590
+[17] [18] [19]
+Overfull \hbox (2.25606pt too wide) in paragraph at lines 680--681
 \T1/cmr/m/n/10.95 The as-so-ci-a-tor com-pat-i-bil-ity thresh-old, ru-mi-na-tio
 n con-sis-tency thresh-old, and depth er-ror thresh-
  []
 
-[13]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 608.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `superscript' on input line 608.
+(hyperref)                removing `math shift' on input line 699.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 608.
+(hyperref)                removing `superscript' on input line 699.
 
-[14] [15]
-Overfull \hbox (10.17982pt too wide) in paragraph at lines 701--702
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 699.
+
+[20] [21]
+Overfull \hbox (10.17982pt too wide) in paragraph at lines 792--793
 []\T1/cmr/m/n/10.95 Each $\OML/cmm/m/it/10.95 ^^V[]$ \T1/cmr/m/n/10.95 lies nea
 r a dis-tinct quater-nionic sub-al-ge-bra $\OMS/cmsy/m/n/10.95 S[]$\T1/cmr/m/n/
 10.95 , with an-gu-lar dis-tance $\OML/cmm/m/it/10.95 ^^R\OT1/cmr/m/n/10.95 (\O
@@ -1019,34 +1030,40 @@ ML/cmm/m/it/10.95 ^^V[]; \OMS/cmsy/m/n/10.95 S[]\OT1/cmr/m/n/10.95 ) \OML/cmm/m
 /it/10.95 <
  []
 
+[22]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 720.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 720.
+(hyperref)                removing `math shift' on input line 811.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 720.
+(hyperref)                removing `subscript' on input line 811.
 
-[16] [17] [18] [19] [20] [21] (./oct-trie.bbl) [22] (./oct-trie.aux)
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 811.
+
+[23] [24] [25] [26] [27] [28] (./oct-trie.bbl [29] [30] [31] [32] [33])
+[34] (./oct-trie.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-10-24>
  ***********
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `oct-trie.out' has not changed.
-(rerunfilecheck)             Checksum: 044749DBB995E9E73C3B2CE8DC9A7FEF;11209.
+(rerunfilecheck)             Checksum: 55E1CBA7E71A51CBCE223C2AE13FC0F7;13780.
  ) 
 Here is how much of TeX's memory you used:
- 27181 strings out of 467538
- 510964 string characters out of 5419552
- 910271 words of memory out of 5000000
- 55480 multiletter control sequences out of 15000+600000
+ 27557 strings out of 467538
+ 517704 string characters out of 5419552
+ 914914 words of memory out of 5000000
+ 55749 multiletter control sequences out of 15000+600000
  652023 words of font info for 99 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,15n,107p,765b,749s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,15n,107p,1335b,749s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 ></usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb>
 </usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><
@@ -1068,19 +1085,20 @@ exmf-dist/fonts/type1/public/cm-super/sfbx1095.pfb></usr/local/texlive/2025/tex
 mf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2025/texmf
 -dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2025/texmf-d
 ist/fonts/type1/public/cm-super/sfcc1095.pfb></usr/local/texlive/2025/texmf-dis
-t/fonts/type1/public/cm-super/sfrm0700.pfb></usr/local/texlive/2025/texmf-dist/
-fonts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2025/texmf-dist/fo
-nts/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2025/texmf-dist/font
-s/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/
-type1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/ty
-pe1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type
-1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/
-public/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/pu
-blic/cm-super/sftt1095.pfb>
-Output written on oct-trie.pdf (22 pages, 586524 bytes).
+t/fonts/type1/public/cm-super/sfrm0600.pfb></usr/local/texlive/2025/texmf-dist/
+fonts/type1/public/cm-super/sfrm0700.pfb></usr/local/texlive/2025/texmf-dist/fo
+nts/type1/public/cm-super/sfrm0800.pfb></usr/local/texlive/2025/texmf-dist/font
+s/type1/public/cm-super/sfrm0900.pfb></usr/local/texlive/2025/texmf-dist/fonts/
+type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2025/texmf-dist/fonts/ty
+pe1/public/cm-super/sfrm1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type
+1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/
+public/cm-super/sfrm1728.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/pu
+blic/cm-super/sfti1095.pfb></usr/local/texlive/2025/texmf-dist/fonts/type1/publ
+ic/cm-super/sftt1095.pfb>
+Output written on oct-trie.pdf (34 pages, 658090 bytes).
 PDF statistics:
- 727 PDF objects out of 1000 (max. 8388607)
- 635 compressed objects within 7 object streams
- 180 named destinations out of 1000 (max. 500000)
- 453 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1154 PDF objects out of 1200 (max. 8388607)
+ 1044 compressed objects within 11 object streams
+ 287 named destinations out of 1000 (max. 500000)
+ 533 words of extra memory for PDF output out of 10000 (max. 10000000)
 

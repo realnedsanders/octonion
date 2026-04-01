@@ -3,44 +3,47 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: oct-trie.aux
 The style file: plainnat.bst
 Database file #1: references.bib
-You've used 9 entries,
+Warning--empty journal in Boyle2020
+Warning--empty journal in Bronstein2021
+You've used 93 entries,
             2773 wiz_defined-function locations,
-            652 strings with 6242 characters,
-and the built_in function-call counts, 3714 in all, are:
-= -- 305
-> -- 232
-< -- 6
-+ -- 81
-- -- 72
-* -- 275
-:= -- 601
-add.period$ -- 28
-call.type$ -- 9
-change.case$ -- 48
-chr.to.int$ -- 9
-cite$ -- 18
-duplicate$ -- 176
-empty$ -- 309
-format.name$ -- 83
-if$ -- 759
-int.to.chr$ -- 1
+            1179 strings with 20552 characters,
+and the built_in function-call counts, 45620 in all, are:
+= -- 4038
+> -- 2651
+< -- 86
++ -- 907
+- -- 813
+* -- 3617
+:= -- 6906
+add.period$ -- 316
+call.type$ -- 93
+change.case$ -- 539
+chr.to.int$ -- 92
+cite$ -- 188
+duplicate$ -- 2155
+empty$ -- 3777
+format.name$ -- 948
+if$ -- 9661
+int.to.chr$ -- 2
 int.to.str$ -- 1
-missing$ -- 9
-newline$ -- 54
-num.names$ -- 36
-pop$ -- 111
+missing$ -- 100
+newline$ -- 498
+num.names$ -- 372
+pop$ -- 1159
 preamble$ -- 1
-purify$ -- 41
+purify$ -- 456
 quote$ -- 0
-skip$ -- 131
+skip$ -- 1649
 stack$ -- 0
-substring$ -- 68
-swap$ -- 10
-text.length$ -- 0
+substring$ -- 1623
+swap$ -- 316
+text.length$ -- 32
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 89
-warning$ -- 0
-while$ -- 31
+type$ -- 973
+warning$ -- 2
+while$ -- 393
 width$ -- 0
-write$ -- 120
+write$ -- 1256
+(There were 2 warnings)
