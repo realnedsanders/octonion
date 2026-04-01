@@ -38,9 +38,18 @@
 \contentsline {subsection}{\numberline {8.2}Composition Order}{13}{subsection.8.2}%
 \contentsline {subsection}{\numberline {8.3}Adaptive Thresholds}{13}{subsection.8.3}%
 \contentsline {subsection}{\numberline {8.4}Remaining Open Questions}{13}{subsection.8.4}%
-\contentsline {section}{\numberline {9}MNIST Benchmark}{14}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Experimental Setup}{14}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Effect of Encoder Quality}{14}{subsection.9.2}%
-\contentsline {subsection}{\numberline {9.3}Effect of Octonionic Dimensionality}{15}{subsection.9.3}%
-\contentsline {subsection}{\numberline {9.4}Significance}{15}{subsection.9.4}%
-\contentsline {section}{\numberline {10}Conclusion}{15}{section.10}%
+\contentsline {section}{\numberline {9}Adaptive Thresholds and Self-Organization}{14}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Associator Norm Distribution on $S^7$}{14}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Fano Plane Geometry and Subalgebra Routing}{14}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Global Threshold Justification}{16}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}$G_2$ Symmetry and Threshold Invariance}{16}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}Stability-Plasticity Tradeoff}{17}{subsection.9.5}%
+\contentsline {subsection}{\numberline {9.6}Complexity Analysis}{18}{subsection.9.6}%
+\contentsline {subsection}{\numberline {9.7}Self-Organization Narrative}{18}{subsection.9.7}%
+\contentsline {subsection}{\numberline {9.8}Convergence of Meta-Trie Feedback}{19}{subsection.9.8}%
+\contentsline {section}{\numberline {10}MNIST Benchmark}{19}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Experimental Setup}{20}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Effect of Encoder Quality}{20}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Effect of Octonionic Dimensionality}{20}{subsection.10.3}%
+\contentsline {subsection}{\numberline {10.4}Significance}{21}{subsection.10.4}%
+\contentsline {section}{\numberline {11}Conclusion}{21}{section.11}%

@@ -1,9 +1,22 @@
-\begin{thebibliography}{6}
+\begin{thebibliography}{9}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Baez(2002)]{Baez2002}
+John~C. Baez.
+\newblock The octonions.
+\newblock \emph{Bulletin of the American Mathematical Society}, 39\penalty0
+  (2):\penalty0 145--205, 2002.
+
+\bibitem[Egan(2024)]{Egan2024}
+Greg Egan.
+\newblock Peeling the octonions.
+\newblock Personal communication and online discussion, 2024.
+\newblock Analytical computation of the mean associator norm on $S^7$:
+  $E[\|[a,b,c]\|] = 147456/(42875\pi)$. Verified independently by Cook.
 
 \bibitem[Escalera(2026)]{Escalera2026}
 Antonio Escalera.
@@ -24,6 +37,11 @@ Alex Graves, Greg Wayne, Malcolm Reynolds, Tim Harley, Ivo Danihelka, Agnieszka
   Tiago Ramalho, John Agapiou, et~al.
 \newblock Hybrid computing using a neural network with dynamic external memory.
 \newblock \emph{Nature}, 538\penalty0 (7626):\penalty0 471--476, 2016.
+
+\bibitem[Harvey(1990)]{Harvey1990}
+F.~Reese Harvey.
+\newblock \emph{Spinors and Calibrations}.
+\newblock Academic Press, 1990.
 
 \bibitem[Hawkins and Ahmad(2016)]{Hawkins2016}
 Jeff Hawkins and Subutai Ahmad.

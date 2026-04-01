@@ -166,6 +166,43 @@ def _make_policy(policy_type: str, policy_params: dict[str, Any]) -> Any:
 
     trie_module = importlib.import_module("octonion.trie")
     cls = getattr(trie_module, class_name)
+
+    # Hybrid policies need special handling: construct sub-policies from
+    # serialized specs, then pass the constructed objects to HybridPolicy.
+    if policy_type == "hybrid":
+        sub_a_type = policy_params.pop("policy_a_type", "global")
+        sub_a_params = policy_params.pop("policy_a_params", {})
+        sub_a_assoc = policy_params.pop("policy_a_assoc", 0.3)
+        sub_a_sim = policy_params.pop("policy_a_sim", 0.1)
+        sub_b_type = policy_params.pop("policy_b_type", "global")
+        sub_b_params = policy_params.pop("policy_b_params", {})
+        sub_b_assoc = policy_params.pop("policy_b_assoc", 0.3)
+        sub_b_sim = policy_params.pop("policy_b_sim", 0.1)
+
+        # Populate sub-policy params with threshold values using correct names
+        if sub_a_type == "global":
+            sub_a_params.setdefault("assoc_threshold", sub_a_assoc)
+            sub_a_params.setdefault("sim_threshold", sub_a_sim)
+        else:
+            sub_a_params.setdefault("base_assoc", sub_a_assoc)
+            sub_a_params.setdefault("sim_threshold", sub_a_sim)
+        if sub_b_type == "global":
+            sub_b_params.setdefault("assoc_threshold", sub_b_assoc)
+            sub_b_params.setdefault("sim_threshold", sub_b_sim)
+        else:
+            sub_b_params.setdefault("base_assoc", sub_b_assoc)
+            sub_b_params.setdefault("sim_threshold", sub_b_sim)
+
+        policy_a = _make_policy(sub_a_type, sub_a_params)
+        policy_b = _make_policy(sub_b_type, sub_b_params)
+
+        return cls(
+            policy_a=policy_a,
+            policy_b=policy_b,
+            combination=policy_params.get("combination", "mean"),
+            transition_inserts=policy_params.get("transition_inserts", 0),
+        )
+
     return cls(**policy_params)
 
 
@@ -201,11 +238,16 @@ def _run_single_config(
 
         # 2. Construct policy
         policy_params = json.loads(config.policy_params)
-        # Inject base thresholds into policy params for convenience
-        policy_params.setdefault("assoc_threshold", config.assoc_threshold)
-        policy_params.setdefault("sim_threshold", config.sim_threshold)
-        policy_params.setdefault("min_share", config.min_share)
-        policy_params.setdefault("min_count", config.min_count)
+        # For global policy with empty policy_params, inject SweepConfig values
+        # as constructor args. Adaptive policies already have correctly-named
+        # params in their policy_params JSON (e.g., base_assoc, alpha, k).
+        if config.policy_type == "global" and not policy_params:
+            policy_params = {
+                "assoc_threshold": config.assoc_threshold,
+                "sim_threshold": config.sim_threshold,
+                "min_share": config.min_share,
+                "min_count": config.min_count,
+            }
 
         policy = _make_policy(config.policy_type, policy_params)
 

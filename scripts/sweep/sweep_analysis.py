@@ -109,6 +109,8 @@ def _load_best_config_per_strategy(
     """Find the best configuration for each strategy on a benchmark.
 
     Returns the config with highest final-epoch accuracy for each policy_type.
+    Uses each policy_type's own max epoch since different experimental runs
+    (initial sweep vs multi-seed validation) may use different epoch counts.
 
     Args:
         conn: SQLite connection.
@@ -118,28 +120,27 @@ def _load_best_config_per_strategy(
         Dict mapping policy_type -> {config_id, assoc_threshold, sim_threshold,
         accuracy, n_nodes, policy_params, ...}
     """
-    max_epoch = conn.execute(
-        "SELECT MAX(epoch) FROM sweep_results WHERE benchmark = ?",
-        (benchmark,),
-    ).fetchone()[0]
-
-    if max_epoch is None:
-        return {}
-
     results: dict[str, dict[str, Any]] = {}
     for policy_type in ["global"] + ADAPTIVE_STRATEGIES:
+        # Use each config's final epoch rather than a global max, so we
+        # compare each policy's best result at its own training completion.
         row = conn.execute(
             """
             SELECT config_id, policy_type, assoc_threshold, sim_threshold,
                    min_share, min_count, noise, accuracy, n_nodes, n_leaves,
                    max_depth, rumination_rejections, consolidation_merges,
                    branching_factor_mean, branching_factor_std, policy_params
-            FROM sweep_results
-            WHERE benchmark = ? AND epoch = ? AND policy_type = ?
+            FROM sweep_results AS sr
+            WHERE benchmark = ? AND policy_type = ?
+              AND epoch = (
+                  SELECT MAX(epoch) FROM sweep_results
+                  WHERE config_id = sr.config_id AND benchmark = sr.benchmark
+                    AND seed = sr.seed
+              )
             ORDER BY accuracy DESC
             LIMIT 1
             """,
-            (benchmark, max_epoch, policy_type),
+            (benchmark, policy_type),
         ).fetchone()
 
         if row is not None:
@@ -210,6 +211,10 @@ def _load_multiseed_by_policy(
     If multi-seed validation data exists (multiple seeds for same config),
     uses that. Otherwise falls back to the single best config result.
 
+    Multi-seed validation runs may use a different epoch count than the
+    original sweep (e.g., 3 epochs vs 5), so we find multi-seed configs
+    first and use THEIR final epoch, rather than the global max epoch.
+
     Args:
         conn: SQLite connection.
         benchmark: Benchmark name.
@@ -218,6 +223,39 @@ def _load_multiseed_by_policy(
     Returns:
         Array of accuracy values across seeds.
     """
+    # Step 1: Find parameter sets with multiple seeds (multi-seed validation).
+    # Multi-seed configs may have different config_ids per seed, so we group
+    # by parameter values rather than config_id.
+    multiseed_row = conn.execute(
+        """
+        SELECT assoc_threshold, sim_threshold, policy_params, noise,
+               COUNT(DISTINCT seed) as n_seeds, MAX(epoch) as final_epoch
+        FROM sweep_results
+        WHERE benchmark = ? AND policy_type = ?
+        GROUP BY assoc_threshold, sim_threshold, policy_params, noise
+        HAVING n_seeds > 1
+        ORDER BY n_seeds DESC, final_epoch DESC
+        LIMIT 1
+        """,
+        (benchmark, policy_type),
+    ).fetchone()
+
+    if multiseed_row is not None:
+        assoc_t, sim_t, pp, noise, n_seeds, final_epoch = multiseed_row
+        seed_rows = conn.execute(
+            """
+            SELECT accuracy FROM sweep_results
+            WHERE benchmark = ? AND policy_type = ?
+              AND assoc_threshold = ? AND sim_threshold = ?
+              AND policy_params = ? AND noise = ? AND epoch = ?
+            ORDER BY seed
+            """,
+            (benchmark, policy_type, assoc_t, sim_t, pp, noise, final_epoch),
+        ).fetchall()
+        return np.array([r[0] for r in seed_rows])
+
+    # Step 2: Fallback — no multi-seed data. Use best single-seed config
+    # at its own final epoch.
     max_epoch = conn.execute(
         "SELECT MAX(epoch) FROM sweep_results WHERE benchmark = ? AND policy_type = ?",
         (benchmark, policy_type),
@@ -226,33 +264,6 @@ def _load_multiseed_by_policy(
     if max_epoch is None:
         return np.array([])
 
-    # Look for configs with multiple seeds (multi-seed validation data)
-    rows = conn.execute(
-        """
-        SELECT config_id, COUNT(DISTINCT seed) as n_seeds
-        FROM sweep_results
-        WHERE benchmark = ? AND policy_type = ? AND epoch = ?
-        GROUP BY config_id
-        HAVING n_seeds > 1
-        ORDER BY n_seeds DESC
-        LIMIT 1
-        """,
-        (benchmark, policy_type, max_epoch),
-    ).fetchone()
-
-    if rows is not None:
-        config_id = rows[0]
-        seed_rows = conn.execute(
-            """
-            SELECT accuracy FROM sweep_results
-            WHERE benchmark = ? AND config_id = ? AND epoch = ?
-            ORDER BY seed
-            """,
-            (benchmark, config_id, max_epoch),
-        ).fetchall()
-        return np.array([r[0] for r in seed_rows])
-
-    # Fallback: get best single-seed config
     row = conn.execute(
         """
         SELECT accuracy FROM sweep_results
@@ -607,49 +618,44 @@ def compute_structural_variance(
         bm_results: dict[str, Any] = {}
 
         for policy_type in ["global"] + ADAPTIVE_STRATEGIES:
-            max_epoch = conn.execute(
-                """SELECT MAX(epoch) FROM sweep_results
-                   WHERE benchmark = ? AND policy_type = ?""",
-                (benchmark, policy_type),
-            ).fetchone()[0]
-
-            if max_epoch is None:
-                continue
-
-            # Find config with most seeds
-            config_row = conn.execute(
+            # Find parameter set with most seeds (group by params, not config_id,
+            # since multi-seed validation assigns unique config_ids per seed)
+            param_row = conn.execute(
                 """
-                SELECT config_id, COUNT(DISTINCT seed) as n_seeds
+                SELECT assoc_threshold, sim_threshold, policy_params, noise,
+                       COUNT(DISTINCT seed) as n_seeds, MAX(epoch) as final_epoch
                 FROM sweep_results
-                WHERE benchmark = ? AND policy_type = ? AND epoch = ?
-                GROUP BY config_id
-                ORDER BY n_seeds DESC, MAX(accuracy) DESC
+                WHERE benchmark = ? AND policy_type = ?
+                GROUP BY assoc_threshold, sim_threshold, policy_params, noise
+                ORDER BY n_seeds DESC, final_epoch DESC
                 LIMIT 1
                 """,
-                (benchmark, policy_type, max_epoch),
+                (benchmark, policy_type),
             ).fetchone()
 
-            if config_row is None:
+            if param_row is None:
                 continue
 
-            config_id, n_seeds = config_row
+            assoc_t, sim_t, pp, noise, n_seeds, final_epoch = param_row
 
             rows = conn.execute(
                 """
                 SELECT n_nodes, max_depth, branching_factor_mean,
                        rumination_rejections, consolidation_merges
                 FROM sweep_results
-                WHERE benchmark = ? AND config_id = ? AND epoch = ?
+                WHERE benchmark = ? AND policy_type = ?
+                  AND assoc_threshold = ? AND sim_threshold = ?
+                  AND policy_params = ? AND noise = ? AND epoch = ?
                 ORDER BY seed
                 """,
-                (benchmark, config_id, max_epoch),
+                (benchmark, policy_type, assoc_t, sim_t, pp, noise, final_epoch),
             ).fetchall()
 
             if not rows:
                 continue
 
             metric_results: dict[str, Any] = {
-                "config_id": config_id,
+                "assoc_threshold": assoc_t,
                 "n_seeds": n_seeds,
             }
             for col_idx, (col_name, display_name) in enumerate(metrics):
@@ -696,39 +702,41 @@ def compute_generalization_gap(
         bm_results: dict[str, Any] = {}
 
         for policy_type in ["global"] + ADAPTIVE_STRATEGIES:
-            max_epoch = conn.execute(
-                """SELECT MAX(epoch) FROM sweep_results
-                   WHERE benchmark = ? AND policy_type = ?""",
-                (benchmark, policy_type),
-            ).fetchone()[0]
-
-            if max_epoch is None:
-                continue
-
             # Get best accuracy from reduced configs (config_id < 1400000, 10K subset)
+            # using each config's own final epoch
             subset_row = conn.execute(
                 """
                 SELECT accuracy, config_id, assoc_threshold, sim_threshold
-                FROM sweep_results
-                WHERE benchmark = ? AND policy_type = ? AND epoch = ?
+                FROM sweep_results AS sr
+                WHERE benchmark = ? AND policy_type = ?
                       AND config_id < 1400000
+                      AND epoch = (
+                          SELECT MAX(epoch) FROM sweep_results
+                          WHERE config_id = sr.config_id AND benchmark = sr.benchmark
+                            AND seed = sr.seed
+                      )
                 ORDER BY accuracy DESC
                 LIMIT 1
                 """,
-                (benchmark, policy_type, max_epoch),
+                (benchmark, policy_type),
             ).fetchone()
 
             # Get best accuracy from full-scale configs (config_id >= 1400000)
             full_row = conn.execute(
                 """
                 SELECT accuracy, config_id, assoc_threshold, sim_threshold
-                FROM sweep_results
-                WHERE benchmark = ? AND policy_type = ? AND epoch = ?
+                FROM sweep_results AS sr
+                WHERE benchmark = ? AND policy_type = ?
                       AND config_id >= 1400000
+                      AND epoch = (
+                          SELECT MAX(epoch) FROM sweep_results
+                          WHERE config_id = sr.config_id AND benchmark = sr.benchmark
+                            AND seed = sr.seed
+                      )
                 ORDER BY accuracy DESC
                 LIMIT 1
                 """,
-                (benchmark, policy_type, max_epoch),
+                (benchmark, policy_type),
             ).fetchone()
 
             if subset_row is not None and full_row is not None:
@@ -1450,6 +1458,8 @@ def run_full_analysis(
 
         def _json_default(obj: Any) -> Any:
             """Handle non-serializable types."""
+            if isinstance(obj, (np.bool_,)):
+                return bool(obj)
             if isinstance(obj, (np.integer,)):
                 return int(obj)
             if isinstance(obj, (np.floating,)):
