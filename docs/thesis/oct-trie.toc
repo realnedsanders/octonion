@@ -7,59 +7,60 @@
 \contentsline {subsection}{\numberline {2.4}Self-Organizing Systems Without Gradient Descent}{7}{subsection.2.4}%
 \contentsline {subsection}{\numberline {2.5}Catastrophic Forgetting and Continual Learning}{7}{subsection.2.5}%
 \contentsline {subsection}{\numberline {2.6}Hierarchical and Hyperbolic Representations}{8}{subsection.2.6}%
-\contentsline {subsection}{\numberline {2.7}Reversible and Invertible Computation}{8}{subsection.2.7}%
-\contentsline {subsection}{\numberline {2.8}Equivariant Architectures and Symmetry Groups}{9}{subsection.2.8}%
-\contentsline {subsection}{\numberline {2.9}Positioning of the Octonionic Trie}{9}{subsection.2.9}%
-\contentsline {section}{\numberline {3}The Associator as a Computational Primitive}{10}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Definition and Algebraic Properties}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {2.7}Decision Trees and Tree-Based Classification}{8}{subsection.2.7}%
+\contentsline {subsection}{\numberline {2.8}Reversible and Invertible Computation}{9}{subsection.2.8}%
+\contentsline {subsection}{\numberline {2.9}Equivariant Architectures and Symmetry Groups}{10}{subsection.2.9}%
+\contentsline {subsection}{\numberline {2.10}Positioning of the Octonionic Trie}{10}{subsection.2.10}%
+\contentsline {section}{\numberline {3}The Associator as a Computational Primitive}{11}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Definition and Algebraic Properties}{11}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Computational Interpretation}{11}{subsection.3.2}%
-\contentsline {subsection}{\numberline {3.3}The Associator vs.\ Inner Product}{11}{subsection.3.3}%
-\contentsline {section}{\numberline {4}Architecture of the Octonionic Trie}{11}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Structure}{11}{subsection.4.1}%
+\contentsline {subsection}{\numberline {3.3}The Associator vs.\ Inner Product}{12}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Architecture of the Octonionic Trie}{12}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Structure}{12}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Encoding: From Raw Data to Octonions}{12}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1}Hierarchical Projection}{12}{subsubsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.3}Core Operations}{13}{subsection.4.3}%
-\contentsline {subsubsection}{\numberline {4.3.1}Compose: Routing and Update}{13}{subsubsection.4.3.1}%
-\contentsline {subsubsection}{\numberline {4.3.2}Detect: Novelty and Branching}{13}{subsubsection.4.3.2}%
-\contentsline {subsubsection}{\numberline {4.3.3}Ruminate: Consistency Verification}{13}{subsubsection.4.3.3}%
-\contentsline {subsubsection}{\numberline {4.3.4}Consolidate: Pruning and Merging}{14}{subsubsection.4.3.4}%
-\contentsline {subsection}{\numberline {4.4}Algebraic Residuals}{14}{subsection.4.4}%
-\contentsline {subsection}{\numberline {4.5}Memory Buffer and Relevance}{14}{subsection.4.5}%
-\contentsline {section}{\numberline {5}Structural Invariants}{15}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Composition Error Bound}{15}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Compression Efficiency}{15}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Subalgebra Decomposition Cleanliness}{15}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {4.2.1}Hierarchical Projection}{13}{subsubsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.3}Core Operations}{14}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}Compose: Routing and Update}{14}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}Detect: Novelty and Branching}{14}{subsubsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}Ruminate: Consistency Verification}{14}{subsubsection.4.3.3}%
+\contentsline {subsubsection}{\numberline {4.3.4}Consolidate: Pruning and Merging}{15}{subsubsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.4}Algebraic Residuals}{15}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Memory Buffer and Relevance}{15}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Structural Invariants}{16}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Composition Error Bound}{16}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Compression Efficiency}{16}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Subalgebra Decomposition Cleanliness}{16}{subsection.5.3}%
 \contentsline {subsection}{\numberline {5.4}Prediction Consistency}{16}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}Associator Health}{16}{subsection.5.5}%
-\contentsline {section}{\numberline {6}Properties of the Architecture}{16}{section.6}%
-\contentsline {subsection}{\numberline {6.1}No Gradient Computation Required}{16}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Encoder Invariance of Trie Structure}{16}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Information Preservation}{16}{subsection.6.3}%
+\contentsline {subsection}{\numberline {5.5}Associator Health}{17}{subsection.5.5}%
+\contentsline {section}{\numberline {6}Properties of the Architecture}{17}{section.6}%
+\contentsline {subsection}{\numberline {6.1}No Gradient Computation Required}{17}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Encoder Invariance of Trie Structure}{17}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Information Preservation}{17}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Natural Hierarchy}{17}{subsection.6.4}%
-\contentsline {section}{\numberline {7}Relationship to Existing Architectures}{17}{section.7}%
-\contentsline {section}{\numberline {8}Experimental Validation}{17}{section.8}%
+\contentsline {section}{\numberline {7}Relationship to Existing Architectures}{18}{section.7}%
+\contentsline {section}{\numberline {8}Experimental Validation}{18}{section.8}%
 \contentsline {subsection}{\numberline {8.1}Prerequisite 1: Subalgebra Routing Discriminability}{18}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Prerequisite 2: Associator as Novelty Signal}{18}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Prerequisite 3: Composition Depth vs.\ Information Retention}{18}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.2}Prerequisite 2: Associator as Novelty Signal}{19}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Prerequisite 3: Composition Depth vs.\ Information Retention}{19}{subsection.8.3}%
 \contentsline {subsection}{\numberline {8.4}Prototype Trie: Stability-Plasticity Test}{19}{subsection.8.4}%
-\contentsline {subsection}{\numberline {8.5}Key Design Findings}{19}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.5}Key Design Findings}{20}{subsection.8.5}%
 \contentsline {section}{\numberline {9}Open Questions}{20}{section.9}%
 \contentsline {subsection}{\numberline {9.1}Geometric Embedding of the Trie}{20}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Composition Order}{20}{subsection.9.2}%
-\contentsline {subsection}{\numberline {9.3}Adaptive Thresholds}{20}{subsection.9.3}%
-\contentsline {subsection}{\numberline {9.4}Remaining Open Questions}{20}{subsection.9.4}%
-\contentsline {section}{\numberline {10}Adaptive Thresholds and Self-Organization}{20}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Associator Norm Distribution on $S^7$}{20}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Fano Plane Geometry and Subalgebra Routing}{21}{subsection.10.2}%
-\contentsline {subsection}{\numberline {10.3}Global Threshold Justification}{22}{subsection.10.3}%
-\contentsline {subsection}{\numberline {10.4}$G_2$ Symmetry and Threshold Invariance}{23}{subsection.10.4}%
+\contentsline {subsection}{\numberline {9.2}Composition Order}{21}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Adaptive Thresholds}{21}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}Remaining Open Questions}{21}{subsection.9.4}%
+\contentsline {section}{\numberline {10}Adaptive Thresholds and Self-Organization}{21}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Associator Norm Distribution on $S^7$}{21}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Fano Plane Geometry and Subalgebra Routing}{22}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Global Threshold Justification}{23}{subsection.10.3}%
+\contentsline {subsection}{\numberline {10.4}$G_2$ Symmetry and Threshold Invariance}{24}{subsection.10.4}%
 \contentsline {subsection}{\numberline {10.5}Stability-Plasticity Tradeoff}{24}{subsection.10.5}%
-\contentsline {subsection}{\numberline {10.6}Complexity Analysis}{24}{subsection.10.6}%
+\contentsline {subsection}{\numberline {10.6}Complexity Analysis}{25}{subsection.10.6}%
 \contentsline {subsection}{\numberline {10.7}Self-Organization Narrative}{25}{subsection.10.7}%
-\contentsline {subsection}{\numberline {10.8}Convergence of Meta-Trie Feedback}{25}{subsection.10.8}%
-\contentsline {section}{\numberline {11}MNIST Benchmark}{26}{section.11}%
-\contentsline {subsection}{\numberline {11.1}Experimental Setup}{26}{subsection.11.1}%
+\contentsline {subsection}{\numberline {10.8}Convergence of Meta-Trie Feedback}{26}{subsection.10.8}%
+\contentsline {section}{\numberline {11}MNIST Benchmark}{27}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Experimental Setup}{27}{subsection.11.1}%
 \contentsline {subsection}{\numberline {11.2}Effect of Encoder Quality}{27}{subsection.11.2}%
-\contentsline {subsection}{\numberline {11.3}Effect of Octonionic Dimensionality}{27}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.3}Effect of Octonionic Dimensionality}{28}{subsection.11.3}%
 \contentsline {subsection}{\numberline {11.4}Significance}{28}{subsection.11.4}%
-\contentsline {section}{\numberline {12}Conclusion}{28}{section.12}%
+\contentsline {section}{\numberline {12}Conclusion}{29}{section.12}%

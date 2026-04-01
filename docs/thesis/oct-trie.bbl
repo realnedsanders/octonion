@@ -1,4 +1,4 @@
-\begin{thebibliography}{93}
+\begin{thebibliography}{108}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -68,6 +68,16 @@ Johann Brehmer, Pim de~Haan, S{\"o}nke Behrends, and Taco Cohen.
 \newblock In \emph{Advances in Neural Information Processing Systems
   (NeurIPS)}, 2023.
 
+\bibitem[Breiman(2001)]{Breiman2001}
+Leo Breiman.
+\newblock Random forests.
+\newblock \emph{Machine Learning}, 45\penalty0 (1):\penalty0 5--32, 2001.
+
+\bibitem[Breiman et~al.(1984)Breiman, Friedman, Stone, and Olshen]{Breiman1984}
+Leo Breiman, Jerome Friedman, Charles~J. Stone, and R.~A. Olshen.
+\newblock \emph{Classification and Regression Trees}.
+\newblock Chapman and Hall/CRC, 1984.
+
 \bibitem[Bronstein et~al.(2021)Bronstein, Bruna, Cohen, and
   Veli{\v{c}}kovi{\'c}]{Bronstein2021}
 Michael~M. Bronstein, Joan Bruna, Taco Cohen, and Petar Veli{\v{c}}kovi{\'c}.
@@ -97,6 +107,12 @@ Ines Chami, Rex Ying, Christopher R{\'e}, and Jure Leskovec.
 \newblock Hyperbolic graph convolutional neural networks.
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~32, pages 4869--4880, 2019.
+
+\bibitem[Chen and Guestrin(2016)]{ChenGuestrin2016}
+Tianqi Chen and Carlos Guestrin.
+\newblock {XGBoost}: A scalable tree boosting system.
+\newblock In \emph{ACM SIGKDD International Conference on Knowledge Discovery
+  and Data Mining}, pages 785--794, 2016.
 
 \bibitem[Cohen and Welling(2016)]{Cohen2016}
 Taco~S. Cohen and Max Welling.
@@ -128,6 +144,12 @@ Geoffrey~M. Dixon.
   Applications}.
 \newblock Kluwer Academic Publishers, 1994.
 
+\bibitem[Domingos and Hulten(2000)]{Domingos2000}
+Pedro Domingos and Geoff Hulten.
+\newblock Mining high-speed data streams.
+\newblock In \emph{ACM SIGKDD International Conference on Knowledge Discovery
+  and Data Mining}, pages 71--80, 2000.
+
 \bibitem[Dray and Manogue(2015)]{DrayManogue2015}
 Tevian Dray and Corinne~A. Manogue.
 \newblock \emph{The Geometry of the Octonions}.
@@ -146,12 +168,24 @@ Antonio Escalera.
   geometric reasoning.
 \newblock Working draft, 2026.
 
+\bibitem[Fredkin(1960)]{Fredkin1960}
+Edward Fredkin.
+\newblock Trie memory.
+\newblock \emph{Communications of the ACM}, 3\penalty0 (9):\penalty0 490--499,
+  1960.
+
 \bibitem[French(1999)]{French1999}
 Robert~M. French.
 \newblock Catastrophic forgetting in connectionist networks.
 \newblock \emph{Trends in Cognitive Sciences}, 3\penalty0 (4):\penalty0
   128--135, 1999.
 \newblock \doi{10.1016/S1364-6613(99)01294-2}.
+
+\bibitem[Friedman(2001)]{Friedman2001}
+Jerome~H. Friedman.
+\newblock Greedy function approximation: A gradient boosting machine.
+\newblock \emph{The Annals of Statistics}, 29\penalty0 (5):\penalty0
+  1189--1232, 2001.
 
 \bibitem[Fritzke(1994)]{Fritzke1994}
 Bernd Fritzke.
@@ -165,6 +199,12 @@ Bernd Fritzke.
 \newblock A growing neural gas network learns topologies.
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~7, pages 625--632. MIT Press, 1995.
+
+\bibitem[Frosst and Hinton(2017)]{Frosst2017}
+Nicholas Frosst and Geoffrey Hinton.
+\newblock Distilling a neural network into a soft decision tree.
+\newblock 2017.
+\newblock arXiv:1711.09784.
 
 \bibitem[Furey(2016)]{Furey2016}
 Cohl Furey.
@@ -212,6 +252,14 @@ Alex Graves, Greg Wayne, Malcolm Reynolds, Tim Harley, Ivo Danihelka, Agnieszka
   Tiago Ramalho, John Agapiou, et~al.
 \newblock Hybrid computing using a neural network with dynamic external memory.
 \newblock \emph{Nature}, 538\penalty0 (7626):\penalty0 471--476, 2016.
+
+\bibitem[Grinsztajn et~al.(2022)Grinsztajn, Oyallon, and
+  Varoquaux]{Grinsztajn2022}
+L{\'e}o Grinsztajn, Edouard Oyallon, and Ga{\"e}l Varoquaux.
+\newblock Why do tree-based models still outperform deep learning on typical
+  tabular data?
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS),
+  Datasets and Benchmarks Track}, 2022.
 
 \bibitem[Grossberg(1976)]{Grossberg1976a}
 Stephen Grossberg.
@@ -334,12 +382,27 @@ Teuvo Kohonen.
   1990.
 \newblock \doi{10.1109/5.58325}.
 
+\bibitem[Kontschieder et~al.(2015)Kontschieder, Fiterau, Criminisi, and
+  Rota~Bul\`{o}]{Kontschieder2015}
+Peter Kontschieder, Madalina Fiterau, Antonio Criminisi, and Samuel
+  Rota~Bul\`{o}.
+\newblock Deep neural decision forests.
+\newblock In \emph{IEEE International Conference on Computer Vision (ICCV)},
+  pages 1467--1475, 2015.
+
 \bibitem[Krotov and Hopfield(2019)]{KrotovHopfield2019}
 Dmitry Krotov and John~J. Hopfield.
 \newblock Unsupervised learning by competing hidden units.
 \newblock \emph{Proceedings of the National Academy of Sciences}, 116\penalty0
   (16):\penalty0 7723--7731, 2019.
 \newblock \doi{10.1073/pnas.1820458116}.
+
+\bibitem[Lakshminarayanan et~al.(2014)Lakshminarayanan, Roy, and
+  Teh]{Lakshminarayanan2014}
+Balaji Lakshminarayanan, Daniel~M. Roy, and Yee~Whye Teh.
+\newblock Mondrian forests: Efficient online random forests.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~27, pages 3140--3148, 2014.
 
 \bibitem[Landauer(1961)]{Landauer1961}
 Rolf Landauer.
@@ -353,6 +416,12 @@ Marc Law, Renjie Liao, Jake Snell, and Richard Zemel.
 \newblock In \emph{Proceedings of the 36th International Conference on Machine
   Learning (ICML)}, volume~97 of \emph{Proceedings of Machine Learning
   Research}, pages 3672--3681. PMLR, 2019.
+
+\bibitem[Lee et~al.(2013)Lee, Cook, Park, and Lee]{Lee2013}
+Yoon~Dong Lee, Dianne Cook, Ji-won Park, and Eun-Kyung Lee.
+\newblock {PPtree}: Projection pursuit classification tree.
+\newblock \emph{Electronic Journal of Statistics}, 7:\penalty0 1369--1386,
+  2013.
 
 \bibitem[Martinetz and Schulten(1991)]{MartinetzSchulten1991}
 Thomas Martinetz and Klaus Schulten.
@@ -394,6 +463,12 @@ Tsendsuren Munkhdalai and Hong Yu.
 \newblock Meta networks.
 \newblock In \emph{Proceedings of the 34th International Conference on Machine
   Learning (ICML)}, volume~70, pages 2554--2563. PMLR, 2017.
+
+\bibitem[Murthy et~al.(1994)Murthy, Kasif, and Salzberg]{Murthy1994}
+Sreerama~K. Murthy, Simon Kasif, and Steven Salzberg.
+\newblock A system for induction of oblique decision trees.
+\newblock \emph{Journal of Artificial Intelligence Research}, 2:\penalty0
+  1--32, 1994.
 
 \bibitem[Nickel and Kiela(2017)]{Nickel2017}
 Maximilian Nickel and Douwe Kiela.
@@ -458,6 +533,16 @@ C{\u{a}}lin-Adrian Popa.
 \newblock Octonion-valued neural networks.
 \newblock In \emph{International Conference on Artificial Neural Networks
   (ICANN)}, volume 9886 of \emph{LNCS}, pages 435--443. Springer, 2016.
+
+\bibitem[Quinlan(1986)]{Quinlan1986}
+J.~Ross Quinlan.
+\newblock Induction of decision trees.
+\newblock \emph{Machine Learning}, 1\penalty0 (1):\penalty0 81--106, 1986.
+
+\bibitem[Quinlan(1993)]{Quinlan1993}
+J.~Ross Quinlan.
+\newblock \emph{{C4.5}: Programs for Machine Learning}.
+\newblock Morgan Kaufmann, 1993.
 
 \bibitem[Ramsauer et~al.(2021)Ramsauer, Sch{\"a}fl, Lehner, Seidl, Widrich,
   Gruber, Holzleitner, Adler, Kreil, Kopp, Klambauer, Brandstetter, and
@@ -571,6 +656,15 @@ Ivan Todorov and Svetla Drenska.
 \newblock Octonions, exceptional {J}ordan algebra and the role of the group
   {$F_4$} in particle physics.
 \newblock \emph{Advances in Applied Clifford Algebras}, 28:\penalty0 82, 2018.
+
+\bibitem[Tomita et~al.(2020)Tomita, Browne, Shen, Chung, Patsolic, Falk,
+  Priebe, Yim, Burns, Maggioni, and Vogelstein]{Tomita2020}
+Tyler~M. Tomita, James Browne, Cencheng Shen, Jaewon Chung, Jesse~L. Patsolic,
+  Benjamin Falk, Carey~E. Priebe, Jason Yim, Randal Burns, Mauro Maggioni, and
+  Joshua~T. Vogelstein.
+\newblock Sparse projection oblique randomer forests.
+\newblock \emph{Journal of Machine Learning Research}, 21\penalty0
+  (104):\penalty0 1--39, 2020.
 
 \bibitem[Trabelsi et~al.(2018)Trabelsi, Bilaniuk, Zhang, Serdyuk, Subramanian,
   Santos, Mehri, Rostamzadeh, Bengio, and Pal]{Trabelsi2018}
