@@ -64,13 +64,6 @@ The associator compatibility threshold tau is the single most consequential para
 
 This is a **proof of concept** that non-associative algebra can serve as a computational substrate for self-organizing memory. The 95.2% MNIST result demonstrates viability; the theoretical framework (associator as novelty signal, G2 invariance of thresholds, composition error bounds) is the deeper contribution. The paper proposes a qualitatively different computational paradigm -- self-organization from algebraic structure -- complementing the companion thesis on gradient-trained octonionic networks.
 
-## Where this could be submitted
-
-- **NeurIPS / ICML**: Novel ML paradigm with theoretical + experimental validation (would need to cut Related Work, add tree baselines)
-- **JMLR**: Full-length journal paper accommodating the theoretical depth
-- **Neural Computation**: Emphasis on the algebraic/computational theory
-- The current draft is thesis-length (~25 pages) and thorough; a conference submission would require significant condensation
-
 ## Questions I'd like feedback on
 
 1. Is the "algebraic economy" framing compelling, or does it need a stronger formal characterization?
