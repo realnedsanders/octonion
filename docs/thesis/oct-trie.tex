@@ -154,7 +154,30 @@ Memory-augmented architectures attach an external memory module to a neural netw
 
 A parallel tradition constructs memory from \emph{algebraic} operations rather than learned attention. \citet{Plate1995} introduces Holographic Reduced Representations (HRR), using circular convolution for compositional distributed memory. \citet{Kanerva1988} develops Sparse Distributed Memory using high-dimensional binary addresses, later generalized to hyperdimensional computing~\citep{Kanerva2009}. These vector symbolic architectures (VSAs) are surveyed comprehensively by~\citet{Kleyko2023a,Kleyko2023b}.
 
-The octonionic trie belongs to this algebraic memory tradition but differs from existing VSAs in three respects: (1)~it uses a non-associative algebra, gaining the octonionic associator as a novelty signal with no counterpart in associative VSAs; (2)~it organizes memory hierarchically in a tree rather than as a flat distributed representation; and (3)~it grows dynamically rather than operating over a fixed-dimensional vector space. A detailed architectural comparison with NTMs, DNCs, SDM, and HTM is provided in \cref{sec:related}.
+The octonionic trie belongs to this algebraic memory tradition but differs from existing VSAs in three respects: (1)~it uses a non-associative algebra, gaining the octonionic associator as a novelty signal with no counterpart in associative VSAs; (2)~it organizes memory hierarchically in a tree rather than as a flat distributed representation; and (3)~it grows dynamically rather than operating over a fixed-dimensional vector space.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of the octonionic trie with existing memory-augmented architectures.}
+\label{tab:comparison}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Property & NTM/DNC & SDM & HTM & Oct-Trie \\
+\midrule
+Memory structure  & Flat array       & Sparse distributed & Columnar  & Tree (trie) \\
+Growth mechanism  & Fixed size       & Fixed size          & Fixed columns & Dynamic (associator) \\
+Routing           & Learned attention & Hamming distance   & Spatial pooling & Subalgebra decomposition \\
+Update rule       & Learned write    & Superposition      & Hebbian   & Algebraic composition \\
+Consistency check & None             & None                & None      & Algebraic inversion \\
+Training          & Backprop         & None                & Hebbian   & None (algebraic) \\
+Pruning           & None             & Decay               & Decay     & Sibling absorption \\
+Self-monitoring   & None             & None                & Anomaly   & 5 algebraic invariants \\
+\bottomrule
+\end{tabular}
+\smallskip
+
+\noindent\footnotesize NTM = Neural Turing Machine~\citep{Graves2014}; DNC = Differentiable Neural Computer~\citep{Graves2016}; SDM = Sparse Distributed Memory~\citep{Kanerva1988}; HTM = Hierarchical Temporal Memory~\citep{Hawkins2016}.
+\end{table}
 
 The trie's tree-based routing also connects to the \textbf{Mixture-of-Experts} (MoE) tradition. Hierarchical MoE~\citep{JordanJacobs1994} routes inputs through a tree of gating networks to specialist experts, and sparse MoE layers~\citep{Shazeer2017} scale this to large models via learned top-$k$ gating. The octonionic trie performs analogous hierarchical routing but replaces learned gating functions with algebraic subalgebra decomposition: the ``gate'' at each node is the projection of the octonionic product onto the 7 quaternionic subalgebras, requiring no trainable gating parameters.
 
@@ -536,42 +559,6 @@ The trie's tree structure encodes hierarchy explicitly: parent nodes represent m
 This hierarchy emerges from the data and the algebra, not from architectural prescription. The trie does not have predefined ``levels of abstraction''; abstraction levels arise from the subalgebra decomposition of the data itself.
 
 %% ====================================================================
-\section{Relationship to Existing Architectures}
-\label{sec:related}
-%% ====================================================================
-
-\begin{table}[ht]
-\centering
-\caption{Comparison with existing memory-augmented architectures.}
-\label{tab:comparison}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Property & NTM/DNC & SDM & HTM & Oct-Trie \\
-\midrule
-Memory structure  & Flat array       & Sparse distributed & Columnar  & Tree (trie) \\
-Growth mechanism  & Fixed size       & Fixed size          & Fixed columns & Dynamic (associator) \\
-Routing           & Learned attention & Hamming distance   & Spatial pooling & Subalgebra decomposition \\
-Update rule       & Learned write    & Superposition      & Hebbian   & Algebraic composition \\
-Consistency check & None             & None                & None      & Algebraic inversion \\
-Training          & Backprop         & None                & Hebbian   & None (algebraic) \\
-Pruning           & None             & Decay               & Decay     & Sibling absorption \\
-Self-monitoring   & None             & None                & Anomaly   & 5 algebraic invariants \\
-\bottomrule
-\end{tabular}
-\smallskip
-
-\noindent\footnotesize NTM = Neural Turing Machine~\citep{Graves2014}; DNC = Differentiable Neural Computer~\citep{Graves2016}; SDM = Sparse Distributed Memory~\citep{Kanerva1988}; HTM = Hierarchical Temporal Memory~\citep{Hawkins2016}.
-\end{table}
-
-The octonionic trie shares individual features with existing architectures but combines them in a way that, to our knowledge, has not been proposed:
-
-\textbf{Kanerva's Sparse Distributed Memory}~\citep{Kanerva1988} uses high-dimensional binary addresses for content-addressable storage. The octonionic trie replaces binary address matching with subalgebra decomposition, providing a richer routing signal (7 overlapping 3D subspaces vs.\ Hamming distance in a flat binary space).
-
-\textbf{Hierarchical Temporal Memory}~\citep{Hawkins2016} uses columnar structure inspired by neocortical columns, with Hebbian-like learning. The octonionic trie replaces the columnar structure with the Fano plane and Hebbian updates with algebraic composition. Both share the principle of learning without backpropagation.
-
-\textbf{Neural Turing Machines}~\citep{Graves2014} use learned read/write heads over a flat memory matrix. The octonionic trie replaces learned attention with algebraic routing and learned writes with algebraic composition, eliminating the need for gradient-based controller training. The NTM's flat memory becomes a dynamic tree.
-
-%% ====================================================================
 \section{Experimental Validation}
 \label{sec:experiments}
 %% ====================================================================
@@ -691,15 +678,15 @@ Octonionic multiplication is non-commutative: $a \cdot b \neq b \cdot a$ in gene
 
 \subsection{Adaptive Thresholds}
 
-The associator compatibility threshold, rumination consistency threshold, and depth error threshold are currently global constants. Whether these should be per-node adaptive values or derived from data distribution percentiles is an open question with significant impact on growth rate and sensitivity.
+The associator compatibility threshold, rumination consistency threshold, and depth error threshold are currently global constants. Whether these should be per-node adaptive values or derived from data distribution percentiles is an open question with significant impact on growth rate and sensitivity. This question is addressed theoretically in \cref{sec:adaptive-thresholds} and remains an active area of empirical investigation.
 
-\subsection{Remaining Open Questions}
+\subsection{Scalability and Capacity}
 
-\begin{itemize}[nosep]
-  \item \textbf{Geometric embedding:} Whether the trie's nodes should live on a hyperboloid, in a Poincar\'{e} ball, or in flat~$\Oct$ remains to be determined. The tree structure already encodes hierarchy; whether a hyperbolic metric provides additional benefit is an empirical question.
-  \item \textbf{Composition order:} The choice between $o' = o \cdot x$ and $o' = x \cdot o$ affects subalgebra activation patterns and should be characterized empirically.
-  \item \textbf{Adaptive thresholds:} Whether associator and consistency thresholds should be global constants, per-node adaptive, or data-derived is an open question.
-\end{itemize}
+The trie's node count grows with data complexity (26,042 nodes for 60,000 MNIST samples). Whether the consolidation mechanisms (sibling absorption, child merging) can bound this growth in practice, and what the effective capacity limit is for a trie of bounded depth, are open questions with direct implications for deployment to larger-scale problems. Empirical characterization on datasets beyond MNIST --- including CIFAR-10, larger numbers of classes, and non-image modalities --- is needed to establish the practical operating regime.
+
+\subsection{Baselines}
+
+The current experimental evaluation compares the trie to $k$-nearest neighbors on identical features. Comparison to decision tree and random forest baselines on the same octonionic features would provide a more complete picture of the trie's competitive position within the tree-based classification landscape.
 
 %% ====================================================================
 \section{Adaptive Thresholds and Self-Organization}
