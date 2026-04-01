@@ -275,21 +275,22 @@ def test_meta_trie_uses_same_class():
 
 def test_meta_trie_signal_encoding():
     """signal_vector produces 8D tensor, algebraic uses routing_key."""
-    policy = MetaTriePolicy(signal_encoding="signal_vector")
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
         depth=3,
     )
-    node._policy_state["meta_assoc_norms"] = [0.1, 0.2, 0.3]
+    node._policy_state["meta_obs_norms"] = [0.1, 0.2, 0.3]
 
     # Signal vector encoding produces 8D tensor
-    sv = policy._encode_signal_vector(node)
+    policy_sv = MetaTriePolicy(signal_encoding="signal_vector")
+    sv = policy_sv._encode(node)
     assert sv.shape == (8,), f"Expected shape (8,), got {sv.shape}"
     assert sv.dtype == torch.float64
 
     # Algebraic encoding uses routing key
-    ak = policy._encode_algebraic(node)
+    policy_alg = MetaTriePolicy(signal_encoding="algebraic")
+    ak = policy_alg._encode(node)
     assert ak.shape == (8,)
     assert torch.allclose(ak, node.routing_key)
 
@@ -313,15 +314,18 @@ def test_meta_trie_convergence_tracking():
     policy = MetaTriePolicy(
         base_assoc=0.3,
         update_frequency=5,  # update every 5 inserts for fast testing
+        observation_window=3,  # short window for fast testing
     )
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
     )
+    policy._known_nodes.add(id(node))
+    policy._id_to_node[id(node)] = node
 
     # Insert enough times to trigger multiple updates
     gen = torch.Generator().manual_seed(42)
-    for i in range(25):
+    for i in range(30):
         x = torch.randn(8, dtype=torch.float64, generator=gen)
         x = x / x.norm()
         policy.on_insert(node, x, 0.1 + 0.01 * i)
@@ -336,30 +340,30 @@ def test_meta_trie_convergence_tracking():
 
 
 def test_meta_trie_self_referential():
-    """Self-referential mode updates meta_trie.assoc_threshold."""
+    """Self-referential mode adapts meta_trie.assoc_threshold based on density."""
     policy = MetaTriePolicy(
         base_assoc=0.3,
         self_referential=True,
         update_frequency=5,
+        observation_window=3,
     )
+    initial_thresh = policy.meta_trie.assoc_threshold
 
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
     )
-    # Force enough data for stability signal to be non-default
-    node._policy_state["meta_assoc_norms"] = [0.5, 0.1, 0.9, 0.2, 0.8, 0.15]
+    policy._known_nodes.add(id(node))
+    policy._id_to_node[id(node)] = node
 
-    # Insert enough times to trigger an update with high CV data
+    # Insert enough times to trigger multiple updates
     gen = torch.Generator().manual_seed(99)
-    for i in range(10):
+    for i in range(30):
         x = torch.randn(8, dtype=torch.float64, generator=gen)
         x = x / x.norm()
         policy.on_insert(node, x, 0.3 + 0.2 * (i % 3))
 
-    # After self-referential update, meta_trie threshold may have changed
-    # (it depends on the meta-trie's dominant_category, but the mechanism should work)
-    # We test that the property is set without error
+    # After self-referential updates, meta_trie threshold should be a valid float
     new_thresh = policy.meta_trie.assoc_threshold
     assert isinstance(new_thresh, float)
     assert new_thresh > 0.0
