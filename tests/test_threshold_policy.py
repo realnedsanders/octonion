@@ -341,7 +341,7 @@ def test_meta_trie_convergence_tracking():
 
 
 def test_meta_trie_self_referential():
-    """Self-referential mode adapts meta_trie.assoc_threshold based on density."""
+    """Self-referential mode adapts meta_trie.assoc_threshold based on hit rate."""
     policy = MetaTriePolicy(
         base_assoc=0.3,
         self_referential=True,
@@ -354,9 +354,9 @@ def test_meta_trie_self_referential():
         content=torch.randn(8, dtype=torch.float64),
     )
 
-    # Insert enough times to trigger multiple updates
+    # Insert enough times to trigger multiple updates and evaluations
     gen = torch.Generator().manual_seed(99)
-    for i in range(30):
+    for i in range(50):
         x = torch.randn(8, dtype=torch.float64, generator=gen)
         x = x / x.norm()
         policy.on_insert(node, x, 0.3 + 0.2 * (i % 3))
@@ -365,6 +365,8 @@ def test_meta_trie_self_referential():
     new_thresh = policy.meta_trie.assoc_threshold
     assert isinstance(new_thresh, float)
     assert new_thresh > 0.0
+    # Should have accumulated outcome data for self-assessment
+    assert len(policy._meta_outcomes) > 0
 
 
 # -- Test 9f: MetaTriePolicy converged property per D-18 ------------------

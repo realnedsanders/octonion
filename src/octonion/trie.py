@@ -21,6 +21,7 @@ Example:
 from __future__ import annotations
 
 import math
+import weakref
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
@@ -367,7 +368,7 @@ class MetaTriePolicy(ThresholdPolicy):
     Per D-12: Uses the same OctonionTrie class (not a subclass).
     Per D-13: Categories are discretized threshold actions.
     Per D-14: Two input encoding modes.
-    Per D-15: Two feedback signal modes (stability and accuracy).
+    Per D-15: Two feedback signal modes (stability and coherence).
 
     Feedback loop (see T2-AAR-meta-trie.md for design rationale):
       1. ACT:     Query meta-trie with node state -> get recommended action
@@ -375,8 +376,9 @@ class MetaTriePolicy(ThresholdPolicy):
       3. OBSERVE: Collect assoc_norms in a per-action window (reset on each act)
       4. LEARN:   Compare pre/post-action quality -> insert outcome into meta-trie
 
-    The meta-trie's categories represent "the action that LED TO a good outcome
-    for a node with this profile," NOT "the action the heuristic computed."
+    All feedback signals are unsupervised (per D-02). The meta-trie learns
+    from the classifier's own internal signals — routing consistency, buffer
+    coherence, branching stability — not from external labels.
     """
 
     # Threshold actions per D-13
@@ -396,14 +398,14 @@ class MetaTriePolicy(ThresholdPolicy):
         min_share: float = 0.05,
         min_count: int = 3,
         signal_encoding: str = "signal_vector",  # or "algebraic" per D-14
-        feedback_signal: str = "stability",       # or "accuracy" per D-15
+        feedback_signal: str = "stability",       # or "coherence" per D-15
         update_frequency: int = 100,              # per D-16: per-N-compatible-routings
         observation_window: int = 20,             # samples to observe before evaluating
-        exploration_rate: float = 0.1,            # initial epsilon (decays per fix #8)
-        exploration_decay: float = 0.995,         # per-update decay for exploration rate
+        exploration_rate: float = 0.1,            # initial epsilon (decays over time)
+        exploration_decay: float = 0.995,         # per-update-event decay
         exploration_min: float = 0.01,            # floor for exploration rate
         generalize_every: int = 10,               # full sweep every N update events
-        generalize_fraction: float = 0.3,         # fraction of nodes to update per sweep (fix #3)
+        generalize_fraction: float = 0.3,         # fraction of nodes per sweep
         self_referential: bool = False,            # per D-17
         meta_seed: int = 7919,
     ):
@@ -434,11 +436,16 @@ class MetaTriePolicy(ThresholdPolicy):
         self._convergence_history: list[float] = []  # per D-18
         self._prev_adjustments: dict[int, float] = {}
         self._rng = torch.Generator().manual_seed(meta_seed + 1)
-        self._id_to_node: dict[int, TrieNode] = {}
+        # Weak references: consolidated nodes can be garbage collected
+        self._id_to_node: weakref.WeakValueDictionary[int, TrieNode] = (
+            weakref.WeakValueDictionary()
+        )
+        # Track meta-trie's recommendation accuracy for self-referential mode
+        self._meta_outcomes: list[bool] = []  # recent: did recommendation help?
 
     @property
     def exploration_rate(self) -> float:
-        """Current exploration rate (decays over time per fix #8)."""
+        """Current exploration rate (decays over time)."""
         return self._exploration_rate
 
     def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
@@ -455,34 +462,41 @@ class MetaTriePolicy(ThresholdPolicy):
         state = node._policy_state
         self._id_to_node[id(node)] = node
 
-        # Fix #1: Track post-action norms in a SEPARATE list that resets per action.
-        # "meta_post_norms" collects observations since the last action.
-        # "meta_obs_norms" is the long-running history (for encoding).
+        # Track post-action norms in a separate list that resets per action.
         state.setdefault("meta_obs_norms", []).append(assoc_norm)
         if len(state["meta_obs_norms"]) > 200:
             state["meta_obs_norms"] = state["meta_obs_norms"][-200:]
         if "meta_action_taken" in state:
             state.setdefault("meta_post_norms", []).append(assoc_norm)
 
-        # Check if observation window is full for pending action
+        # Evaluate when observation window is full (guard: only if not yet evaluated)
         post_norms = state.get("meta_post_norms", [])
-        if len(post_norms) >= self.observation_window and "meta_action_taken" in state:
+        if (len(post_norms) >= self.observation_window
+                and "meta_action_taken" in state):
             self._evaluate_and_learn(node)
 
         self._insert_counter += 1
         if self._insert_counter % self.update_frequency == 0:
-            # Fix #2: Force-evaluate pending action before starting new one
+            # Evaluate pending action if data exists, otherwise overwrite.
+            # Overwriting is acceptable: low-traffic nodes may never
+            # accumulate enough post-action data for a clean evaluation,
+            # and blocking them creates stuck nodes that never recover.
             if "meta_action_taken" in state and state.get("meta_post_norms"):
                 self._evaluate_and_learn(node)
             self._act_on_node(node)
             self._update_counter += 1
-            # Fix #3: Staggered generalization (random subset)
+            # Staggered generalization
             if self._update_counter % self.generalize_every == 0:
                 self._generalize_sweep()
             self._track_convergence()
             if self.self_referential:
                 self._adapt_meta_trie_threshold()
-            # Fix #7: Prune stale entries from _id_to_node
+            # Exploration decay: only in update path, not in generalization
+            self._exploration_rate = max(
+                self.exploration_min,
+                self._exploration_rate * self.exploration_decay,
+            )
+            # Prune stale nodes periodically
             if self._update_counter % (self.generalize_every * 5) == 0:
                 self._prune_stale_nodes()
 
@@ -490,9 +504,7 @@ class MetaTriePolicy(ThresholdPolicy):
         """Encode node state as octonion for meta-trie input."""
         if self.signal_encoding == "algebraic":
             return node.routing_key.clone()
-        # Fix #4: Signal vector with balanced component scales.
-        # Each component is scaled to roughly [0, 1] before combining,
-        # so no single dimension dominates after unit normalization.
+        # Signal vector with balanced component scales.
         state = node._policy_state
         norms = state.get("meta_obs_norms", [0.0])
         norms_t = torch.tensor(norms[-30:], dtype=torch.float64)
@@ -500,14 +512,14 @@ class MetaTriePolicy(ThresholdPolicy):
         std_norm = norms_t.std().item() if len(norms) > 1 else 0.0
         n_children = len(node.children)
         return torch.tensor([
-            min(mean_norm / self.base_assoc, 2.0),          # norm relative to base, capped
-            min(std_norm / max(mean_norm, 1e-10), 2.0),     # CV (coefficient of variation), capped
-            n_children / 7.0,                                # branching fraction
-            min(node.insert_count / 100.0, 2.0),            # traffic volume, capped
-            (state.get("meta_adjustment", 0.0) + 0.2) / 0.4,  # adjustment scaled to [0, 1]
-            node.depth / 15.0,                               # depth fraction
-            self._buffer_consistency(node),                  # pairwise similarity
-            min(len(norms) / 30.0, 2.0),                    # data maturity, capped
+            min(mean_norm / self.base_assoc, 2.0),
+            min(std_norm / max(mean_norm, 1e-10), 2.0),
+            n_children / 7.0,
+            min(node.insert_count / 100.0, 2.0),
+            (state.get("meta_adjustment", 0.0) + 0.2) / 0.4,
+            node.depth / 15.0,
+            self._buffer_consistency(node),
+            min(len(norms) / 30.0, 2.0),
         ], dtype=torch.float64)
 
     def _buffer_consistency(self, node: TrieNode) -> float:
@@ -525,38 +537,42 @@ class MetaTriePolicy(ThresholdPolicy):
         """ACT phase: query meta-trie for recommendation, apply to node."""
         state = node._policy_state
 
-        # Record pre-action baseline
+        # Record pre-action baseline using MATCHED window size
         norms = state.get("meta_obs_norms", [])
-        if len(norms) >= 3:
-            state["meta_pre_mean"] = torch.tensor(
-                norms[-30:], dtype=torch.float64
-            ).mean().item()
+        window = min(self.observation_window, len(norms))
+        if window >= 3:
+            state["meta_pre_mean"] = sum(norms[-window:]) / window
+            state["meta_pre_consistency"] = self._buffer_consistency(node)
         else:
             state["meta_pre_mean"] = self.base_assoc
+            state["meta_pre_consistency"] = 0.0
 
         # Query meta-trie for recommendation
         meta_input = self._encode(node)
         leaf = self.meta_trie.query(meta_input)
         recommended = leaf.dominant_category
 
-        # Fix #8: Decaying epsilon-greedy exploration
-        if recommended is None or torch.rand(1, generator=self._rng).item() < self._exploration_rate:
+        # Epsilon-greedy exploration (decay happens in on_insert update path only)
+        if (recommended is None
+                or torch.rand(1, generator=self._rng).item() < self._exploration_rate):
             action = torch.randint(0, 5, (1,), generator=self._rng).item()
         else:
             action = recommended
-        self._exploration_rate = max(
-            self.exploration_min,
-            self._exploration_rate * self.exploration_decay,
-        )
 
-        # Apply adjustment and reset observation window (fix #1)
+        # Apply adjustment and reset observation window
         state["meta_adjustment"] = self.ACTIONS[action]
         state["meta_action_taken"] = action
         state["meta_state_before"] = meta_input.clone()
-        state["meta_post_norms"] = []  # Reset per-action observation list
+        state["meta_post_norms"] = []
 
     def _evaluate_and_learn(self, node: TrieNode) -> None:
-        """OBSERVE + LEARN: evaluate outcome of last action, feed back to meta-trie."""
+        """OBSERVE + LEARN: evaluate outcome, feed back to meta-trie.
+
+        Quality signals are purely unsupervised (per D-02):
+        - stability: did assoc_norms decrease? (better routing compatibility)
+        - coherence: did buffer consistency increase? (more homogeneous samples)
+        Both are environmental feedback from the classifier's own internal state.
+        """
         state = node._policy_state
 
         action_taken = state.get("meta_action_taken")
@@ -564,64 +580,80 @@ class MetaTriePolicy(ThresholdPolicy):
         pre_mean = state.get("meta_pre_mean", self.base_assoc)
 
         if action_taken is None or state_before is None:
+            self._clear_pending_action(state)
             return
 
-        # Fix #1: Use the dedicated post-action norm list (not absolute index)
         post_norms = state.get("meta_post_norms", [])
         if len(post_norms) < 3:
-            # Not enough data — clear action without learning
             self._clear_pending_action(state)
             return
 
         post_mean = sum(post_norms) / len(post_norms)
 
-        # Fix #5 + #6: Quality metric based on feedback_signal mode
-        if self.feedback_signal == "accuracy":
-            # Accuracy mode: use category purity as proxy (unsupervised
-            # approximation — true accuracy needs a held-out set which
-            # policies don't have access to).
-            total = sum(node.category_counts.values()) if node.category_counts else 0
-            dominant = max(node.category_counts.values()) if node.category_counts else 0
-            purity = dominant / total if total > 0 else 0.5
-            # Higher purity = better. Compare against a baseline of 0.7.
-            quality = purity - 0.7
-            epsilon = 0.05
+        if self.feedback_signal == "coherence":
+            # Coherence mode: did the buffer become more self-consistent?
+            # Higher buffer consistency = samples reaching this node are more
+            # similar to each other = better discrimination upstream.
+            pre_consistency = state.get("meta_pre_consistency", 0.0)
+            post_consistency = self._buffer_consistency(node)
+            quality = post_consistency - pre_consistency
+            epsilon = 0.02
         else:
-            # Stability mode: lower assoc_norms = better routing compatibility
+            # Stability mode: did assoc_norms decrease?
             quality = pre_mean - post_mean
             epsilon = 0.01 * self.base_assoc
 
-        if quality > epsilon:
-            outcome_label = action_taken       # Reinforce
-        elif quality < -epsilon:
-            outcome_label = self._OPPOSITE[action_taken]  # Correct
+        helped = quality > epsilon
+        hurt = quality < -epsilon
+
+        if helped:
+            outcome_label = action_taken
+        elif hurt:
+            outcome_label = self._OPPOSITE[action_taken]
         else:
-            outcome_label = 2                  # Neutral ("keep")
+            outcome_label = 2  # "keep"
 
         self.meta_trie.insert(state_before, category=outcome_label)
+
+        # Track for self-referential self-assessment
+        self._meta_outcomes.append(helped)
+        if len(self._meta_outcomes) > 100:
+            self._meta_outcomes = self._meta_outcomes[-100:]
+
         self._clear_pending_action(state)
 
     def _clear_pending_action(self, state: dict) -> None:
-        """Remove pending action state after evaluation or forced clear."""
+        """Remove pending action state after evaluation."""
         state.pop("meta_action_taken", None)
         state.pop("meta_state_before", None)
         state.pop("meta_pre_mean", None)
+        state.pop("meta_pre_consistency", None)
         state.pop("meta_post_norms", None)
 
     def _generalize_sweep(self) -> None:
-        """Query meta-trie for a RANDOM SUBSET of nodes and apply recommendations.
+        """Query meta-trie for a random subset of nodes and apply recommendations.
 
-        Fix #3: Staggered sweep reduces credit assignment confounding.
-        Only a fraction of nodes get new adjustments each sweep, so the
-        post-action observations for each node are less contaminated by
-        concurrent changes to other nodes.
+        Staggered sweep: only a fraction of nodes get new adjustments,
+        reducing credit assignment confounding from concurrent changes.
+        Exploration decay does NOT fire here (only in update path).
         """
+        # First: evaluate or clear pending actions on all tracked nodes
+        for node in self._id_to_node.values():
+            if node is None:
+                continue
+            state = node._policy_state
+            if "meta_action_taken" not in state:
+                continue
+            if state.get("meta_post_norms"):
+                self._evaluate_and_learn(node)
+            else:
+                self._clear_pending_action(state)
+
         eligible = [
             nid for nid, node in self._id_to_node.items()
             if node is not None and "meta_action_taken" not in node._policy_state
         ]
         n_to_update = max(1, int(len(eligible) * self.generalize_fraction))
-        # Random subset
         indices = torch.randperm(len(eligible), generator=self._rng)[:n_to_update]
         for idx in indices:
             node = self._id_to_node.get(eligible[idx.item()])
@@ -629,17 +661,25 @@ class MetaTriePolicy(ThresholdPolicy):
                 self._act_on_node(node)
 
     def _adapt_meta_trie_threshold(self) -> None:
-        """Per D-17: self-referential — meta-trie adapts its own thresholds."""
-        meta_stats = self.meta_trie.stats()
-        n_nodes = meta_stats["n_nodes"]
-        target_nodes = max(20, self._insert_counter // 100)
-        if n_nodes < target_nodes * 0.5:
+        """Per D-17: self-referential — meta-trie adjusts based on self-assessment.
+
+        Instead of a density heuristic, the meta-trie evaluates whether its
+        own recommendations have been leading to positive outcomes. If its
+        hit rate is low, it loosens its own threshold to explore more diverse
+        state-action mappings. If high, it tightens to be more selective.
+        """
+        if len(self._meta_outcomes) < 10:
+            return
+        hit_rate = sum(self._meta_outcomes[-50:]) / len(self._meta_outcomes[-50:])
+        # Low hit rate → meta-trie's routing isn't discriminating well → loosen
+        # High hit rate → meta-trie is routing effectively → tighten
+        if hit_rate < 0.3:
             self.meta_trie.assoc_threshold = max(
-                0.001, self.meta_trie.assoc_threshold * 1.1
+                0.001, self.meta_trie.assoc_threshold * 1.05
             )
-        elif n_nodes > target_nodes * 2:
+        elif hit_rate > 0.6:
             self.meta_trie.assoc_threshold = max(
-                0.001, self.meta_trie.assoc_threshold * 0.9
+                0.001, self.meta_trie.assoc_threshold * 0.95
             )
 
     def _track_convergence(self) -> None:
@@ -659,10 +699,16 @@ class MetaTriePolicy(ThresholdPolicy):
         self._prev_adjustments = curr
 
     def _prune_stale_nodes(self) -> None:
-        """Fix #7: Remove entries for nodes no longer in the classifier trie."""
-        stale = [nid for nid, node in self._id_to_node.items() if node is None]
-        for nid in stale:
-            self._id_to_node.pop(nid, None)
+        """Clean up _prev_adjustments for nodes no longer tracked.
+
+        WeakValueDictionary handles _id_to_node automatically — when a
+        consolidated node is garbage collected, its entry disappears.
+        We just need to clean up _prev_adjustments which uses plain ids.
+        """
+        live_ids = set(self._id_to_node.keys())
+        stale = [k for k in self._prev_adjustments if k not in live_ids]
+        for k in stale:
+            del self._prev_adjustments[k]
 
     @property
     def converged(self) -> bool:
