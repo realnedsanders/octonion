@@ -769,11 +769,11 @@ Every remaining term contains at least one perpendicular component of norm $O(\e
 The bound is tight: for the subalgebra $\mathcal{S} = \text{span}_\Real\{1, e_1, e_2, e_4\}$, the associator $[e_1, e_2, e_3] = -2e_6$ has norm~$2$, so generic perturbations with a single $O(\epsilon)$ component perpendicular to $\mathcal{S}$ contribute at $O(\epsilon)$, not $O(\epsilon^2)$.
 \end{proof}
 
-A stronger bound holds when the elements are concentrated near a common \emph{element}, not merely near a common subalgebra:
+A stronger bound holds when the elements are concentrated near a common \emph{element}. Crucially, this bound requires only alternativity --- the center element need not lie in any quaternionic subalgebra:
 
 \begin{corollary}[Element proximity bound]
 \label{cor:element-proximity}
-Let $q \in S^7$ be a unit octonion lying in a quaternionic subalgebra $\mathcal{S}_\ell$, and let $a, b, c \in S^7$ satisfy $\lVert a - q \rVert, \lVert b - q \rVert, \lVert c - q \rVert \leq \epsilon$. Then:
+Let $q \in S^7$ be any unit octonion, and let $a, b, c \in S^7$ satisfy $\lVert a - q \rVert, \lVert b - q \rVert, \lVert c - q \rVert \leq \epsilon$. Then:
 \begin{equation}
   \lVert [a, b, c] \rVert = O(\epsilon^2) \quad \text{as } \epsilon \to 0.
   \label{eq:element-proximity-bound}
@@ -781,12 +781,19 @@ Let $q \in S^7$ be a unit octonion lying in a quaternionic subalgebra $\mathcal{
 \end{corollary}
 
 \begin{proof}
-Write $a = q + \delta a$, $b = q + \delta b$, $c = q + \delta c$ with $\lVert \delta a \rVert, \lVert \delta b \rVert, \lVert \delta c \rVert \leq \epsilon$. Expanding $[a,b,c]$ by trilinearity, the $O(1)$ term $[q,q,q] = 0$ by the alternating property. The three $O(\epsilon)$ terms are $[\delta a, q, q]$, $[q, \delta b, q]$, and $[q, q, \delta c]$, each of which vanishes: the first and third by alternativity ($[x, y, y] = [y, y, x] = 0$), and the second by flexibility ($[x, y, x] = 0$, which holds in every alternative algebra). All surviving terms contain at least two perturbations, giving $O(\epsilon^2)$.
+Write $a = q + \delta a$, $b = q + \delta b$, $c = q + \delta c$ with $\lVert \delta a \rVert, \lVert \delta b \rVert, \lVert \delta c \rVert \leq \epsilon$. (Since $a, q \in S^7$, the perturbation satisfies $\langle q, \delta a \rangle = -\lVert \delta a \rVert^2 / 2 = O(\epsilon^2)$; this sphere constraint does not affect the order analysis below.) Expanding $[a,b,c]$ by trilinearity, the $O(1)$ term $[q,q,q] = 0$ by the alternating property. The three $O(\epsilon)$ terms are $[\delta a, q, q]$, $[q, \delta b, q]$, and $[q, q, \delta c]$, each of which vanishes: the first and third by alternativity ($[x, y, y] = [y, y, x] = 0$), and the second by flexibility ($[x, y, x] = 0$, which holds in every alternative algebra). No property of $q$ beyond membership in $\Oct$ is used. All surviving terms contain at least two perturbations, giving $O(\epsilon^2)$.
 \end{proof}
 
-\Cref{cor:element-proximity} is the operationally relevant bound for the trie. Within a well-functioning branch, the input $x$, child routing key $c$, and parent node $n$ are all close to their respective cluster centers. The within-class spread $\sigma$ plays the role of $\epsilon$, and the quadratic suppression $O(\sigma^2)$ explains why the associator threshold can cleanly separate within-class triples (small) from between-class triples (bounded away from zero).
+The two bounds decompose the trie's threshold mechanism into functionally independent components, each grounded in a different algebraic property:
 
-\Cref{prop:proximity} provides the weaker but still useful guarantee that even elements spread across a subalgebra (not clustered around a single point) have associator norms bounded linearly by their distance from the subalgebra.
+\begin{itemize}[nosep]
+  \item \textbf{Within-class suppression} (\cref{cor:element-proximity}): Clustered data has small associator norms, bounded quadratically by the cluster radius. This follows from \emph{alternativity alone} and holds for clusters around any point in $S^7$, regardless of subalgebra alignment. The trie's novelty detection is therefore more robust than a subalgebra-centric analysis would suggest.
+  \item \textbf{Between-class separation} (\cref{sec:fano-geometry}): Elements drawn from classes assigned to distinct subalgebras produce associator norms bounded \emph{away} from zero, with the gap determined by the Fano plane geometry. This is where the subalgebra structure is load-bearing.
+\end{itemize}
+
+\noindent Two mechanisms --- quadratic floor suppression from alternativity, geometric ceiling elevation from the Fano plane --- emerge from the same algebraic object. This is the sense in which the octonionic trie achieves \emph{algebraic economy}: a single 8-dimensional non-associative algebra provides both noise suppression and class discrimination, through two independent properties of its multiplication structure.
+
+\Cref{prop:proximity} provides the complementary (but weaker) guarantee that even elements spread broadly across a subalgebra, without clustering around a single point, have associator norms bounded linearly by their distance from the subalgebra.
 
 \begin{definition}[Fano angular separation]
 \label{def:fano-sep}
@@ -820,7 +827,7 @@ Then there exists a global threshold $\tau^*$ such that:
 for all classes $k$ and all distinct class triples $i, j, k$, provided $\sigma$ and $\delta$ are sufficiently small relative to the Fano angular separations.
 \end{conjecture}
 
-\textbf{Evidence for the conjecture.} The within-class bound follows from \cref{cor:element-proximity}: elements of class $k$ lie within distance $\sigma$ of the class mean $\mu_k$, which itself lies near $\mathcal{S}_{\ell(k)}$. Since within-class triples are concentrated around a common element, the associator norm is $O(\sigma^2)$ by the element proximity bound. (The weaker subalgebra bound of \cref{prop:proximity} gives only $O(\delta + \sigma)$; the quadratic rate requires element-level concentration.) The between-class lower bound follows from the fact that elements from classes assigned to different subalgebras span genuinely non-associative structure; the associator norm is bounded away from zero by the inter-subalgebra separation.
+\textbf{Evidence for the conjecture.} The within-class bound follows from \cref{cor:element-proximity}: elements of class $k$ lie within distance $\sigma$ of the class mean $\mu_k$, so within-class associator norms are $O(\sigma^2)$ by the element proximity bound. Note that the within-class bound does not require $\mu_k$ to lie near any subalgebra --- it holds for arbitrary class means by alternativity alone. The subalgebra structure enters only in the between-class lower bound: elements from classes assigned to different subalgebras span genuinely non-associative structure, and the Fano plane geometry ensures the associator norm is bounded away from zero by the inter-subalgebra separation.
 
 \textbf{When the conjecture fails.} The injectivity condition (condition~3) is the most restrictive. With more than 7 classes, at least two classes must share a subalgebra assignment at some trie level, and a global threshold cannot separate within-class from between-class triples for those colliding classes. This is precisely the regime where \emph{adaptive} thresholds or hierarchical depth are needed: the trie resolves the collision at a deeper level with a different routing key, effectively providing a different ``view'' of the subalgebra structure.
 
