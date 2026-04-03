@@ -94,6 +94,7 @@ def nonzero_octonion_tensors(
 # =============================================================================
 
 from octonion import Octonion  # noqa: E402
+from octonion._fano import FANO_PLANE  # noqa: E402
 
 
 @st.composite
@@ -129,3 +130,31 @@ def nonzero_octonions(
     """Strategy generating non-zero Octonion instances (for inverse testing)."""
     t = draw(nonzero_octonion_tensors(dtype=dtype))
     return Octonion(t)
+
+
+@st.composite
+def subalgebra_octonions(
+    draw: st.DrawFn,
+    subalgebra_idx: int = 0,
+    *,
+    dtype: torch.dtype = torch.float64,
+    min_value: float = -1.0,
+    max_value: float = 1.0,
+) -> Octonion:
+    """Strategy generating Octonions restricted to a quaternionic subalgebra.
+
+    The subalgebra is span{1, e_i, e_j, e_k} where (i,j,k) is the
+    Fano triple at the given index. Components outside these 4 slots are zero.
+    """
+    triple = FANO_PLANE.triples[subalgebra_idx]
+    elements = st.floats(
+        min_value=min_value,
+        max_value=max_value,
+        allow_nan=False,
+        allow_infinity=False,
+    )
+    data = torch.zeros(8, dtype=dtype)
+    data[0] = draw(elements)  # real part
+    for idx in triple:
+        data[idx] = draw(elements)  # imaginary parts in subalgebra
+    return Octonion(data)

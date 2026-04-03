@@ -572,3 +572,97 @@ def test_unsupervised_constraint():
                 f"violating D-02 unsupervised constraint. "
                 f"Params: {param_names}"
             )
+
+
+# -- AlgebraicPurityPolicy parent parameter fix tests ------------------
+
+
+def test_algebraic_purity_with_parent_nonzero_variance():
+    """AlgebraicPurityPolicy with parent should produce nonzero associator variance.
+
+    Before the fix, the policy computed [buf, node, node] which is always zero
+    by alternativity. With the fix, it computes [buf, child, parent] which is
+    generically nonzero, enabling the assoc_weight term to contribute.
+    """
+    policy = AlgebraicPurityPolicy(
+        base_assoc=0.3, assoc_weight=0.5, sim_weight=0.5, sensitivity=2.0
+    )
+
+    parent = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+    child = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+
+    # Fill child buffer with diverse samples
+    gen = torch.Generator().manual_seed(42)
+    for _ in range(15):
+        sample = torch.randn(8, dtype=torch.float64, generator=gen)
+        sample = sample / sample.norm()
+        child.buffer.append((sample, 0))
+
+    threshold = policy.get_assoc_threshold(child, 0, parent)
+    assert threshold != pytest.approx(0.3), (
+        f"Threshold {threshold} equals base (0.3) — parent not being used"
+    )
+
+
+def test_algebraic_purity_without_parent_returns_base():
+    """AlgebraicPurityPolicy without parent (None) should return base_assoc."""
+    policy = AlgebraicPurityPolicy(base_assoc=0.3, sensitivity=2.0)
+
+    node = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+    # Fill buffer so it's not the < 3 early return
+    gen = torch.Generator().manual_seed(42)
+    for _ in range(10):
+        sample = torch.randn(8, dtype=torch.float64, generator=gen)
+        sample = sample / sample.norm()
+        node.buffer.append((sample, 0))
+
+    threshold = policy.get_assoc_threshold(node, 0, None)
+    assert threshold == pytest.approx(0.3), (
+        f"Expected base_assoc (0.3) when parent=None, got {threshold}"
+    )
+
+
+def test_algebraic_purity_assoc_weight_matters_with_parent():
+    """assoc_weight should affect threshold when parent is provided.
+
+    Compares a policy with assoc_weight=0.5 vs assoc_weight=0.0. With the fix,
+    these should produce different thresholds because the associator variance
+    is nonzero. Before the fix, they would be identical.
+    """
+    parent = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+    child = TrieNode(
+        routing_key=torch.randn(8, dtype=torch.float64),
+        content=torch.randn(8, dtype=torch.float64),
+    )
+
+    gen = torch.Generator().manual_seed(42)
+    for _ in range(15):
+        sample = torch.randn(8, dtype=torch.float64, generator=gen)
+        sample = sample / sample.norm()
+        child.buffer.append((sample, 0))
+
+    policy_with = AlgebraicPurityPolicy(
+        base_assoc=0.3, assoc_weight=0.5, sim_weight=0.5, sensitivity=2.0
+    )
+    policy_without = AlgebraicPurityPolicy(
+        base_assoc=0.3, assoc_weight=0.0, sim_weight=0.5, sensitivity=2.0
+    )
+
+    thresh_with = policy_with.get_assoc_threshold(child, 0, parent)
+    thresh_without = policy_without.get_assoc_threshold(child, 0, parent)
+
+    assert thresh_with != pytest.approx(thresh_without), (
+        f"assoc_weight has no effect: with={thresh_with}, without={thresh_without}"
+    )

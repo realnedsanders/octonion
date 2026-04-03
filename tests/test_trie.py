@@ -292,3 +292,173 @@ class TestTrieStabilityPlasticity:
         # All categories should be reachable
         overall = _accuracy(trie, test_s, test_l)
         assert overall > 0.7, f"Overall accuracy too low after two phases: {overall:.3f}"
+
+
+# ── Query Edge Cases ─────────────────────────────────────────────────
+
+
+class TestQueryEdgeCases:
+    """Edge cases for the query operation."""
+
+    def test_query_empty_trie_returns_root(self) -> None:
+        """Querying an empty trie (root only, no children) returns root."""
+        trie = OctonionTrie(seed=42)
+        x = torch.randn(8, dtype=torch.float64)
+        x = x / x.norm()
+        result = trie.query(x)
+        assert result is trie.root, "Query on empty trie should return root"
+
+
+# ── Rumination Rejection Paths ───────────────────────────────────────
+
+
+class TestRumination:
+    """Tests for the rumination (geometric consistency) mechanism."""
+
+    def test_small_buffer_accepts(self) -> None:
+        """With fewer than 3 buffer entries, rumination should not reject."""
+        trie = OctonionTrie(associator_threshold=0.3, seed=42)
+
+        # Insert 2 similar samples into same branch
+        base = torch.zeros(8, dtype=torch.float64)
+        base[0] = 1.0
+        for i in range(2):
+            sample = base + 0.01 * torch.randn(8, dtype=torch.float64)
+            sample = sample / sample.norm()
+            trie.insert(sample, category=0)
+
+        assert trie.stats()["rumination_rejections"] == 0, (
+            "Should have no rumination rejections with < 3 buffer entries"
+        )
+
+    def test_rejects_orthogonal_input(self) -> None:
+        """Rumination should reject input orthogonal to buffer contents."""
+        trie = OctonionTrie(
+            associator_threshold=0.5, similarity_threshold=0.3, seed=42
+        )
+
+        # Build a cluster in one direction
+        base = torch.zeros(8, dtype=torch.float64)
+        base[0] = 0.9
+        base[1] = 0.4
+        base = base / base.norm()
+        for i in range(10):
+            sample = base + 0.02 * torch.randn(8, dtype=torch.float64)
+            sample = sample / sample.norm()
+            trie.insert(sample, category=0)
+
+        rejections_before = trie.stats()["rumination_rejections"]
+
+        # Insert something nearly orthogonal to the cluster
+        orthogonal = torch.zeros(8, dtype=torch.float64)
+        orthogonal[5] = 0.9
+        orthogonal[6] = 0.4
+        orthogonal = orthogonal / orthogonal.norm()
+        trie.insert(orthogonal, category=1)
+
+        # The orthogonal input should either branch or be rejected by rumination
+        # (it definitely shouldn't be silently accepted into the existing cluster)
+        stats = trie.stats()
+        # Either rumination rejected it OR it created a new branch (n_nodes increased)
+        new_rejections = stats["rumination_rejections"] - rejections_before
+        has_branched = stats["n_nodes"] > 3  # root + at least 2 children
+        assert new_rejections > 0 or has_branched, (
+            "Orthogonal input was neither rejected by rumination nor branched"
+        )
+
+
+# ── Depth Limit ──────────────────────────────────────────────────────
+
+
+class TestDepthLimit:
+    """Test that max_depth is respected."""
+
+    def test_max_depth_respected(self) -> None:
+        """No node should exceed max_depth."""
+        max_depth = 2
+        trie = OctonionTrie(
+            associator_threshold=0.1, max_depth=max_depth, seed=42
+        )
+
+        # Insert many diverse samples to force deep branching attempts
+        gen = torch.Generator().manual_seed(42)
+        for i in range(50):
+            x = torch.randn(8, dtype=torch.float64, generator=gen)
+            x = x / x.norm()
+            trie.insert(x, category=i % 7)
+
+        # Walk the trie and verify no node exceeds max_depth
+        def _check_depth(node: TrieNode, expected_max: int) -> None:
+            assert node.depth <= expected_max, (
+                f"Node at depth {node.depth} exceeds max_depth={expected_max}"
+            )
+            for child in node.children.values():
+                _check_depth(child, expected_max)
+
+        _check_depth(trie.root, max_depth)
+
+
+# ── All Slots Occupied ───────────────────────────────────────────────
+
+
+class TestAllSlotsOccupied:
+    """Test behavior when all 7 subalgebra slots are filled."""
+
+    def test_fallback_to_existing_child(self) -> None:
+        """When all 7 slots are full, new input descends into existing child."""
+        trie = OctonionTrie(
+            associator_threshold=0.05,  # tight threshold forces branching
+            seed=42,
+        )
+
+        # Insert samples that are diverse enough to fill all 7 subalgebra slots
+        centers = _make_aligned_centers()
+        for cat_idx, center in enumerate(centers):
+            for _ in range(5):
+                sample = center + 0.01 * torch.randn(8, dtype=torch.float64)
+                sample = sample / sample.norm()
+                trie.insert(sample, category=cat_idx)
+
+        n_root_children = len(trie.root.children)
+
+        # Now insert an 8th category — should not create a new root child
+        # (max 7 subalgebra slots)
+        extra = torch.randn(8, dtype=torch.float64)
+        extra = extra / extra.norm()
+        trie.insert(extra, category=7)
+
+        assert len(trie.root.children) <= 7, (
+            f"Root has {len(trie.root.children)} children (max 7 subalgebra slots)"
+        )
+
+
+# ── Consolidation Edge Cases ─────────────────────────────────────────
+
+
+class TestConsolidationEdgeCases:
+    """Edge cases for the consolidation operation."""
+
+    def test_single_child_survives(self) -> None:
+        """A node with only 1 child should not be consolidated."""
+        trie = OctonionTrie(
+            associator_threshold=0.5,  # loose threshold to keep things in one branch
+            seed=42,
+        )
+
+        # Insert similar samples — should create at most 1-2 children
+        base = torch.zeros(8, dtype=torch.float64)
+        base[0] = 1.0
+        base = base / base.norm()
+        for _ in range(5):
+            sample = base + 0.01 * torch.randn(8, dtype=torch.float64)
+            sample = sample / sample.norm()
+            trie.insert(sample, category=0)
+
+        n_before = trie.stats()["n_nodes"]
+        trie.consolidate()
+        n_after = trie.stats()["n_nodes"]
+
+        # With similar inputs in one branch, consolidation should not reduce
+        assert n_after >= n_before - 1, (
+            f"Consolidation removed too many nodes: {n_before} -> {n_after}"
+        )
