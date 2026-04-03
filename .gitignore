@@ -10,3 +10,5 @@ results
 results/*
 .remember
 scripts/sweep/sweep_runner.py
+.claude
+.data

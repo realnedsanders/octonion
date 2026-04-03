@@ -1,14 +1,10 @@
 """Integration tests for CIFAR benchmark reproduction.
 
-Fast tests (run normally):
-- Parameter count matching across all 4 algebras for CIFAR-10 and CIFAR-100
-- Forward pass correctness on a single batch for all 4 algebras
+Tests model construction, parameter counts, forward pass correctness,
+training config validation, and reproduction report generation for
+all 4 algebras (R, C, H, O) on CIFAR-10 and CIFAR-100.
 
-Slow tests (marked @pytest.mark.slow, require GPU and hours of training):
-- Full quaternion CIFAR-10 reproduction (target: 5.44% error)
-- Full complex CIFAR-100 reproduction (target: 26.36% error)
-- Full quaternion CIFAR-100 reproduction (target: 26.01% error)
-- Full real CIFAR-10 reproduction (target: 6.37% error)
+Full training reproduction runs live in scripts/run_cifar_reproduction.py.
 """
 
 from __future__ import annotations
@@ -272,45 +268,23 @@ class TestCIFARTrainConfig:
         warmup_lr = tc.lr  # 0.01
         target_lr = tc.lr * 10  # 0.1
 
-        # Set warmup LR
+        # Set warmup LR and simulate full schedule
         for pg in opt.param_groups:
-            pg["lr"] = warmup_lr
-
-        for epoch in range(tc.epochs):
-            # Warmup override (same logic as train_model)
-            if warmup_epochs > 0 and epoch < warmup_epochs:
-                for pg in opt.param_groups:
-                    pg["lr"] = warmup_lr
-            elif warmup_epochs > 0 and epoch == warmup_epochs:
-                for pg in opt.param_groups:
-                    pg["lr"] = target_lr
-
-            lr = opt.param_groups[0]["lr"]
-
-            # Step scheduler only after warmup
-            if epoch >= warmup_epochs:
-                sched.step()
-
-        # Now verify key LR values by re-simulating and checking at specific epochs
-        # Reset everything
-        opt2 = _build_optimizer(model, tc_copy)
-        sched2 = _build_scheduler(opt2, tc_copy)
-        for pg in opt2.param_groups:
             pg["lr"] = warmup_lr
 
         lr_at_epoch: dict[int, float] = {}
         for epoch in range(tc.epochs):
             if warmup_epochs > 0 and epoch < warmup_epochs:
-                for pg in opt2.param_groups:
+                for pg in opt.param_groups:
                     pg["lr"] = warmup_lr
             elif warmup_epochs > 0 and epoch == warmup_epochs:
-                for pg in opt2.param_groups:
+                for pg in opt.param_groups:
                     pg["lr"] = target_lr
 
-            lr_at_epoch[epoch] = opt2.param_groups[0]["lr"]
+            lr_at_epoch[epoch] = opt.param_groups[0]["lr"]
 
             if epoch >= warmup_epochs:
-                sched2.step()
+                sched.step()
 
         # Warmup phase: LR = 0.01
         assert abs(lr_at_epoch[0] - 0.01) < 1e-8, f"Epoch 0: LR={lr_at_epoch[0]}"
@@ -392,190 +366,3 @@ class TestReproductionReport:
         reproduction_report(pub, ours, str(tmp_path / "test_report"))
         assert os.path.exists(str(tmp_path / "test_report.json"))
         assert os.path.exists(str(tmp_path / "test_report.md"))
-
-
-# ── Slow Tests: Full Reproduction ─────────────────────────────────
-
-
-@pytest.mark.slow
-class TestQuaternionCIFAR10Reproduction:
-    """Full training run for quaternion on CIFAR-10.
-
-    Target: 5.44% error rate (Gaudet and Maida 2018).
-    Expected runtime: 2-4 hours on a single GPU.
-    """
-
-    def test_reproduction(self) -> None:
-        """Quaternion CIFAR-10 should achieve error within 1 std of 5.44%.
-
-        This test uses run_comparison with 3 seeds to get mean and std,
-        then checks against the published result.
-        """
-        from octonion.baselines._benchmarks import build_cifar10_data, cifar_train_config
-        from octonion.baselines._comparison import run_comparison
-        from octonion.baselines._config import ComparisonConfig
-
-        config = ComparisonConfig(
-            task="cifar10_quat_repro",
-            algebras=[AlgebraType.QUATERNION],
-            seeds=3,
-            train_config=cifar_train_config("cifar10"),
-            output_dir="experiments",
-        )
-
-        report = run_comparison(
-            "cifar10_quat_repro",
-            build_cifar10_data,
-            config,
-            device="cuda",
-            network_config_overrides={
-                "topology": "conv2d",
-                "depth": 28,
-                "ref_hidden": 4,
-            },
-        )
-
-        # Extract error rates
-        accs = [r["metrics"]["best_val_acc"] for r in report.per_run]
-        errors = [(1 - a) * 100 for a in accs]
-        mean_error = sum(errors) / len(errors)
-
-        # Published: 5.44% +/- 0.18%
-        pub = PUBLISHED_RESULTS["cifar10"]["H"]
-        assert abs(mean_error - pub["error_pct"]) <= pub["std_pct"], (
-            f"H CIFAR-10 error {mean_error:.2f}% outside 1 std of "
-            f"{pub['error_pct']:.2f}% +/- {pub['std_pct']:.2f}%"
-        )
-
-
-@pytest.mark.slow
-class TestComplexCIFAR100Reproduction:
-    """Full training run for complex on CIFAR-100.
-
-    Target: 26.36% error rate (Trabelsi et al. 2018).
-    """
-
-    def test_reproduction(self) -> None:
-        """Complex CIFAR-100 should achieve error within 1 std of 26.36%."""
-        from octonion.baselines._benchmarks import build_cifar100_data, cifar_train_config
-        from octonion.baselines._comparison import run_comparison
-        from octonion.baselines._config import ComparisonConfig
-
-        config = ComparisonConfig(
-            task="cifar100_complex_repro",
-            algebras=[AlgebraType.COMPLEX],
-            seeds=3,
-            train_config=cifar_train_config("cifar100"),
-            output_dir="experiments",
-        )
-
-        report = run_comparison(
-            "cifar100_complex_repro",
-            build_cifar100_data,
-            config,
-            device="cuda",
-            network_config_overrides={
-                "topology": "conv2d",
-                "depth": 28,
-                "ref_hidden": 4,
-            },
-        )
-
-        accs = [r["metrics"]["best_val_acc"] for r in report.per_run]
-        errors = [(1 - a) * 100 for a in accs]
-        mean_error = sum(errors) / len(errors)
-
-        pub = PUBLISHED_RESULTS["cifar100"]["C"]
-        assert abs(mean_error - pub["error_pct"]) <= pub["std_pct"], (
-            f"C CIFAR-100 error {mean_error:.2f}% outside 1 std of "
-            f"{pub['error_pct']:.2f}% +/- {pub['std_pct']:.2f}%"
-        )
-
-
-@pytest.mark.slow
-class TestQuaternionCIFAR100Reproduction:
-    """Full training run for quaternion on CIFAR-100.
-
-    Target: 26.01% error rate (Gaudet and Maida 2018).
-    """
-
-    def test_reproduction(self) -> None:
-        """Quaternion CIFAR-100 should achieve error within 1 std of 26.01%."""
-        from octonion.baselines._benchmarks import build_cifar100_data, cifar_train_config
-        from octonion.baselines._comparison import run_comparison
-        from octonion.baselines._config import ComparisonConfig
-
-        config = ComparisonConfig(
-            task="cifar100_quat_repro",
-            algebras=[AlgebraType.QUATERNION],
-            seeds=3,
-            train_config=cifar_train_config("cifar100"),
-            output_dir="experiments",
-        )
-
-        report = run_comparison(
-            "cifar100_quat_repro",
-            build_cifar100_data,
-            config,
-            device="cuda",
-            network_config_overrides={
-                "topology": "conv2d",
-                "depth": 28,
-                "ref_hidden": 4,
-            },
-        )
-
-        accs = [r["metrics"]["best_val_acc"] for r in report.per_run]
-        errors = [(1 - a) * 100 for a in accs]
-        mean_error = sum(errors) / len(errors)
-
-        pub = PUBLISHED_RESULTS["cifar100"]["H"]
-        assert abs(mean_error - pub["error_pct"]) <= pub["std_pct"], (
-            f"H CIFAR-100 error {mean_error:.2f}% outside 1 std of "
-            f"{pub['error_pct']:.2f}% +/- {pub['std_pct']:.2f}%"
-        )
-
-
-@pytest.mark.slow
-class TestRealCIFAR10Reproduction:
-    """Full training run for real on CIFAR-10.
-
-    Target: 6.37% error rate (Gaudet and Maida 2018).
-    Validates training infrastructure correctness.
-    """
-
-    def test_reproduction(self) -> None:
-        """Real CIFAR-10 should achieve error within 1 std of 6.37%."""
-        from octonion.baselines._benchmarks import build_cifar10_data, cifar_train_config
-        from octonion.baselines._comparison import run_comparison
-        from octonion.baselines._config import ComparisonConfig
-
-        config = ComparisonConfig(
-            task="cifar10_real_repro",
-            algebras=[AlgebraType.REAL],
-            seeds=3,
-            train_config=cifar_train_config("cifar10"),
-            output_dir="experiments",
-        )
-
-        report = run_comparison(
-            "cifar10_real_repro",
-            build_cifar10_data,
-            config,
-            device="cuda",
-            network_config_overrides={
-                "topology": "conv2d",
-                "depth": 28,
-                "ref_hidden": 4,
-            },
-        )
-
-        accs = [r["metrics"]["best_val_acc"] for r in report.per_run]
-        errors = [(1 - a) * 100 for a in accs]
-        mean_error = sum(errors) / len(errors)
-
-        pub = PUBLISHED_RESULTS["cifar10"]["R"]
-        assert abs(mean_error - pub["error_pct"]) <= pub["std_pct"], (
-            f"R CIFAR-10 error {mean_error:.2f}% outside 1 std of "
-            f"{pub['error_pct']:.2f}% +/- {pub['std_pct']:.2f}%"
-        )

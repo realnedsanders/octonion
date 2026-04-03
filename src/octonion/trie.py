@@ -92,8 +92,18 @@ class ThresholdPolicy(ABC):
     """
 
     @abstractmethod
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
-        """Return the associator norm threshold for routing at this node."""
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
+        """Return the associator norm threshold for routing at this node.
+
+        Args:
+            node: The child node being evaluated for compatibility.
+            depth: Depth of the parent node.
+            parent: The parent node (None only for root-level queries).
+                Policies that need to compute associators from buffer entries
+                require the parent to form the correct triple [buf, child, parent].
+        """
         ...
 
     @abstractmethod
@@ -130,7 +140,9 @@ class GlobalPolicy(ThresholdPolicy):
         self.min_share = min_share
         self.min_count = min_count
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         return self.assoc_threshold
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
@@ -169,7 +181,9 @@ class PerNodeEMAPolicy(ThresholdPolicy):
         self.min_count = min_count
         self.min_obs = min_obs
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         count = node._policy_state.get("ema_count", 0)
         if count < self.min_obs:
             return self.base_assoc
@@ -226,7 +240,9 @@ class PerNodeMeanStdPolicy(ThresholdPolicy):
         self.min_count = min_count
         self.min_obs = min_obs
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         count = node._policy_state.get("welford_count", 0)
         if count < self.min_obs:
             return self.base_assoc
@@ -282,7 +298,9 @@ class DepthPolicy(ThresholdPolicy):
         self.min_share = min_share
         self.min_count = min_count
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         return self.base_assoc * (self.decay_factor ** depth)
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
@@ -324,17 +342,26 @@ class AlgebraicPurityPolicy(ThresholdPolicy):
         self.min_share = min_share
         self.min_count = min_count
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         if len(node.buffer) < 3:
             return self.base_assoc
 
-        # Compute associator norm variance across buffer entries
-        node_oct = Octonion(node.routing_key)
+        # Compute associator norm variance across buffer entries.
+        # The routing triple is [input, child, parent], so the analogous
+        # measurement for buffer entries is [buf, child, parent].
+        # When parent is unavailable (root query), fall back to base threshold.
+        if parent is None:
+            return self.base_assoc
+
+        child_oct = Octonion(node.routing_key)
+        parent_oct = Octonion(parent.routing_key)
         assoc_norms = []
         sim_values = []
         for buf_x, _ in node.buffer:
             buf_oct = Octonion(buf_x)
-            a = associator(buf_oct, node_oct, node_oct)
+            a = associator(buf_oct, child_oct, parent_oct)
             assoc_norms.append(a.components.norm().item())
             sim_values.append(torch.dot(buf_x, node.routing_key).item())
 
@@ -448,7 +475,9 @@ class MetaTriePolicy(ThresholdPolicy):
     def exploration_rate(self) -> float:
         return self._exploration_rate
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         return node._policy_state.get("meta_threshold", self.base_assoc)
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
@@ -705,10 +734,12 @@ class HybridPolicy(ThresholdPolicy):
             return (1 - alpha) * val_a + alpha * val_b
         return (val_a + val_b) / 2.0
 
-    def get_assoc_threshold(self, node: TrieNode, depth: int) -> float:
+    def get_assoc_threshold(
+        self, node: TrieNode, depth: int, parent: TrieNode | None = None
+    ) -> float:
         return self._combine(
-            self.policy_a.get_assoc_threshold(node, depth),
-            self.policy_b.get_assoc_threshold(node, depth),
+            self.policy_a.get_assoc_threshold(node, depth, parent),
+            self.policy_b.get_assoc_threshold(node, depth, parent),
         )
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
@@ -830,7 +861,7 @@ class OctonionTrie:
             assoc = associator(x_oct, child_oct, node_oct)
             assoc_norm = assoc.components.norm().item()
 
-            threshold = self.policy.get_assoc_threshold(child, node.depth)
+            threshold = self.policy.get_assoc_threshold(child, node.depth, node)
             if assoc_norm < threshold:
                 if best_compatible is None or sim > best_compatible[3]:
                     best_compatible = (sub_idx, child, assoc_norm, sim)
@@ -856,7 +887,7 @@ class OctonionTrie:
             key=lambda k: torch.dot(x, node.children[k].routing_key).item(),
         )
         threshold = self.policy.get_assoc_threshold(
-            node.children[best_sim_idx], node.depth
+            node.children[best_sim_idx], node.depth, node
         )
         return best_sim_idx, node.children[best_sim_idx], threshold + 1
 
@@ -903,7 +934,7 @@ class OctonionTrie:
             if child is None:
                 return self._create_child(node, x, sub_idx, category)
 
-            threshold = self.policy.get_assoc_threshold(child, node.depth)
+            threshold = self.policy.get_assoc_threshold(child, node.depth, node)
             if assoc_norm < threshold and self._ruminate(child, x):
                 node = child
                 self._count(node, category)
