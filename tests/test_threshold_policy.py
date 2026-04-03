@@ -274,22 +274,23 @@ def test_meta_trie_uses_same_class():
 
 
 def test_meta_trie_signal_encoding():
-    """signal_vector produces balanced 8D tensor, algebraic uses routing_key."""
+    """signal_vector produces 8D tensor with ratio signal, algebraic uses routing_key."""
     node = TrieNode(
         routing_key=torch.randn(8, dtype=torch.float64),
         content=torch.randn(8, dtype=torch.float64),
         depth=3,
     )
     node._policy_state["meta_obs_norms"] = [0.1, 0.2, 0.3]
+    node._policy_state["meta_threshold"] = 0.3
 
-    # Signal vector encoding produces 8D tensor with balanced components
+    # Signal vector encoding produces 8D tensor
     policy_sv = MetaTriePolicy(signal_encoding="signal_vector")
     sv = policy_sv._encode(node)
     assert sv.shape == (8,), f"Expected shape (8,), got {sv.shape}"
     assert sv.dtype == torch.float64
-    # No single component should dominate (all scaled to roughly [0, 2])
-    normed = sv / sv.norm().clamp(min=1e-10)
-    assert normed.abs().max().item() < 0.99, "Signal vector has degenerate dimension dominance"
+    # First component is the ratio signal (mean_norm / threshold)
+    expected_ratio = min(0.2 / 0.3, 3.0)  # mean of [0.1, 0.2, 0.3] / 0.3
+    assert abs(sv[0].item() - expected_ratio) < 0.01
 
     # Algebraic encoding uses routing key
     policy_alg = MetaTriePolicy(signal_encoding="algebraic")
@@ -302,11 +303,14 @@ def test_meta_trie_signal_encoding():
 
 
 def test_meta_trie_actions():
-    """ACTIONS dict has 5 entries with symmetric values summing to 0."""
+    """ACTIONS dict has 5 compounding multiplicative factors."""
     assert len(MetaTriePolicy.ACTIONS) == 5
-    assert sum(MetaTriePolicy.ACTIONS.values()) == pytest.approx(0.0)
-    # Verify keys are 0-4
     assert set(MetaTriePolicy.ACTIONS.keys()) == {0, 1, 2, 3, 4}
+    # Action 2 is "keep" (factor 1.0)
+    assert MetaTriePolicy.ACTIONS[2] == 1.0
+    # Tighten factors < 1, loosen factors > 1
+    assert MetaTriePolicy.ACTIONS[0] < 1.0
+    assert MetaTriePolicy.ACTIONS[4] > 1.0
 
 
 # -- Test 9d: MetaTriePolicy convergence tracking per D-18 ----------------
@@ -382,12 +386,12 @@ def test_meta_trie_converged_property():
     policy._convergence_history = [0.1, 0.05]
     assert not policy.converged
 
-    # Not converged with last entry >= 0.01
-    policy._convergence_history = [0.1, 0.05, 0.02]
+    # Not converged with last entry >= 0.001
+    policy._convergence_history = [0.1, 0.05, 0.002]
     assert not policy.converged
 
-    # Converged with last entry < 0.01
-    policy._convergence_history = [0.1, 0.05, 0.005]
+    # Converged with last entry < 0.001
+    policy._convergence_history = [0.1, 0.05, 0.0005]
     assert policy.converged
 
 
