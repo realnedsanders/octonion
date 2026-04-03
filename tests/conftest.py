@@ -5,7 +5,12 @@ import torch
 from hypothesis import assume, settings
 
 # --- Tolerance constants ---
-# float64 tolerance for numerical comparison in property-based tests
+# float64 machine epsilon is ~2.2e-16. For octonionic operations involving
+# 3-4 chained multiplications on 8D vectors with O(1) component magnitudes,
+# the accumulated error is ~(8 dims × 64 multiply-adds × 4 operations) × eps
+# ≈ 1e-12. Input ranges [-1, 1] are used in identity tests to keep products
+# O(1), preventing magnitude-dependent error amplification.
+# See .planning/STATE.md decision D-02 for the full derivation.
 RTOL_FLOAT64 = 1e-12
 ATOL_FLOAT64 = 1e-12
 
@@ -53,10 +58,18 @@ def unit_octonion_tensors(
     *,
     dtype: torch.dtype = torch.float64,
 ) -> torch.Tensor:
-    """Strategy generating unit-norm octonion tensors on S^7."""
+    """Strategy generating unit-norm octonion tensors on S^7.
+
+    Uses st.floats with a wide, symmetric range (-1e6, 1e6) then normalizes.
+    The wide range reduces the cube-corner bias that occurs with tight bounds
+    like [-10, 10]: as the range grows, the ratio of corner-to-face volume
+    decreases, and normalization produces a more uniform distribution on S^7.
+    (Perfect uniformity requires Gaussian draws, as in src/octonion/_random.py,
+    but Hypothesis strategies need shrinkable bounded floats.)
+    """
     elements = st.floats(
-        min_value=-10.0,
-        max_value=10.0,
+        min_value=-1e6,
+        max_value=1e6,
         allow_nan=False,
         allow_infinity=False,
     )
@@ -141,7 +154,7 @@ def subalgebra_octonions(
     min_value: float = -1.0,
     max_value: float = 1.0,
 ) -> Octonion:
-    """Strategy generating Octonions restricted to a quaternionic subalgebra.
+    """Strategy generating non-zero Octonions restricted to a quaternionic subalgebra.
 
     The subalgebra is span{1, e_i, e_j, e_k} where (i,j,k) is the
     Fano triple at the given index. Components outside these 4 slots are zero.
@@ -157,4 +170,5 @@ def subalgebra_octonions(
     data[0] = draw(elements)  # real part
     for idx in triple:
         data[idx] = draw(elements)  # imaginary parts in subalgebra
+    assume(data.norm().item() > 1e-6)  # exclude trivially-zero elements
     return Octonion(data)

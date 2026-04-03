@@ -17,7 +17,7 @@ from typing import Dict
 
 import pytest
 import torch
-from hypothesis import given, settings
+from hypothesis import example, given, settings, target
 
 import hypothesis.strategies as st
 
@@ -216,6 +216,15 @@ class TestMoufangIdentities:
 class TestNormPreservation:
     """Norm preservation |a*b| = |a|*|b| within 1e-12 relative error."""
 
+    # Edge cases: identity, basis elements, pure-real, near-zero
+    @example(
+        a=Octonion(torch.tensor([1, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+        b=Octonion(torch.tensor([0, 1, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+    )
+    @example(
+        a=Octonion(torch.tensor([1e-15, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+        b=Octonion(torch.tensor([1, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+    )
     @given(
         a=octonions(min_value=-10, max_value=10),
         b=octonions(min_value=-10, max_value=10),
@@ -229,6 +238,8 @@ class TestNormPreservation:
         # Relative error when expected > 0; absolute when near zero
         if expected_norm.item() > 1e-15:
             rel_error = torch.abs(product_norm - expected_norm) / expected_norm
+            # Direct Hypothesis toward worst-case inputs
+            target(float(rel_error.item()), label="norm_preservation_rel_error")
             assert rel_error.item() < ATOL_FLOAT64, (
                 f"Norm preservation failed: |a*b|={product_norm.item():.6e}, "
                 f"|a|*|b|={expected_norm.item():.6e}, "
@@ -463,6 +474,15 @@ class TestMoufangPrecisionReport:
 class TestConjugationRule:
     """conj(x*y) = conj(y) * conj(x) — the anti-automorphism property."""
 
+    # Edge cases: identity, pure-imaginary, basis elements
+    @example(
+        a=Octonion(torch.tensor([1, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+        b=Octonion(torch.tensor([0, 0, 0, 0, 0, 0, 0, 1], dtype=torch.float64)),
+    )
+    @example(
+        a=Octonion(torch.tensor([0, 1, 0, 0, 0, 0, 0, 0], dtype=torch.float64)),
+        b=Octonion(torch.tensor([0, 0, 1, 0, 0, 0, 0, 0], dtype=torch.float64)),
+    )
     @given(
         a=octonions(min_value=-1.0, max_value=1.0),
         b=octonions(min_value=-1.0, max_value=1.0),
@@ -501,6 +521,7 @@ class TestAssociatorTrilinearity:
         lhs = associator(a * s, b, c)
         rhs = associator(a, b, c) * s
         err = (lhs.components - rhs.components).abs().max().item()
+        target(err, label="trilinearity_slot1_error")
         assert err < ATOL_FLOAT64 * 10, (
             f"Trilinearity (slot 1) failed: max_error={err:.2e}"
         )

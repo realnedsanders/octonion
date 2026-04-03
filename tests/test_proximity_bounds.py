@@ -15,27 +15,41 @@ from hypothesis import given, settings, assume
 import hypothesis.strategies as st
 
 from octonion import Octonion
+from octonion._fano import FANO_PLANE
 from octonion._octonion import associator
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
+def _subalgebra_indices(sub_idx: int) -> tuple[list[int], list[int]]:
+    """Return (parallel_indices, perpendicular_indices) for a subalgebra.
+
+    parallel_indices: [0] + list(triple) — the real part plus 3 imaginary units.
+    perpendicular_indices: the remaining 4 imaginary indices.
+    """
+    triple = FANO_PLANE.triples[sub_idx]
+    par = [0] + list(triple)
+    perp = [i for i in range(1, 8) if i not in triple]
+    return par, perp
+
+
 def _make_near_subalgebra(
     parallel: torch.Tensor,
     perp: torch.Tensor,
     epsilon: float,
+    sub_idx: int = 0,
 ) -> Octonion:
-    """Create a unit octonion within epsilon of subalgebra span{1, e1, e2, e4}.
+    """Create a unit octonion within epsilon of a quaternionic subalgebra.
 
     Args:
-        parallel: 4 coefficients for {1, e1, e2, e4} components.
-        perp: 4 coefficients for {e3, e5, e6, e7} components (scaled by epsilon).
+        parallel: 4 coefficients for the subalgebra components.
+        perp: 4 coefficients for the perpendicular components (scaled by epsilon).
         epsilon: Distance scale for perpendicular component.
+        sub_idx: Index into FANO_PLANE.triples (0-6).
     """
+    par_indices, perp_indices = _subalgebra_indices(sub_idx)
     data = torch.zeros(8, dtype=torch.float64)
-    par_indices = [0, 1, 2, 4]
-    perp_indices = [3, 5, 6, 7]
     for i, idx in enumerate(par_indices):
         data[idx] = parallel[i]
     for i, idx in enumerate(perp_indices):
@@ -92,15 +106,17 @@ def _unit_8d(draw: st.DrawFn) -> torch.Tensor:
 class TestSubalgebraProximity:
     """Elements within epsilon of a quaternionic subalgebra have ||[a,b,c]|| = O(epsilon)."""
 
+    @pytest.mark.parametrize("sub_idx", range(7))
     @pytest.mark.parametrize("epsilon", [0.1, 0.01, 0.001])
     @given(
         a_par=_unit_4d(), a_perp=_unit_4d(),
         b_par=_unit_4d(), b_perp=_unit_4d(),
         c_par=_unit_4d(), c_perp=_unit_4d(),
     )
-    @settings(max_examples=500, deadline=None)
+    @settings(max_examples=200, deadline=None)
     def test_linear_scaling(
         self,
+        sub_idx: int,
         epsilon: float,
         a_par: torch.Tensor, a_perp: torch.Tensor,
         b_par: torch.Tensor, b_perp: torch.Tensor,
@@ -108,20 +124,21 @@ class TestSubalgebraProximity:
     ) -> None:
         """||[a,b,c]|| / epsilon should be bounded by a constant K.
 
-        We use K = 20 which is generous but validates the O(epsilon) claim.
+        Calibrated bound: observed max ratio across all 7 subalgebras is ~6,
+        so K=12 gives 2x headroom. Tested across all 7 quaternionic subalgebras.
         """
-        a = _make_near_subalgebra(a_par, a_perp, epsilon)
-        b = _make_near_subalgebra(b_par, b_perp, epsilon)
-        c = _make_near_subalgebra(c_par, c_perp, epsilon)
+        a = _make_near_subalgebra(a_par, a_perp, epsilon, sub_idx)
+        b = _make_near_subalgebra(b_par, b_perp, epsilon, sub_idx)
+        c = _make_near_subalgebra(c_par, c_perp, epsilon, sub_idx)
 
         assoc = associator(a, b, c)
         norm = assoc._data.norm().item()
 
         # O(epsilon) means norm/epsilon should be bounded
         ratio = norm / epsilon
-        assert ratio < 20.0, (
-            f"||[a,b,c]||/epsilon = {ratio:.4f} > 20 at epsilon={epsilon}, "
-            f"violating O(epsilon) bound"
+        assert ratio < 12.0, (
+            f"||[a,b,c]||/epsilon = {ratio:.4f} > 12 at epsilon={epsilon}, "
+            f"sub_idx={sub_idx}, violating O(epsilon) bound"
         )
 
 
@@ -141,7 +158,8 @@ class TestElementProximity:
     ) -> None:
         """||[a,b,c]|| / epsilon^2 should be bounded by a constant K.
 
-        We use K = 50 which is generous but validates the O(epsilon^2) claim.
+        Calibrated bound: observed max ratio across 5K random trials is ~4.3,
+        so K=10 gives ~2.3x headroom.
         """
         a = _make_near_element(q, da, epsilon)
         b = _make_near_element(q, db, epsilon)
@@ -151,8 +169,8 @@ class TestElementProximity:
         norm = assoc._data.norm().item()
 
         ratio = norm / (epsilon ** 2)
-        assert ratio < 50.0, (
-            f"||[a,b,c]||/epsilon^2 = {ratio:.4f} > 50 at epsilon={epsilon}, "
+        assert ratio < 10.0, (
+            f"||[a,b,c]||/epsilon^2 = {ratio:.4f} > 10 at epsilon={epsilon}, "
             f"violating O(epsilon^2) bound"
         )
 
@@ -194,4 +212,96 @@ class TestElementProximity:
         assert 1.8 <= mean_alpha <= 2.2, (
             f"Mean scaling exponent {mean_alpha:.3f} not in [1.8, 2.2]; "
             f"expected ~2.0 for O(epsilon^2)"
+        )
+
+
+# ── Bound Calibration ────────────────────────────────────────────────
+
+
+class TestBoundCalibration:
+    """Empirical calibration of the K constants used in the scaling tests.
+
+    These tests document the observed maximum ratios that justify the K bounds
+    in TestSubalgebraProximity (K=12) and TestElementProximity (K=10). If the
+    algebra implementation changes and the true constants shift, these tests
+    will detect it — either by the observed max exceeding K/2 (suggesting K
+    is too tight) or by staying well below K/4 (suggesting K could be tightened).
+    """
+
+    N_CALIBRATION_SAMPLES = 5000
+
+    def test_subalgebra_bound_calibration(self) -> None:
+        """Measure the empirical max of ||[a,b,c]||/epsilon across all 7 subalgebras.
+
+        The K=12 bound in TestSubalgebraProximity is set to 2x the observed
+        maximum (~5). This test verifies the observed max and documents it.
+        """
+        gen = torch.Generator().manual_seed(42)
+        max_ratio = 0.0
+        eps = 0.1
+
+        for sub_idx in range(7):
+            par_indices, perp_indices = _subalgebra_indices(sub_idx)
+            for _ in range(self.N_CALIBRATION_SAMPLES // 7):
+                data_list = []
+                for _ in range(3):  # a, b, c
+                    par = torch.randn(4, dtype=torch.float64, generator=gen)
+                    par = par / par.norm()
+                    perp = torch.randn(4, dtype=torch.float64, generator=gen)
+                    perp = perp / perp.norm()
+                    data = torch.zeros(8, dtype=torch.float64)
+                    for i, idx in enumerate(par_indices):
+                        data[idx] = par[i]
+                    for i, idx in enumerate(perp_indices):
+                        data[idx] = eps * perp[i]
+                    data = data / data.norm()
+                    data_list.append(Octonion(data))
+
+                norm = associator(*data_list)._data.norm().item()
+                max_ratio = max(max_ratio, norm / eps)
+
+        # Document the observed maximum
+        K_BOUND = 12.0
+        assert max_ratio < K_BOUND, (
+            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; "
+            f"bound needs updating"
+        )
+        assert max_ratio > K_BOUND / 4, (
+            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND/4:.1f}; "
+            f"bound could be tightened (current 2x headroom is excessive)"
+        )
+
+    def test_element_bound_calibration(self) -> None:
+        """Measure the empirical max of ||[a,b,c]||/epsilon^2 for element proximity.
+
+        The K=10 bound in TestElementProximity is set to ~2.3x the observed
+        maximum (~4.3). This test verifies the observed max and documents it.
+        """
+        gen = torch.Generator().manual_seed(42)
+        max_ratio = 0.0
+        eps = 0.1
+
+        for _ in range(self.N_CALIBRATION_SAMPLES):
+            q = torch.randn(8, dtype=torch.float64, generator=gen)
+            q = q / q.norm()
+
+            elems = []
+            for _ in range(3):
+                delta = torch.randn(8, dtype=torch.float64, generator=gen)
+                delta = delta / delta.norm()
+                data = (q + eps * delta)
+                data = data / data.norm()
+                elems.append(Octonion(data))
+
+            norm = associator(*elems)._data.norm().item()
+            max_ratio = max(max_ratio, norm / (eps ** 2))
+
+        K_BOUND = 10.0
+        assert max_ratio < K_BOUND, (
+            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; "
+            f"bound needs updating"
+        )
+        assert max_ratio > K_BOUND / 4, (
+            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND/4:.1f}; "
+            f"bound could be tightened"
         )

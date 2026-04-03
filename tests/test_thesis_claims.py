@@ -31,13 +31,13 @@ class TestEganMeanAssociatorNorm:
     def test_monte_carlo(self) -> None:
         """Monte Carlo estimate of mean associator norm on S^7.
 
-        Samples 100K uniform unit octonion triples and computes the mean
-        associator norm. Asserts within 1% relative error of the theoretical
-        value from Egan (2024).
+        Samples 100K uniform unit octonion triples (Gaussian normalization
+        for uniformity on S^7) and checks that the theoretical value falls
+        within the 95% confidence interval of the sample mean.
         """
         gen = torch.Generator().manual_seed(314159)
         n_samples = 100_000
-        total = 0.0
+        norms = []
 
         for _ in range(n_samples):
             # Uniform on S^7 via Gaussian normalization
@@ -49,14 +49,21 @@ class TestEganMeanAssociatorNorm:
             c = c / c.norm()
 
             assoc = associator(Octonion(a), Octonion(b), Octonion(c))
-            total += assoc._data.norm().item()
+            norms.append(assoc._data.norm().item())
 
-        mean_norm = total / n_samples
-        rel_error = abs(mean_norm - self.THEORETICAL_VALUE) / self.THEORETICAL_VALUE
+        norms_t = torch.tensor(norms, dtype=torch.float64)
+        mean_norm = norms_t.mean().item()
+        std_norm = norms_t.std().item()
+        se = std_norm / math.sqrt(n_samples)
 
-        assert rel_error < 0.01, (
-            f"Mean associator norm {mean_norm:.6f} differs from theoretical "
-            f"{self.THEORETICAL_VALUE:.6f} by {rel_error*100:.2f}% (>1%)"
+        # 95% CI: mean ± 1.96 * SE
+        ci_lower = mean_norm - 1.96 * se
+        ci_upper = mean_norm + 1.96 * se
+
+        assert ci_lower <= self.THEORETICAL_VALUE <= ci_upper, (
+            f"Theoretical value {self.THEORETICAL_VALUE:.6f} outside 95% CI "
+            f"[{ci_lower:.6f}, {ci_upper:.6f}] "
+            f"(sample mean={mean_norm:.6f}, SE={se:.6f})"
         )
 
 
@@ -110,12 +117,17 @@ def _apply_fano_automorphism(x: Octonion, perm: dict[int, int]) -> Octonion:
     return Octonion(result)
 
 
+def _compose_perm(p1: dict[int, int], p2: dict[int, int]) -> dict[int, int]:
+    """Compose two permutations: (p1 ∘ p2)(x) = p1(p2(x))."""
+    return {k: p1[v] for k, v in p2.items()}
+
+
 class TestG2Invariance:
     """Validate ||[g(a),g(b),g(c)]|| = ||[a,b,c]|| for Fano automorphisms.
 
     Fano plane automorphisms form a finite subgroup (order 168) of the
-    exceptional Lie group G2. Testing both generators covers the non-trivial
-    part of the symmetry.
+    exceptional Lie group G2. Testing both generators plus their composition
+    covers a non-trivially generated group element.
     """
 
     @pytest.mark.parametrize(
@@ -126,7 +138,7 @@ class TestG2Invariance:
     def test_fano_automorphism_preserves_associator_norm(
         self, gen_idx: int, a: Octonion, b: Octonion, c: Octonion
     ) -> None:
-        """Associator norm is invariant under Fano plane automorphisms."""
+        """Associator norm is invariant under Fano plane automorphism generators."""
         perm = FANO_PLANE.automorphism_generators[gen_idx]
 
         original = associator(a, b, c)._data.norm().item()
@@ -138,5 +150,30 @@ class TestG2Invariance:
 
         assert abs(original - transformed) < ATOL_FLOAT64, (
             f"Associator norm changed under automorphism: "
+            f"{original:.12f} -> {transformed:.12f}"
+        )
+
+    @given(a=unit_octonions(), b=unit_octonions(), c=unit_octonions())
+    @settings(max_examples=2000, deadline=None)
+    def test_composed_automorphism_preserves_associator_norm(
+        self, a: Octonion, b: Octonion, c: Octonion
+    ) -> None:
+        """Associator norm is invariant under cycle_7 ∘ quad_res.
+
+        This tests a non-trivially generated group element beyond the two
+        individual generators, covering a product element of the order-168 group.
+        """
+        gen1, gen2 = FANO_PLANE.automorphism_generators
+        composed = _compose_perm(gen1, gen2)
+
+        original = associator(a, b, c)._data.norm().item()
+        transformed = associator(
+            _apply_fano_automorphism(a, composed),
+            _apply_fano_automorphism(b, composed),
+            _apply_fano_automorphism(c, composed),
+        )._data.norm().item()
+
+        assert abs(original - transformed) < ATOL_FLOAT64, (
+            f"Associator norm changed under composed automorphism: "
             f"{original:.12f} -> {transformed:.12f}"
         )

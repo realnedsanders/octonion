@@ -36,13 +36,37 @@ docker compose run --rm dev uv run python -c "import torch; print(torch.cuda.is_
 3. The container has: ROCm 7.2, PyTorch 2.9.1, Python 3.12, uv
 4. First run in a fresh container requires `docker compose run --rm dev uv sync` to install project deps
 
+## Makefile
+
+A project-level Makefile wraps common container commands:
+
+```bash
+make test              # Run all tests
+make list-scripts      # Show available experiment scripts
+make run-<script>      # Run scripts/<script>.py in the container
+make run-<script> ARGS="--flag"  # Pass arguments to a script
+```
+
+Examples:
+```bash
+make run-run_trie_mnist
+make run-run_landscape ARGS="--smoke"
+make run-run_cifar_reproduction
+```
+
 ## Project Structure
 
 ```
 src/octonion/          # Main package — octonionic algebra for ML
-tests/                 # Pytest test suite
-scripts/               # Dev utility scripts
-.planning/             # GSD planning docs
+    trie.py            # Self-organizing trie + threshold policies (primary research)
+    calculus/          # GHR derivatives, autograd functions, Jacobians
+    baselines/         # Fair R/C/H/O comparison networks + training
+    landscape/         # Optimization landscape analysis + go/no-go gate
+    tasks/             # Synthetic task generators
+tests/                 # Pytest test suite (839 tests, Hypothesis property-based)
+scripts/               # Experiment runners, benchmarks, analysis, sweeps
+docs/thesis/           # Two thesis documents (oct-neural-nets, oct-trie)
+.planning/             # Research planning, roadmap, phase tracking
 ```
 
 ## Code Style
