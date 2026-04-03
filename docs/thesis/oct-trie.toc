@@ -53,14 +53,14 @@
 \contentsline {subsection}{\numberline {9.1}Associator Norm Distribution on $S^7$}{21}{subsection.9.1}%
 \contentsline {subsection}{\numberline {9.2}Fano Plane Geometry and Subalgebra Routing}{22}{subsection.9.2}%
 \contentsline {subsection}{\numberline {9.3}Global Threshold Justification}{23}{subsection.9.3}%
-\contentsline {subsection}{\numberline {9.4}$G_2$ Symmetry and Threshold Invariance}{23}{subsection.9.4}%
-\contentsline {subsection}{\numberline {9.5}Stability-Plasticity Tradeoff}{24}{subsection.9.5}%
+\contentsline {subsection}{\numberline {9.4}$G_2$ Symmetry and Threshold Invariance}{24}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}Stability-Plasticity Tradeoff}{25}{subsection.9.5}%
 \contentsline {subsection}{\numberline {9.6}Complexity Analysis}{25}{subsection.9.6}%
 \contentsline {subsection}{\numberline {9.7}Self-Organization Narrative}{25}{subsection.9.7}%
 \contentsline {subsection}{\numberline {9.8}Convergence of Meta-Trie Feedback}{26}{subsection.9.8}%
 \contentsline {section}{\numberline {10}MNIST Benchmark}{27}{section.10}%
 \contentsline {subsection}{\numberline {10.1}Experimental Setup}{27}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Effect of Encoder Quality}{27}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.2}Effect of Encoder Quality}{28}{subsection.10.2}%
 \contentsline {subsection}{\numberline {10.3}Effect of Octonionic Dimensionality}{28}{subsection.10.3}%
-\contentsline {subsection}{\numberline {10.4}Significance}{28}{subsection.10.4}%
-\contentsline {section}{\numberline {11}Conclusion}{28}{section.11}%
+\contentsline {subsection}{\numberline {10.4}Significance}{29}{subsection.10.4}%
+\contentsline {section}{\numberline {11}Conclusion}{29}{section.11}%
