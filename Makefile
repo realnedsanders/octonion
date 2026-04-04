@@ -6,6 +6,14 @@ DOCKER := docker compose run --rm dev
 test: ## Run all tests
 	$(DOCKER) uv run pytest
 
+.PHONY: lint
+lint: ## Run ruff linter
+	$(DOCKER) uv run ruff check src/
+
+.PHONY: docs
+docs: ## Build docs locally (catches docstring issues before CI)
+	$(DOCKER) uv run --with mkdocs-material --with "mkdocstrings[python]" --with mkdocs-gen-files --with mkdocs-literate-nav mkdocs build --strict
+
 # ── Scripts ──────────────────────────────────────────────────────────
 # Auto-generates a `run-<stem>` target for every scripts/*.py file.
 # Example: `make run-run_cifar_reproduction` runs scripts/run_cifar_reproduction.py
