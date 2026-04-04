@@ -1,4 +1,4 @@
-# Octonionic Computation Substrate
+# Octonion
 
 A research project investigating octonions as a computational substrate for machine learning. The primary result is a **self-organizing octonionic trie** that classifies data without gradient descent, using only algebraic operations.
 
@@ -36,24 +36,24 @@ The project produced two companion theses:
 
 The primary research contribution. A self-organizing hierarchical memory where **octonionic algebra replaces gradient-based learning entirely**:
 
-| Component | Conventional systems | Octonionic trie |
-|-----------|---------------------|-----------------|
-| Routing | Learned attention / gating | Subalgebra decomposition (Fano plane) |
-| Novelty detection | Engineered thresholds | Associator norm |
-| Content update | Learned write / Hebbian | Octonionic composition |
-| Consistency check | None | Algebraic inversion |
-| Health monitoring | Separate metrics | Associator norms + composition error |
+| Component         | Conventional systems       | Octonionic trie                       |
+| ----------------- | -------------------------- | ------------------------------------- |
+| Routing           | Learned attention / gating | Subalgebra decomposition (Fano plane) |
+| Novelty detection | Engineered thresholds      | Associator norm                       |
+| Content update    | Learned write / Hebbian    | Octonionic composition                |
+| Consistency check | None                       | Algebraic inversion                   |
+| Health monitoring | Separate metrics           | Associator norms + composition error  |
 
 ### Key results
 
-| Experiment | Result | What it shows |
-|------------|--------|---------------|
-| Subalgebra routing | 90%+ within-class consistency | Routing is discriminative |
-| Associator as novelty | 5x spike ratio, zero false negatives | Novelty detection works |
-| Composition depth | Exact inversion to machine precision at depth 200 | Local inversion is reliable |
-| 7-category stability-plasticity | 97.7% accuracy, 0.0% forgetting | Trie learns without forgetting |
-| **MNIST (CNN encoder)** | **95.2%** (vs. 98.2% kNN on same features) | Competitive without gradients |
-| MNIST (PCA-only) | 76.5% (vs. 88.8% kNN) | Works without any neural network |
+| Experiment                      | Result                                            | What it shows                    |
+| ------------------------------- | ------------------------------------------------- | -------------------------------- |
+| Subalgebra routing              | 90%+ within-class consistency                     | Routing is discriminative        |
+| Associator as novelty           | 5x spike ratio, zero false negatives              | Novelty detection works          |
+| Composition depth               | Exact inversion to machine precision at depth 200 | Local inversion is reliable      |
+| 7-category stability-plasticity | 97.7% accuracy, 0.0% forgetting                   | Trie learns without forgetting   |
+| **MNIST (CNN encoder)**         | **95.2%** (vs. 98.2% kNN on same features)        | Competitive without gradients    |
+| MNIST (PCA-only)                | 76.5% (vs. 88.8% kNN)                             | Works without any neural network |
 
 ### Theoretical results
 
@@ -74,39 +74,39 @@ Two mechanisms -- quadratic floor suppression from alternativity, geometric ceil
 
 The trie is built on a validated algebraic foundation (Phases 1-5, complete):
 
-| Phase | What it validates | Status |
-|-------|-------------------|--------|
-| 1. Octonionic Algebra | Moufang identities, norm preservation, alternativity, associator properties | Complete |
-| 2. GHR Calculus | Octonionic gradients match finite-difference to <1e-5 | Complete |
-| 3. Baselines | Fair R/C/H/O comparison networks with matched parameters (<1% deviation) | Complete |
-| 4. Numerical Stability | Precision vs depth, condition numbers, StabilizingNorm mitigation | Complete |
-| 5. Optimization Landscape | Go/no-go gate for gradient-trained octonionic networks | Complete (gate passed) |
+| Phase                     | What it validates                                                           | Status                 |
+| ------------------------- | --------------------------------------------------------------------------- | ---------------------- |
+| 1. Octonionic Algebra     | Moufang identities, norm preservation, alternativity, associator properties | Complete               |
+| 2. GHR Calculus           | Octonionic gradients match finite-difference to <1e-5                       | Complete               |
+| 3. Baselines              | Fair R/C/H/O comparison networks with matched parameters (<1% deviation)    | Complete               |
+| 4. Numerical Stability    | Precision vs depth, condition numbers, StabilizingNorm mitigation           | Complete               |
+| 5. Optimization Landscape | Go/no-go gate for gradient-trained octonionic networks                      | Complete (gate passed) |
 
 ### Fair baseline comparison
 
 Every gradient-trained experiment compares 4+ algebras with matched total parameter counts:
 
-| Algebra | Width multiplier | Role |
-|---------|-----------------|------|
-| Real (R) | 8x | Standard baseline |
-| Complex (C) | 4x | Published quaternionic/complex ML comparison |
-| Quaternion (H) | 2x | Closest associative relative |
-| Octonion (O) | 1x | Primary subject |
-| PHM-8 | Matched | Kronecker-factored structure (Zhang et al. 2021) |
-| R8-Dense | Matched | Unconstrained 8x8 real mixing control |
+| Algebra        | Width multiplier | Role                                             |
+| -------------- | ---------------- | ------------------------------------------------ |
+| Real (R)       | 8x               | Standard baseline                                |
+| Complex (C)    | 4x               | Published quaternionic/complex ML comparison     |
+| Quaternion (H) | 2x               | Closest associative relative                     |
+| Octonion (O)   | 1x               | Primary subject                                  |
+| PHM-8          | Matched          | Kronecker-factored structure (Zhang et al. 2021) |
+| R8-Dense       | Matched          | Unconstrained 8x8 real mixing control            |
 
 ## Implementation
 
 A PyTorch-native library implementing the full stack from algebra to experiment infrastructure:
 
-| Module | Description |
-|--------|-------------|
-| **Core algebra** | Multiplication via Fano plane structure constants, conjugation, norm, inverse, associator. Cayley-Dickson cross-check. R/C/H/O tower types. Batch operations, exp/log. |
-| **`trie.py`** | Self-organizing octonionic trie with 7 pluggable threshold policies (Global, EMA, MeanStd, Depth, AlgebraicPurity, MetaTrie, Hybrid). Subalgebra routing, associator-based novelty detection, rumination consistency check, consolidation. |
-| **`calculus/`** | GHR Wirtinger derivatives for octonionic backpropagation. Analytic 8x8 Jacobians. Parenthesization-aware chain rule. `torch.autograd.Function` implementations. |
-| **`baselines/`** | Fair comparison networks: parameter-matched R/C/H/O. Algebra-specific batch norm with Cholesky whitening. MLP, Conv2D, Recurrent topologies. Training with gradient statistics, AMP, TensorBoard. |
-| **`landscape/`** | Hessian eigenspectrum, Bill & Cox curvature, gradient variance, go/no-go gate. |
-| **`tasks/`** | Synthetic task generators with known optima. |
+| Module           | Description                                                                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Core algebra** | Multiplication via Fano plane structure constants, conjugation, norm, inverse, associator. Cayley-Dickson cross-check. R/C/H/O tower types. Batch operations, exp/log.                                                                     |
+| **`trie.py`**    | Self-organizing octonionic trie with 7 pluggable threshold policies (Global, EMA, MeanStd, Depth, AlgebraicPurity, MetaTrie, Hybrid). Subalgebra routing, associator-based novelty detection, rumination consistency check, consolidation. |
+| **`calculus/`**  | GHR Wirtinger derivatives for octonionic backpropagation. Analytic 8x8 Jacobians. Parenthesization-aware chain rule. `torch.autograd.Function` implementations.                                                                            |
+| **`baselines/`** | Fair comparison networks: parameter-matched R/C/H/O. Algebra-specific batch norm with Cholesky whitening. MLP, Conv2D, Recurrent topologies. Training with gradient statistics, AMP, TensorBoard.                                          |
+| **`landscape/`** | Hessian eigenspectrum, Bill & Cox curvature, gradient variance, go/no-go gate.                                                                                                                                                             |
+| **`tasks/`**     | Synthetic task generators with known optima.                                                                                                                                                                                               |
 
 **839 tests** covering algebra, calculus, baselines, stability, trie, threshold policies, proximity bounds, and thesis theorem validation (pytest + Hypothesis property-based testing).
 
