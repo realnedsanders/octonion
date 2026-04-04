@@ -52,6 +52,10 @@ class TestEganMeanAssociatorNorm:
             norms.append(assoc._data.norm().item())
 
         norms_t = torch.tensor(norms, dtype=torch.float64)
+        assert torch.isfinite(norms_t).all(), (
+            f"Non-finite associator norms detected in {(~torch.isfinite(norms_t)).sum()} "
+            f"of {n_samples} samples — possible NaN/Inf in octonion multiplication"
+        )
         mean_norm = norms_t.mean().item()
         std_norm = norms_t.std().item()
         se = std_norm / math.sqrt(n_samples)

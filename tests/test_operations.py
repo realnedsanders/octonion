@@ -78,6 +78,26 @@ class TestOctonionExp:
                 f"{(result.components - a.components).abs().max().item()}"
             )
 
+    def test_log_exp_roundtrip_small_imaginary(self) -> None:
+        """log(exp(a)) ~ a for pure octonions with small imaginary norm.
+
+        The main roundtrip test avoids ||v|| < 0.1. This test specifically
+        targets the small-norm regime where atan2/sinc computations may lose
+        precision due to catastrophic cancellation.
+        """
+        torch.manual_seed(99)
+        for target_norm in [0.05, 0.01, 1e-3, 1e-6]:
+            data = torch.zeros(8, dtype=torch.float64)
+            v = torch.randn(7, dtype=torch.float64)
+            v = v / v.norm() * target_norm
+            data[1:] = v
+            a = Octonion(data)
+            result = octonion_log(octonion_exp(a))
+            assert torch.allclose(result.components, a.components, atol=1e-10), (
+                f"log(exp(a)) roundtrip failed for ||v||={target_norm}: max diff = "
+                f"{(result.components - a.components).abs().max().item()}"
+            )
+
     def test_exp_log_roundtrip_near_identity(self) -> None:
         """exp(log(a)) ~ a for octonions near identity within 1e-10."""
         torch.manual_seed(42)

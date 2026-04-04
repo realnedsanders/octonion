@@ -123,22 +123,27 @@ class TestLargeMagnitudePrecision:
         assert not torch.any(torch.isinf(result))
 
     def test_large_inverse_relative_precision(self) -> None:
-        """Inverse of large octonion maintains relative precision.
+        """Inverse of large octonion maintains machine-epsilon precision.
 
-        For ||a|| ~ 1e10, a * a^{-1} should be identity to ~1e-6 relative precision.
+        The inverse x^{-1} = conj(x)/|x|^2 is well-conditioned at all scales
+        because the product x * x^{-1} normalizes out the magnitude. Empirically,
+        a * a^{-1} achieves ~1e-16 absolute error (machine epsilon) for ||a|| up
+        to 1e15. We use 1e-12 tolerance to match the project standard (ATOL_FLOAT64)
+        with ample headroom.
         """
         torch.manual_seed(42)
-        data = torch.randn(8, dtype=torch.float64) * 1e10
-        a = Octonion(data)
-        inv = a.inverse()
-        product = (a * inv).components
-        identity = torch.zeros(8, dtype=torch.float64)
-        identity[0] = 1.0
-        # Relative precision: |product - identity| / ||a|| should be small
-        diff = (product - identity).abs().max().item()
-        assert diff < 1e-4, (
-            f"Large octonion inverse precision: max diff = {diff}"
-        )
+        for scale in [1e5, 1e10, 1e15]:
+            data = torch.randn(8, dtype=torch.float64) * scale
+            a = Octonion(data)
+            inv = a.inverse()
+            product = (a * inv).components
+            identity = torch.zeros(8, dtype=torch.float64)
+            identity[0] = 1.0
+            diff = (product - identity).abs().max().item()
+            assert diff < 1e-12, (
+                f"Large octonion inverse (||a||~{scale:.0e}): "
+                f"max |a*a^{{-1}} - 1| = {diff:.2e}, expected < 1e-12"
+            )
 
     def test_large_norm_correct(self) -> None:
         """Norm of large octonion is correct order of magnitude."""
