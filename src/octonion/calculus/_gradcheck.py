@@ -139,13 +139,13 @@ def octonion_gradcheck(
 
     Returns:
         dict with keys:
-        - "passed" (bool): Whether all checks passed
-        - "max_abs_error" (float): Maximum absolute error across all inputs
-        - "max_rel_error" (float): Maximum relative error across all inputs
-        - "per_component_errors" (list[list[float]]): Per-input, per-component
-          max absolute errors
-        - "wirtinger_passed" (bool): Whether Wirtinger pair comparison passed
-        - "wirtinger_error" (float): Max error in Wirtinger pair comparison
+            - "passed" (bool): Whether all checks passed
+            - "max_abs_error" (float): Maximum absolute error across all inputs
+            - "max_rel_error" (float): Maximum relative error across all inputs
+            - "per_component_errors" (list[list[float]]): Per-input, per-component
+              max absolute errors
+            - "wirtinger_passed" (bool): Whether Wirtinger pair comparison passed
+            - "wirtinger_error" (float): Max error in Wirtinger pair comparison
     """
     if isinstance(inputs, torch.Tensor):
         inputs = (inputs,)

@@ -42,8 +42,8 @@ class StabilizingNorm(nn.Module):
         """Normalize each algebra element to unit norm.
 
         Args:
-            x: For algebra_dim==1: [..., features].
-               For algebra_dim>1: [..., features, algebra_dim].
+            x: For algebra_dim==1: ``[..., features]``.
+                For algebra_dim>1: ``[..., features, algebra_dim]``.
 
         Returns:
             Tensor with same shape, each algebra element having unit norm.

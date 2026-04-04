@@ -46,7 +46,7 @@ class FanoPlane:
 
     @property
     def incidence_matrix(self) -> torch.Tensor:
-        """7x7 incidence matrix: M[point][line] = 1 if point is on line.
+        """7x7 incidence matrix where entry (point, line_idx) is 1 if point is on that line.
 
         Points are 0-indexed (point p corresponds to imaginary unit e_{p+1}).
         Lines are indexed 0..6 matching the triple order.

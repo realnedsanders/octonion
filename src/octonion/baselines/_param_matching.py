@@ -318,8 +318,8 @@ def flop_report(
 
     Returns:
         Dict with keys:
-          - total_mult_adds: Total multiply-accumulate operations.
-          - per_layer: List of dicts with name and mult_adds per layer.
+            - total_mult_adds: Total multiply-accumulate operations.
+            - per_layer: List of dicts with name and mult_adds per layer.
     """
     import torchinfo
 

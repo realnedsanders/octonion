@@ -300,7 +300,9 @@ def associator(a: Octonion, b: Octonion, c: Octonion) -> Octonion:
     - Non-zero for generic triples (octonions are NOT associative)
 
     Args:
-        a, b, c: Octonion instances.
+        a: Octonion instance.
+        b: Octonion instance.
+        c: Octonion instance.
 
     Returns:
         Octonion representing (a*b)*c - a*(b*c).

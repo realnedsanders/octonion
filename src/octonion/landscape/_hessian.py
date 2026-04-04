@@ -81,14 +81,14 @@ def compute_full_hessian(
 
     Returns:
         Dict with keys:
-          - eigenvalues: numpy array of eigenvalues (sorted ascending)
-          - n_negative: count of eigenvalues < -1e-10
-          - n_positive: count of eigenvalues > 1e-10
-          - n_zero: count of eigenvalues in [-1e-10, 1e-10]
-          - trace: sum of eigenvalues
-          - spectral_norm: max absolute eigenvalue
-          - negative_ratio: fraction of negative eigenvalues
-          - method: 'full'
+            - eigenvalues: numpy array of eigenvalues (sorted ascending)
+            - n_negative: count of eigenvalues < -1e-10
+            - n_positive: count of eigenvalues > 1e-10
+            - n_zero: count of eigenvalues in [-1e-10, 1e-10]
+            - trace: sum of eigenvalues
+            - spectral_norm: max absolute eigenvalue
+            - negative_ratio: fraction of negative eigenvalues
+            - method: 'full'
     """
     model = model.to(device)
     data_x = data_x.to(device)
@@ -219,13 +219,13 @@ def stochastic_lanczos(
 
     Returns:
         Dict with keys:
-          - ritz_values: numpy array of all Ritz values across samples
-          - n_negative_approx: count of negative Ritz values
-          - negative_ratio_approx: fraction of negative Ritz values
-          - trace_approx: mean trace estimate across samples
-          - method: 'lanczos'
-          - n_iterations: actual iterations used
-          - n_samples: number of samples used
+            - ritz_values: numpy array of all Ritz values across samples
+            - n_negative_approx: count of negative Ritz values
+            - negative_ratio_approx: fraction of negative Ritz values
+            - trace_approx: mean trace estimate across samples
+            - method: 'lanczos'
+            - n_iterations: actual iterations used
+            - n_samples: number of samples used
     """
     model = model.to(device)
     data_x = data_x.to(device)

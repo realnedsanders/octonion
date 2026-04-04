@@ -109,11 +109,11 @@ def measure_curvature(
 
     Returns:
         Dict with keys:
-          - mean_curvature: Mean curvature across directions
-          - median_curvature: Median curvature across directions
-          - std_curvature: Standard deviation of curvatures
-          - curvatures: List of curvature values (one per direction)
-          - n_directions: Number of directions sampled
+            - mean_curvature: Mean curvature across directions
+            - median_curvature: Median curvature across directions
+            - std_curvature: Standard deviation of curvatures
+            - curvatures: List of curvature values (one per direction)
+            - n_directions: Number of directions sampled
     """
     # Save converged weights
     theta_star: dict[str, torch.Tensor] = {

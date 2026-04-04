@@ -120,7 +120,8 @@ def commutator(a: Octonion, b: Octonion) -> Octonion:
     - For real scalars, [s, a] = 0
 
     Args:
-        a, b: Octonion instances.
+        a: Octonion instance.
+        b: Octonion instance.
 
     Returns:
         Octonion representing a*b - b*a.
@@ -141,7 +142,8 @@ def inner_product(a: Octonion, b: Octonion) -> torch.Tensor:
     - Bilinear: <sa + tb, c> = s<a, c> + t<b, c>
 
     Args:
-        a, b: Octonion instances.
+        a: Octonion instance.
+        b: Octonion instance.
 
     Returns:
         Scalar tensor (batch dims preserved) with the inner product value.
@@ -166,7 +168,8 @@ def cross_product(a: Octonion, b: Octonion) -> Octonion:
     - For pure imaginary a, b: antisymmetry follows from a*b + b*a = -2<a,b> (real)
 
     Args:
-        a, b: Octonion instances.
+        a: Octonion instance.
+        b: Octonion instance.
 
     Returns:
         Octonion with zero real part (pure imaginary) representing the cross product.
