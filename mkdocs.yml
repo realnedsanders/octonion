@@ -29,6 +29,9 @@ theme:
     - search.highlight
     - toc.follow
 
+exclude_docs: |
+  thesis/
+
 plugins:
   - search
   - mkdocstrings:

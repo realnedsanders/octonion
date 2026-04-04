@@ -2,16 +2,44 @@
 
 ## Autograd Functions
 
-::: octonion.calculus.OctonionMul
+::: octonion.calculus.OctonionMulFunction
 
-::: octonion.calculus.OctonionExp
+::: octonion.calculus.OctonionExpFunction
 
-::: octonion.calculus.OctonionLog
+::: octonion.calculus.OctonionLogFunction
 
-::: octonion.calculus.OctonionConj
+::: octonion.calculus.OctonionConjugateFunction
 
-::: octonion.calculus.OctonionInv
+::: octonion.calculus.OctonionInverseFunction
 
-::: octonion.calculus.OctonionInner
+::: octonion.calculus.OctonionInnerProductFunction
 
-::: octonion.calculus.OctonionCross
+::: octonion.calculus.OctonionCrossProductFunction
+
+## Analytic Jacobians
+
+::: octonion.calculus.jacobian_mul
+
+::: octonion.calculus.jacobian_exp
+
+::: octonion.calculus.jacobian_log
+
+::: octonion.calculus.jacobian_inverse
+
+::: octonion.calculus.jacobian_conjugate
+
+::: octonion.calculus.jacobian_inner_product
+
+::: octonion.calculus.jacobian_cross_product
+
+## GHR Derivatives
+
+::: octonion.calculus.ghr_derivative
+
+::: octonion.calculus.conjugate_derivative
+
+## Gradient Checking
+
+::: octonion.calculus.octonion_gradcheck
+
+::: octonion.calculus.octonion_gradgradcheck
