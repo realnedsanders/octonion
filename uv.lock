@@ -688,6 +688,28 @@ name = "octonion"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "numpy" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "geoopt" },
+    { name = "hypothesis" },
+    { name = "hypothesis-torch" },
+    { name = "matplotlib" },
+    { name = "mypy" },
+    { name = "optuna" },
+    { name = "pytest" },
+    { name = "pytest-timeout" },
+    { name = "pytorch-optimizer" },
+    { name = "ruff" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "seaborn" },
+    { name = "tensorboard" },
+    { name = "torchinfo" },
+]
+full = [
     { name = "geoopt" },
     { name = "matplotlib" },
     { name = "optuna" },
@@ -699,41 +721,29 @@ dependencies = [
     { name = "torchinfo" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "hypothesis-torch" },
-    { name = "mypy" },
-    { name = "numpy" },
-    { name = "pytest" },
-    { name = "pytest-timeout" },
-    { name = "ruff" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "geoopt", specifier = ">=0.5.1" },
-    { name = "matplotlib", specifier = ">=3.10.8" },
-    { name = "optuna", specifier = ">=4.7.0" },
-    { name = "pytorch-optimizer", specifier = ">=3.10.0" },
-    { name = "scikit-learn", specifier = ">=1.8.0" },
-    { name = "scipy", specifier = ">=1.17.1" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "tensorboard", specifier = ">=2.20.0" },
-    { name = "torch", specifier = ">=2.7" },
-    { name = "torchinfo", specifier = ">=1.8.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = ">=6.0" },
-    { name = "hypothesis-torch" },
-    { name = "mypy" },
+    { name = "geoopt", marker = "extra == 'full'", specifier = ">=0.5.1" },
+    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.0" },
+    { name = "hypothesis-torch", marker = "extra == 'dev'" },
+    { name = "matplotlib", marker = "extra == 'full'", specifier = ">=3.10" },
+    { name = "mypy", marker = "extra == 'dev'" },
     { name = "numpy", specifier = ">=1.26" },
-    { name = "pytest" },
-    { name = "pytest-timeout" },
-    { name = "ruff" },
+    { name = "octonion", extras = ["full"], marker = "extra == 'dev'" },
+    { name = "octonion", extras = ["torch"], marker = "extra == 'full'" },
+    { name = "optuna", marker = "extra == 'full'", specifier = ">=4.7.0" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-timeout", marker = "extra == 'dev'" },
+    { name = "pytorch-optimizer", marker = "extra == 'full'", specifier = ">=3.10.0" },
+    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "scikit-learn", marker = "extra == 'full'", specifier = ">=1.8.0" },
+    { name = "scipy", marker = "extra == 'full'", specifier = ">=1.12" },
+    { name = "seaborn", marker = "extra == 'full'", specifier = ">=0.13.2" },
+    { name = "tensorboard", marker = "extra == 'full'", specifier = ">=2.20.0" },
+    { name = "torch", marker = "extra == 'torch'", specifier = ">=2.7" },
+    { name = "torchinfo", marker = "extra == 'full'", specifier = ">=1.8.0" },
 ]
+provides-extras = ["torch", "full", "dev"]
 
 [[package]]
 name = "optuna"

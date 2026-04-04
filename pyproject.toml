@@ -6,36 +6,85 @@ build-backend = "hatchling.build"
 name = "octonion"
 version = "0.1.0"
 description = "PyTorch-native octonionic algebra for ML research"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.12"
+
+authors = [
+    { name = "Antonio Escalera", email = "python.amply620@passmail.net" },
+]
+
+keywords = [
+    "octonion",
+    "hypercomplex",
+    "pytorch",
+    "machine-learning",
+    "algebra",
+    "non-associative",
+    "normed-division-algebra",
+    "fano-plane",
+    "trie",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+]
+
+# Core dependencies — lightweight, no GPU required.
+# Users install PyTorch separately for their hardware before installing this.
 dependencies = [
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+# PyTorch (user should install for their hardware first; this is a convenience)
+torch = [
+    "torch>=2.7",
+]
+# Full research stack (experiments, visualization, optimization)
+full = [
+    "octonion[torch]",
     "geoopt>=0.5.1",
-    "matplotlib>=3.10.8",
+    "matplotlib>=3.10",
     "optuna>=4.7.0",
     "pytorch-optimizer>=3.10.0",
     "scikit-learn>=1.8.0",
-    "scipy>=1.17.1",
+    "scipy>=1.12",
     "seaborn>=0.13.2",
     "tensorboard>=2.20.0",
-    "torch>=2.7",
     "torchinfo>=1.8.0",
 ]
+# Development (testing, linting, type checking)
+dev = [
+    "octonion[full]",
+    "pytest",
+    "pytest-timeout",
+    "hypothesis>=6.0",
+    "hypothesis-torch",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/realnedsanders/octonion-computation-substrate"
+Documentation = "https://realnedsanders.github.io/octonion-computation-substrate"
+Repository = "https://github.com/realnedsanders/octonion-computation-substrate"
+Issues = "https://github.com/realnedsanders/octonion-computation-substrate/issues"
 
 [tool.uv]
 # torch and triton are provided by the ROCm dev container (/opt/venv/).
 # Prevent uv from installing PyPI's CUDA builds which shadow the ROCm ones.
 # The container's packages are made visible via .pth file (see Containerfile).
 exclude-dependencies = ["torch", "triton"]
-
-[dependency-groups]
-dev = [
-    "pytest",
-    "pytest-timeout",
-    "hypothesis>=6.0",
-    "hypothesis-torch",
-    "numpy>=1.26",
-    "ruff",
-    "mypy",
-]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/octonion"]

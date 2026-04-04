@@ -34,7 +34,7 @@ docker compose run --rm dev uv run python -c "import torch; print(torch.cuda.is_
 1. **Never run `uv`, `python`, or `pytest` directly on the host** — always prefix with `docker compose run --rm dev`
 2. File edits happen on the host (mounted at `/workspace` in container)
 3. The container has: ROCm 7.2, PyTorch 2.9.1, Python 3.12, uv
-4. First run in a fresh container requires `docker compose run --rm dev uv sync` to install project deps
+4. First run in a fresh container requires `docker compose run --rm dev uv sync --all-extras --all-groups` to install project deps (core + torch + full research stack + dev tools)
 
 ## Makefile
 
