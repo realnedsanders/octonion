@@ -23,7 +23,7 @@ jobs:
       - name: Install CPU-only PyTorch (needed for mkdocstrings import)
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install docs dependencies
-        run: pip install mkdocs-material "mkdocstrings[python]" -e .
+        run: pip install mkdocs-material "mkdocstrings[python]" mkdocs-gen-files mkdocs-literate-nav -e .
       - name: Build site
         run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3

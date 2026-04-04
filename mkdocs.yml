@@ -31,9 +31,15 @@ theme:
 
 exclude_docs: |
   thesis/
+  ghr-calculus/
 
 plugins:
   - search
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
   - mkdocstrings:
       handlers:
         python:
@@ -68,7 +74,4 @@ nav:
   - Guide:
       - Octonionic Algebra: guide/algebra.md
       - The Octonionic Trie: guide/trie.md
-  - API Reference:
-      - Core: api/core.md
-      - Trie: api/trie.md
-      - Calculus: api/calculus.md
+  - API Reference: api/

@@ -33,8 +33,4 @@ The associator compatibility threshold is the single most consequential paramete
 | `MetaTriePolicy` | A second trie optimizes thresholds via ratio-feedback signal |
 | `HybridPolicy` | Blends two policies (mean, min, max, or adaptive transition) |
 
-## API
-
-::: octonion.trie.OctonionTrie
-
-::: octonion.trie.TrieNode
+See the [API Reference](../api/) for full documentation of `OctonionTrie`, `TrieNode`, and all threshold policies.

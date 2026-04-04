@@ -34,8 +34,4 @@ The multiplication table of the 7 imaginary octonion units is encoded by the Fan
 
 The 7 lines define 7 quaternionic subalgebras $\mathcal{S}_\ell = \mathrm{span}\{1, e_i, e_j, e_k\}$. Within each subalgebra, the algebra is associative.
 
-## API
-
-::: octonion.Octonion
-
-::: octonion.associator
+See the [API Reference](../api/) for full documentation of `Octonion`, `associator`, and all operations.
