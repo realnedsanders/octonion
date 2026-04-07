@@ -61,8 +61,8 @@ DEFAULT_EPOCHS = 3
 
 # Meta-trie sweep dimensions per D-14, D-15, D-16, D-17
 SIGNAL_ENCODINGS = ["signal_vector", "algebraic"]
-FEEDBACK_SIGNALS = ["stability", "accuracy"]
-UPDATE_FREQUENCIES = [100, 1000]  # per-N-inserts; per-epoch computed from train_size
+UPDATE_FREQUENCIES = [10, 50, 200]  # compounding needs frequent updates
+OBSERVATION_WINDOWS = [5, 10]
 SELF_REFERENTIAL_VALUES = [False, True]
 
 # Noise levels for expanded sweep per D-05
@@ -266,11 +266,10 @@ def generate_meta_trie_sweep_configs(
 ) -> list[SweepConfig]:
     """Generate sweep configs for MetaTriePolicy (Strategy 5).
 
-    4D sweep: encoding x feedback x update_freq x self_referential
+    4D sweep: encoding x update_freq x observation_window x self_referential
     crossed with top-3 base_assoc and top-2 sim_threshold from global sweep.
 
-    Total per benchmark: 2(encoding) * 2(feedback) * 3(freq) * 2(self_ref) * 3(assoc) * 2(sim)
-                       = 144 per benchmark, 720 total.
+    Uses compounding multiplicative actions with ratio-feedback signal.
 
     Args:
         benchmarks: List of benchmark names.
@@ -288,13 +287,9 @@ def generate_meta_trie_sweep_configs(
     config_id = META_TRIE_CONFIG_ID_BASE
 
     for bm in benchmarks:
-        # Compute per-epoch update frequency from train size
-        train_size = BENCHMARK_TRAIN_SIZES.get(bm, 10000)
-        update_freqs = UPDATE_FREQUENCIES + [train_size]  # per-epoch = per-N
-
         for encoding in SIGNAL_ENCODINGS:
-            for feedback in FEEDBACK_SIGNALS:
-                for freq in update_freqs:
+            for freq in UPDATE_FREQUENCIES:
+                for obs_window in OBSERVATION_WINDOWS:
                     for self_ref in SELF_REFERENTIAL_VALUES:
                         for base_assoc in top_assoc:
                             for sim_thresh in top_sim:
@@ -302,8 +297,8 @@ def generate_meta_trie_sweep_configs(
                                     "base_assoc": base_assoc,
                                     "sim_threshold": sim_thresh,
                                     "signal_encoding": encoding,
-                                    "feedback_signal": feedback,
                                     "update_frequency": freq,
+                                    "observation_window": obs_window,
                                     "self_referential": self_ref,
                                 }
 
@@ -648,17 +643,18 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 f"{winner:>12}"
             )
 
-        # ── Section 3: Feedback signal comparison per D-15 ──────
+        # ── Section 3: Observation window comparison ──────
         logger.info("")
         logger.info("=" * 90)
-        logger.info("FEEDBACK SIGNAL COMPARISON (per D-15)")
+        logger.info("OBSERVATION WINDOW COMPARISON")
         logger.info("=" * 90)
-        logger.info(f"{'Benchmark':<15} {'stability':>14} {'accuracy':>14} {'Winner':>12}")
-        logger.info("-" * 60)
+        obs_labels = [str(w) for w in OBSERVATION_WINDOWS]
+        logger.info(f"{'Benchmark':<15} " + " ".join(f"{'win=' + l:>10}" for l in obs_labels) + f" {'Winner':>10}")
+        logger.info("-" * (15 + 11 * len(obs_labels) + 10))
 
         for bm in benchmarks:
-            fb_accs: dict[str, float] = {}
-            for fb in FEEDBACK_SIGNALS:
+            win_accs: dict[int, float] = {}
+            for win in OBSERVATION_WINDOWS:
                 rows = conn.execute(
                     """
                     SELECT policy_params, accuracy
@@ -676,33 +672,26 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 best_acc = 0.0
                 for row in rows:
                     pp = json.loads(row["policy_params"])
-                    if pp.get("feedback_signal") == fb:
+                    if pp.get("observation_window") == win:
                         if row["accuracy"] > best_acc:
                             best_acc = row["accuracy"]
-                fb_accs[fb] = best_acc
+                win_accs[win] = best_acc
 
-            winner = max(FEEDBACK_SIGNALS, key=lambda f: fb_accs.get(f, 0.0))
-            logger.info(
-                f"{bm:<15} "
-                f"{fb_accs.get('stability', 0.0):>14.4f} "
-                f"{fb_accs.get('accuracy', 0.0):>14.4f} "
-                f"{winner:>12}"
-            )
+            winner = max(OBSERVATION_WINDOWS, key=lambda w: win_accs.get(w, 0.0))
+            accs_str = " ".join(f"{win_accs.get(w, 0.0):>10.4f}" for w in OBSERVATION_WINDOWS)
+            logger.info(f"{bm:<15} {accs_str} {'win=' + str(winner):>10}")
 
         # ── Section 4: Update frequency comparison per D-16 ──────
         logger.info("")
         logger.info("=" * 90)
         logger.info("UPDATE FREQUENCY COMPARISON (per D-16)")
         logger.info("=" * 90)
-        logger.info(
-            f"{'Benchmark':<15} {'per-100':>10} {'per-1000':>10} {'per-epoch':>10} {'Best':>10}"
-        )
-        logger.info("-" * 60)
+        freq_labels = [f"per-{f}" for f in UPDATE_FREQUENCIES]
+        logger.info(f"{'Benchmark':<15} " + " ".join(f"{l:>10}" for l in freq_labels) + f" {'Best':>10}")
+        logger.info("-" * (15 + 11 * len(freq_labels) + 10))
 
         for bm in benchmarks:
-            train_size = BENCHMARK_TRAIN_SIZES.get(bm, 10000)
-            freq_values = [100, 1000, train_size]
-            freq_labels = ["per-100", "per-1000", "per-epoch"]
+            freq_values = UPDATE_FREQUENCIES
             freq_accs: dict[str, float] = {}
 
             for freq_val, freq_lbl in zip(freq_values, freq_labels):
@@ -729,13 +718,8 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 freq_accs[freq_lbl] = best_acc
 
             winner = max(freq_labels, key=lambda f: freq_accs.get(f, 0.0))
-            logger.info(
-                f"{bm:<15} "
-                f"{freq_accs.get('per-100', 0.0):>10.4f} "
-                f"{freq_accs.get('per-1000', 0.0):>10.4f} "
-                f"{freq_accs.get('per-epoch', 0.0):>10.4f} "
-                f"{winner:>10}"
-            )
+            accs_str = " ".join(f"{freq_accs.get(fl, 0.0):>10.4f}" for fl in freq_labels)
+            logger.info(f"{bm:<15} {accs_str} {winner:>10}")
 
         # ── Section 5: Self-referential vs fixed per D-17 ──────
         logger.info("")
