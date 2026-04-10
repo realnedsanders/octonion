@@ -466,10 +466,10 @@ def generate_diagnostics(
             continue
 
         data = torch.load(str(features_file), weights_only=True)
-        train_x = data["train_features"]
-        train_y = data["train_labels"]
-        test_x = data["test_features"]
-        test_y = data["test_labels"]
+        train_x = data["train_x"]
+        train_y = data["train_y"]
+        test_x = data["test_x"]
+        test_y = data["test_y"]
 
         logger.info(f"Processing {benchmark}: train={len(train_x)}, test={len(test_x)}")
 
@@ -699,9 +699,9 @@ def _make_policy_from_config(config: dict[str, Any]) -> Any:
             sim_threshold=sim,
             min_share=min_share,
             min_count=min_count,
-            signal_encoding=policy_params.get("signal_encoding", "signal_vector"),
-            feedback_signal=policy_params.get("feedback_signal", "stability"),
-            update_frequency=policy_params.get("update_frequency", 100),
+            signal_encoding=policy_params.get("signal_encoding", "algebraic"),
+            update_frequency=policy_params.get("update_frequency", 10),
+            observation_window=policy_params.get("observation_window", 5),
             self_referential=policy_params.get("self_referential", False),
         )
     elif policy_type == "hybrid":
