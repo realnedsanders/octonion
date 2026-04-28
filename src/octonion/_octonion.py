@@ -30,6 +30,8 @@ class Octonion(NormedDivisionAlgebra):
 
     __slots__ = ("_data",)
 
+    _data: torch.Tensor
+
     def __init__(self, data: torch.Tensor) -> None:
         if isinstance(data, Octonion):
             data = data.components

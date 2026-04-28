@@ -109,3 +109,11 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = "geoopt"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "seaborn"
+ignore_missing_imports = true

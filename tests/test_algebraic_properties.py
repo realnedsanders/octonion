@@ -116,8 +116,8 @@ def check_moufang(
 
     # Overall pass/fail
     max_err = max(r["max_error"] for r in results.values())
-    results["passed"] = {"value": max_err < tol}  # type: ignore[assignment]
-    results["max_error_overall"] = {"value": max_err}  # type: ignore[assignment]
+    results["passed"] = {"value": max_err < tol}
+    results["max_error_overall"] = {"value": max_err}
 
     return results
 
