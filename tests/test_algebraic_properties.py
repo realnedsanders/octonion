@@ -17,15 +17,15 @@ reporting (max/mean/std of relative errors) per user decision.
 import hypothesis.strategies as st
 import pytest
 import torch
+from hypothesis import example, given, settings, target
+
+from octonion import Octonion, associator
 from tests.conftest import (
     ATOL_FLOAT64,
     nonzero_octonions,
     octonions,
     subalgebra_octonions,
 )
-from hypothesis import example, given, settings, target
-
-from octonion import Octonion, associator
 
 # =============================================================================
 # Precision tracking utilities

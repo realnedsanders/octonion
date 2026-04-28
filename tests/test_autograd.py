@@ -25,7 +25,6 @@ Primitives tested:
 
 import torch
 import torch.autograd
-from tests.conftest import octonion_tensors
 from hypothesis import assume, given, settings
 
 from octonion._linear import OctonionLinear
@@ -58,6 +57,7 @@ from octonion.calculus._gradcheck import (
     octonion_gradcheck,
     octonion_gradgradcheck,
 )
+from tests.conftest import octonion_tensors
 
 # =============================================================================
 # Forward correctness tests

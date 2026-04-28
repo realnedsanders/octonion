@@ -5,11 +5,11 @@ This implements success criterion 3 from the ROADMAP:
 """
 
 import torch
-from tests.conftest import ATOL_FLOAT64, octonion_tensors
 from hypothesis import given, settings
 
 from octonion._cayley_dickson import cayley_dickson_mul, quaternion_conj, quaternion_mul
 from octonion._multiplication import octonion_mul
+from tests.conftest import ATOL_FLOAT64, octonion_tensors
 
 
 def _basis(i: int) -> torch.Tensor:

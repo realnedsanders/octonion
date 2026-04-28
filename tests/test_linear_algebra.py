@@ -7,11 +7,11 @@ Covers:
 """
 
 import torch
-from tests.conftest import ATOL_FLOAT64, octonions
 from hypothesis import given, settings
 
 from octonion import Octonion
 from octonion._linear_algebra import left_mul_matrix, right_mul_matrix
+from tests.conftest import ATOL_FLOAT64, octonions
 
 
 class TestLeftMulMatrix:

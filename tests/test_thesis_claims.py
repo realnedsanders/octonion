@@ -12,12 +12,12 @@ import math
 
 import pytest
 import torch
-from tests.conftest import ATOL_FLOAT64, unit_octonions
 from hypothesis import given, settings
 
 from octonion import Octonion
 from octonion._fano import FANO_PLANE
 from octonion._octonion import associator
+from tests.conftest import ATOL_FLOAT64, unit_octonions
 
 # ── Egan's Mean Associator Norm ──────────────────────────────────────
 

@@ -9,7 +9,6 @@ Covers:
 """
 
 import torch
-from tests.conftest import ATOL_FLOAT64, octonions
 from hypothesis import given, settings
 
 from octonion import Octonion
@@ -20,6 +19,7 @@ from octonion._operations import (
     octonion_exp,
     octonion_log,
 )
+from tests.conftest import ATOL_FLOAT64, octonions
 
 
 class TestOctonionExp:

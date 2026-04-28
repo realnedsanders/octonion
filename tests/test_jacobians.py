@@ -27,7 +27,6 @@ Primitives tested:
 """
 
 import torch
-from tests.conftest import octonion_tensors
 from hypothesis import assume, given, settings
 
 from octonion._multiplication import octonion_mul
@@ -49,6 +48,7 @@ from octonion.calculus import (
     numeric_jacobian,
     numeric_jacobian_2arg,
 )
+from tests.conftest import octonion_tensors
 
 # Numeric Jacobian step size for tests (larger = less roundoff, more truncation;
 # eps=1e-5 balances both for inputs up to magnitude ~10).
