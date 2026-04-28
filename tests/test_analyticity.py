@@ -21,6 +21,7 @@ from octonion.calculus._analyticity import (
     is_octonionic_analytic,
 )
 from octonion.calculus._lr_scaling import (
+    GradientStats,
     gradient_magnitude_stats,
     lr_scaling_heuristic,
     suggest_lr,
@@ -170,7 +171,7 @@ class TestLRScaling:
 
     def test_lr_scaling_heuristic(self) -> None:
         """lr_scaling_heuristic returns a positive scaling factor."""
-        stats = {
+        stats: GradientStats = {
             "grad_norm_mean": 2.5,
             "grad_norm_std": 0.5,
             "grad_norm_max": 4.0,
@@ -184,7 +185,7 @@ class TestLRScaling:
 
     def test_lr_scaling_inverse_relationship(self) -> None:
         """If octonionic gradients are K times real, scaling factor should be ~1/K."""
-        stats = {
+        stats: GradientStats = {
             "grad_norm_mean": 5.0,
             "grad_norm_std": 1.0,
             "grad_norm_max": 8.0,

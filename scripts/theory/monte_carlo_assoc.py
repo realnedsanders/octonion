@@ -31,8 +31,8 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from octonion._fano import FANO_PLANE
-from octonion._multiplication import octonion_mul
+from octonion._fano import FANO_PLANE  # noqa: E402 — sys.path mutation above
+from octonion._multiplication import octonion_mul  # noqa: E402 — sys.path mutation above
 
 # Egan's exact analytical result for E[||[a,b,c]||] on S^7
 EGAN_THEORETICAL_MEAN = 147456 / (42875 * math.pi)

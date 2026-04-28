@@ -24,8 +24,21 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 import torch
 import torch.nn as nn
+
+
+class GradientStats(TypedDict):
+    """Per-key types for gradient_magnitude_stats output."""
+
+    grad_norm_mean: float
+    grad_norm_std: float
+    grad_norm_max: float
+    grad_norm_min: float
+    grad_per_component: list[float]
+    ratio_to_real: float
 
 
 def gradient_magnitude_stats(
@@ -33,7 +46,7 @@ def gradient_magnitude_stats(
     n_samples: int = 1000,
     input_range: tuple[float, float] = (-1.0, 1.0),
     dtype: torch.dtype = torch.float64,
-) -> dict[str, float | list[float]]:
+) -> GradientStats:
     """Compute gradient magnitude statistics for an octonionic layer.
 
     Generates n_samples random inputs, runs forward + backward through the layer,
@@ -117,7 +130,7 @@ def gradient_magnitude_stats(
     }
 
 
-def lr_scaling_heuristic(stats: dict[str, float | list[float]]) -> float:
+def lr_scaling_heuristic(stats: GradientStats) -> float:
     """Recommend a learning rate scaling factor from gradient statistics.
 
     The heuristic: if octonionic gradient norms are K times larger than
@@ -132,7 +145,7 @@ def lr_scaling_heuristic(stats: dict[str, float | list[float]]) -> float:
         Positive float scaling factor. Multiply base learning rate by this
         value to get the recommended octonionic learning rate.
     """
-    ratio = float(stats["ratio_to_real"])
+    ratio = stats["ratio_to_real"]
     if ratio <= 0:
         return 1.0
     return 1.0 / ratio

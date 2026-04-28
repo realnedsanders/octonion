@@ -158,7 +158,7 @@ def build_mixed_tree(ops: list[str], structure: TreeNode) -> TreeNode:
         try:
             new_op = next(op_iter)
         except StopIteration:
-            raise ValueError("Not enough operations for the tree structure")
+            raise ValueError("Not enough operations for the tree structure") from None
         return Node(new_op, new_left, new_right)
 
     result = _relabel(structure)

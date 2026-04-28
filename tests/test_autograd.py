@@ -28,6 +28,7 @@ import torch.autograd
 from conftest import octonion_tensors
 from hypothesis import assume, given, settings
 
+from octonion._linear import OctonionLinear
 from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
 from octonion._operations import (
@@ -52,6 +53,10 @@ from octonion.calculus._autograd_functions import (
     OctonionInverseFunction,
     OctonionLogFunction,
     OctonionMulFunction,
+)
+from octonion.calculus._gradcheck import (
+    octonion_gradcheck,
+    octonion_gradgradcheck,
 )
 
 # =============================================================================
@@ -416,8 +421,6 @@ class TestBatchedAutograd:
 # Custom octonion gradcheck tests
 # =============================================================================
 
-from octonion.calculus._gradcheck import octonion_gradcheck, octonion_gradgradcheck
-
 
 class TestOctonionGradcheck:
     """Test the custom octonion gradcheck utility on all 7 primitives."""
@@ -523,9 +526,6 @@ class TestOctonionGradgradcheck:
 # =============================================================================
 # SC-1: OctonionLinear single layer gradient check
 # =============================================================================
-
-
-from octonion._linear import OctonionLinear
 
 
 class TestGradcheckOctonionLinear:
