@@ -16,7 +16,7 @@ import torch.nn as nn
 
 def collect_gradient_stats(
     model: nn.Module,
-    loss_fn: Callable,
+    loss_fn: Callable[..., torch.Tensor],
     data_x: torch.Tensor,
     data_y: torch.Tensor,
     device: str | torch.device = "cpu",
@@ -101,7 +101,7 @@ def collect_gradient_stats(
 
 def collect_gradient_variance_across_seeds(
     model_factory: Callable[[], nn.Module],
-    loss_fn: Callable,
+    loss_fn: Callable[..., torch.Tensor],
     data_x: torch.Tensor,
     data_y: torch.Tensor,
     seeds: list[int],

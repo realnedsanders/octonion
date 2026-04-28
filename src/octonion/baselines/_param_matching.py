@@ -8,6 +8,8 @@ Provides:
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -277,7 +279,7 @@ def find_matched_width(
     return best_width
 
 
-def param_report(model: nn.Module) -> list[dict]:
+def param_report(model: nn.Module) -> list[dict[str, Any]]:
     """Per-layer parameter breakdown.
 
     Args:
@@ -307,7 +309,7 @@ def flop_report(
     model: nn.Module,
     input_size: tuple[int, ...],
     device: str = "cpu",
-) -> dict:
+) -> dict[str, Any]:
     """Per-layer FLOP counts via torchinfo.
 
     Reported for transparency per CONTEXT.md decision. FLOPs are NOT matched

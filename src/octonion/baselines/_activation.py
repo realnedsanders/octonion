@@ -9,12 +9,14 @@ Two strategies for applying nonlinearities to hypercomplex features:
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 # Map activation names to PyTorch functions
-_ACTIVATION_FNS: dict[str, callable] = {
+_ACTIVATION_FNS: dict[str, Callable[[torch.Tensor], torch.Tensor]] = {
     "relu": F.relu,
     "gelu": F.gelu,
     "leaky_relu": F.leaky_relu,

@@ -94,7 +94,7 @@ def build_cifar10_data(
     data_dir: str = "./data",
     num_workers: int = 4,
     val_fraction: float = 0.1,
-) -> tuple[DataLoader, DataLoader, DataLoader, int, int, int]:
+) -> tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any], int, int, int]:
     """Load CIFAR-10 with standard augmentation for benchmark reproduction.
 
     Train augmentation: RandomCrop(32, padding=4), RandomHorizontalFlip, Normalize.
@@ -190,7 +190,7 @@ def build_cifar100_data(
     data_dir: str = "./data",
     num_workers: int = 4,
     val_fraction: float = 0.1,
-) -> tuple[DataLoader, DataLoader, DataLoader, int, int, int]:
+) -> tuple[DataLoader[Any], DataLoader[Any], DataLoader[Any], int, int, int]:
     """Load CIFAR-100 with standard augmentation for benchmark reproduction.
 
     Same augmentation strategy as CIFAR-10 but with CIFAR-100

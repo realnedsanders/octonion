@@ -169,7 +169,7 @@ def _update_manifest(
 
 def run_comparison(
     task_name: str,
-    build_data_fn: Callable[..., tuple],
+    build_data_fn: Callable[..., tuple[Any, ...]],
     config: ComparisonConfig,
     device: str = "cuda",
     network_config_overrides: dict[str, Any] | None = None,

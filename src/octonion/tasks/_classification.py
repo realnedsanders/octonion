@@ -9,6 +9,7 @@ Task 5: Gaussian cluster classification with known Bayes-optimal accuracy.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import torch
 from torch.utils.data import TensorDataset
@@ -66,7 +67,7 @@ def build_classification(
     n_classes: int = 5,
     separation: float = 3.0,
     seed: int = 42,
-) -> tuple[TensorDataset, TensorDataset, dict]:
+) -> tuple[TensorDataset, TensorDataset, dict[str, Any]]:
     """Build a Gaussian cluster classification task.
 
     Generates n_classes clusters with centers uniformly distributed on a

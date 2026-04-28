@@ -18,6 +18,8 @@ Output projection strategies:
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -599,7 +601,7 @@ class AlgebraNetwork(nn.Module):
         # Output projection
         return self._apply_output_projection(final_h)
 
-    def param_report(self) -> list[dict]:
+    def param_report(self) -> list[dict[str, Any]]:
         """Per-layer parameter breakdown.
 
         Returns:

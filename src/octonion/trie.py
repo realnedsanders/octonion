@@ -25,6 +25,7 @@ import weakref
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
+from typing import Any
 
 import torch
 
@@ -65,8 +66,8 @@ class TrieNode:
     insert_count: int = 0
     category_counts: dict[int, int] = field(default_factory=dict)
     depth: int = 0
-    buffer: deque = field(default_factory=lambda: deque(maxlen=30))
-    _policy_state: dict = field(default_factory=dict)
+    buffer: deque[Any] = field(default_factory=lambda: deque(maxlen=30))
+    _policy_state: dict[str, Any] = field(default_factory=dict)
 
     @property
     def dominant_category(self) -> int | None:
@@ -630,7 +631,7 @@ class MetaTriePolicy(ThresholdPolicy):
             self._meta_outcomes = self._meta_outcomes[-100:]
         self._clear_pending(state)
 
-    def _clear_pending(self, state: dict) -> None:
+    def _clear_pending(self, state: dict[str, Any]) -> None:
         state.pop("meta_action_taken", None)
         state.pop("meta_state_before", None)
         state.pop("meta_pre_ratio", None)
@@ -998,7 +999,7 @@ class OctonionTrie:
         """Merge underused nodes into siblings."""
         self._consolidate_node(self.root)
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         """Compute trie statistics."""
         nodes: list[TrieNode] = []
         leaves: list[TrieNode] = []
