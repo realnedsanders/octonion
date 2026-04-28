@@ -28,8 +28,10 @@ def octonion_exp(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     Returns:
         Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    raw_tensor = isinstance(o, torch.Tensor) and not isinstance(o, Octonion)
-    if raw_tensor:
+    if isinstance(o, Octonion):
+        raw_tensor = False
+    else:
+        raw_tensor = True
         o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector
@@ -78,8 +80,10 @@ def octonion_log(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     Returns:
         Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    raw_tensor = isinstance(o, torch.Tensor) and not isinstance(o, Octonion)
-    if raw_tensor:
+    if isinstance(o, Octonion):
+        raw_tensor = False
+    else:
+        raw_tensor = True
         o = Octonion(o)
     a = o.real  # [...] scalar part
     v = o.imag  # [..., 7] imaginary vector

@@ -121,7 +121,7 @@ def compute_full_hessian(
         return loss_fn(output, data_y)
 
     # Compute full Hessian via autograd
-    H = torch.autograd.functional.hessian(loss_func, flat_params)
+    H = torch.autograd.functional.hessian(loss_func, flat_params)  # type: ignore[no-untyped-call]
     H = H.detach().reshape(n_params, n_params)
 
     # Symmetrize (numerical noise)

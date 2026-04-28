@@ -55,7 +55,7 @@ class StabilizingNorm(nn.Module):
         else:
             # Hypercomplex: normalize along last (algebra) dimension
             norm = x.norm(dim=-1, keepdim=True).clamp(min=self.eps)
-            return x / norm
+            return x / norm  # type: ignore[no-any-return]
 
     def extra_repr(self) -> str:
         return f"algebra_dim={self.algebra_dim}, eps={self.eps}"

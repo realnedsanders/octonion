@@ -58,7 +58,7 @@ class RealLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: standard linear transformation."""
-        return self.linear(x)
+        return self.linear(x)  # type: ignore[no-any-return]
 
 
 class ComplexLinear(nn.Module):

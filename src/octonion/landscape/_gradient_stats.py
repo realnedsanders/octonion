@@ -53,7 +53,7 @@ def collect_gradient_stats(
     # Forward + backward
     outputs = model(data_x)
     loss = loss_fn(outputs, data_y)
-    loss.backward()
+    loss.backward()  # type: ignore[no-untyped-call]
 
     # Collect per-layer stats
     per_layer_stats: list[dict[str, Any]] = []
@@ -150,7 +150,7 @@ def collect_gradient_variance_across_seeds(
             optimizer.zero_grad()
             outputs = model(data_x)
             loss = loss_fn(outputs, data_y)
-            loss.backward()
+            loss.backward()  # type: ignore[no-untyped-call]
 
             # Collect stats before stepping
             stats = collect_gradient_stats(model, loss_fn, data_x, data_y, device)

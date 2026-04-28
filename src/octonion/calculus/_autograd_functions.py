@@ -56,7 +56,7 @@ class OctonionMulFunction(torch.autograd.Function):
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        a, b = ctx.saved_tensors
+        a, b = ctx.saved_tensors  # type: ignore[attr-defined]
         C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
         grad_a = torch.einsum("...k, ijk, ...j -> ...i", grad_output, C, b)
         grad_b = torch.einsum("...k, ijk, ...i -> ...j", grad_output, C, a)
@@ -82,14 +82,14 @@ class OctonionExpFunction(torch.autograd.Function):
         o: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(o)
-        return octonion_exp(o)
+        return octonion_exp(o)  # type: ignore[return-value]
 
     @staticmethod
     def backward(
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        (o,) = ctx.saved_tensors
+        (o,) = ctx.saved_tensors  # type: ignore[attr-defined]
 
         # Recompute Jacobian using differentiable operations
         a = o[..., 0:1]  # [..., 1]
@@ -150,14 +150,14 @@ class OctonionLogFunction(torch.autograd.Function):
         o: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(o)
-        return octonion_log(o)
+        return octonion_log(o)  # type: ignore[return-value]
 
     @staticmethod
     def backward(
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        (o,) = ctx.saved_tensors
+        (o,) = ctx.saved_tensors  # type: ignore[attr-defined]
 
         a = o[..., 0:1]
         v = o[..., 1:]
@@ -261,7 +261,7 @@ class OctonionInverseFunction(torch.autograd.Function):
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor]:
-        (o,) = ctx.saved_tensors
+        (o,) = ctx.saved_tensors  # type: ignore[attr-defined]
 
         n2 = torch.sum(o**2, dim=-1, keepdim=True)  # [..., 1]
 
@@ -313,7 +313,7 @@ class OctonionInnerProductFunction(torch.autograd.Function):
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        a, b = ctx.saved_tensors
+        a, b = ctx.saved_tensors  # type: ignore[attr-defined]
         # grad_output shape [...], need to broadcast to [..., 8]
         go = grad_output.unsqueeze(-1)
         grad_a = go * b
@@ -354,7 +354,7 @@ class OctonionCrossProductFunction(torch.autograd.Function):
         ctx: torch.autograd.function.FunctionCtx,
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        a, b = ctx.saved_tensors
+        a, b = ctx.saved_tensors  # type: ignore[attr-defined]
         C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
 
         # grad_output has zero real part (output is pure imaginary), but

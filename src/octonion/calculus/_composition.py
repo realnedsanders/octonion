@@ -96,11 +96,11 @@ def all_parenthesizations(n: int, op: str = "mul") -> list[TreeNode]:
 
 # Map from operation names to their autograd Function apply methods
 _OP_DISPATCH = {
-    "mul": lambda a, b: OctonionMulFunction.apply(a, b),
-    "exp": lambda a, _: OctonionExpFunction.apply(a),
-    "log": lambda a, _: OctonionLogFunction.apply(a),
-    "conjugate": lambda a, _: OctonionConjugateFunction.apply(a),
-    "inverse": lambda a, _: OctonionInverseFunction.apply(a),
+    "mul": lambda a, b: OctonionMulFunction.apply(a, b),  # type: ignore[no-untyped-call]
+    "exp": lambda a, _: OctonionExpFunction.apply(a),  # type: ignore[no-untyped-call]
+    "log": lambda a, _: OctonionLogFunction.apply(a),  # type: ignore[no-untyped-call]
+    "conjugate": lambda a, _: OctonionConjugateFunction.apply(a),  # type: ignore[no-untyped-call]
+    "inverse": lambda a, _: OctonionInverseFunction.apply(a),  # type: ignore[no-untyped-call]
 }
 
 
@@ -129,7 +129,7 @@ def evaluate_tree(tree: TreeNode, operands: list[torch.Tensor]) -> torch.Tensor:
     if dispatch is None:
         raise ValueError(f"Unknown operation: {tree.op}")
 
-    return dispatch(left_val, right_val)
+    return dispatch(left_val, right_val)  # type: ignore[no-any-return,no-untyped-call]
 
 
 def build_mixed_tree(ops: list[str], structure: TreeNode) -> TreeNode:

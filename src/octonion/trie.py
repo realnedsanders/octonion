@@ -576,7 +576,7 @@ class MetaTriePolicy(ThresholdPolicy):
             action = recommended
 
         # Compound: multiply current threshold by action factor
-        factor = self.ACTIONS[action]
+        factor = self.ACTIONS[int(action)]
         new_thresh = max(0.001, min(thresh * factor, 5.0))
         state["meta_threshold"] = new_thresh
         state["meta_action_taken"] = action
@@ -656,9 +656,9 @@ class MetaTriePolicy(ThresholdPolicy):
         n = max(1, int(len(eligible) * self.generalize_fraction))
         indices = torch.randperm(len(eligible), generator=self._rng)[:n]
         for idx in indices:
-            node = self._id_to_node.get(eligible[idx.item()])
-            if node is not None:
-                self._act_on_node(node)
+            maybe_node = self._id_to_node.get(eligible[int(idx.item())])
+            if maybe_node is not None:
+                self._act_on_node(maybe_node)
 
     def _adapt_meta_trie_threshold(self) -> None:
         if len(self._meta_outcomes) < 10:

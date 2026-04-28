@@ -13,7 +13,7 @@ import math
 from typing import Any
 
 import numpy as np
-from scipy import stats
+from scipy import stats  # type: ignore[import-untyped]
 
 
 def cohen_d(a: list[float], b: list[float]) -> float:

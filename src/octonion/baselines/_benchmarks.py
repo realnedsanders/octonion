@@ -116,8 +116,8 @@ def build_cifar10_data(
                   input_dim, output_dim, input_channels).
         input_dim = 3 (CIFAR channels), output_dim = 10, input_channels = 3.
     """
-    import torchvision
-    import torchvision.transforms as T
+    import torchvision  # type: ignore[import-untyped]
+    import torchvision.transforms as T  # type: ignore[import-untyped]
 
     # CIFAR-10 normalization statistics
     mean = (0.4914, 0.4822, 0.4465)
@@ -446,6 +446,7 @@ def reproduction_report(
             "notes": pub.get("notes", ""),
         }
 
+    algebras_tested = list(ours.keys())
     report = {
         "verdicts": verdicts,
         "overall_pass": all(
@@ -453,7 +454,7 @@ def reproduction_report(
             for v in verdicts.values()
         ),
         "n_algebras": len(ours),
-        "algebras_tested": list(ours.keys()),
+        "algebras_tested": algebras_tested,
     }
 
     # Save JSON
@@ -469,7 +470,7 @@ def reproduction_report(
         "## Summary",
         "",
         f"**Overall:** {'PASS' if report['overall_pass'] else 'FAIL'}",
-        f"**Algebras tested:** {', '.join(report['algebras_tested'])}",
+        f"**Algebras tested:** {', '.join(algebras_tested)}",
         "",
         "## Results",
         "",

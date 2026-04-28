@@ -69,12 +69,12 @@ def _autograd_jacobian(
 
         if output.dim() == 0:
             # Scalar output: backward directly
-            output.backward(retain_graph=True)
+            output.backward(retain_graph=True)  # type: ignore[no-untyped-call]
         else:
             # Create unit vector for output component k
             grad_output = torch.zeros_like(output)
             grad_output[..., k] = 1.0
-            output.backward(grad_output, retain_graph=True)
+            output.backward(grad_output, retain_graph=True)  # type: ignore[no-untyped-call]
 
         if inp.grad is not None:
             J[k, :] = inp.grad.clone()

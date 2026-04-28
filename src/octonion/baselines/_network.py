@@ -164,7 +164,7 @@ class _ResidualBlock(nn.Module):
         out = out + residual
         out = self.act2(out)
 
-        return out
+        return out  # type: ignore[no-any-return]
 
 
 class AlgebraNetwork(nn.Module):
@@ -429,19 +429,19 @@ class AlgebraNetwork(nn.Module):
 
         if dim == 1:
             # Real algebra: already real-valued [B, hidden]
-            return self.output_proj(x)
+            return self.output_proj(x)  # type: ignore[no-any-return]
 
         if strategy == "real":
             # Extract component 0
-            return self.output_proj(x[..., 0])
+            return self.output_proj(x[..., 0])  # type: ignore[no-any-return]
         elif strategy in ("flatten", "learned"):
             # Flatten all components
             flat = x.reshape(x.shape[0], -1)
-            return self.output_proj(flat)
+            return self.output_proj(flat)  # type: ignore[no-any-return]
         elif strategy == "norm":
             # Algebra norm
             norm = x.norm(dim=-1)  # [B, hidden]
-            return self.output_proj(norm)
+            return self.output_proj(norm)  # type: ignore[no-any-return]
         else:
             raise ValueError(f"Unknown output projection: {strategy}")
 
@@ -485,6 +485,7 @@ class AlgebraNetwork(nn.Module):
 
         # Hidden blocks
         for block in self.hidden_blocks:
+            assert isinstance(block, nn.ModuleDict)
             h = block["linear"](h)
             if "bn" in block:
                 h = block["bn"](h)
@@ -549,7 +550,7 @@ class AlgebraNetwork(nn.Module):
         B, seq_len, _ = x.shape
 
         # Initialize states for all layers
-        states = []
+        states: list[tuple[torch.Tensor, torch.Tensor] | torch.Tensor] = []
         for cell in self.rnn_cells:
             if isinstance(cell, (RealLSTMCell,)):
                 h0 = torch.zeros(B, self.hidden, device=x.device, dtype=x.dtype)

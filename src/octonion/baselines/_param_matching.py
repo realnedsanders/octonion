@@ -103,7 +103,7 @@ class _SimpleAlgebraMLP(nn.Module):
             h = h.reshape(h.shape[0], -1)
 
         # Output projection: [B, hidden * dim] -> [B, output_dim]
-        return self.output_proj(h)
+        return self.output_proj(h)  # type: ignore[no-any-return]
 
 
 def _build_simple_mlp(
@@ -222,7 +222,7 @@ def find_matched_width(
     """
     if topology == "mlp":
         lo, hi = 1, 4096  # generous upper bound
-        def build_fn(w):
+        def build_fn(w: int) -> nn.Module:
             return _build_simple_mlp(
                     algebra=algebra, hidden=w, depth=depth,
                     input_dim=input_dim, output_dim=output_dim,
@@ -233,7 +233,7 @@ def find_matched_width(
         # for real (multiplier=8), which is already huge. Start at 64 and
         # expand only if needed.
         lo, hi = 1, 64
-        def build_fn(w):
+        def build_fn(w: int) -> nn.Module:
             return _build_conv_model(
                     algebra=algebra, base_hidden=w, depth=depth,
                     input_dim=input_dim, output_dim=output_dim, **kwargs,

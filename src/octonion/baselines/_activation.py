@@ -113,7 +113,7 @@ class NormPreservingActivation(nn.Module):
         # Compute scale factor: activated_norm / (norm + eps)
         scale = activated_norm / (norm + self.eps)  # [..., 1]
 
-        return x * scale
+        return x * scale  # type: ignore[no-any-return]
 
     def extra_repr(self) -> str:
         return f"activation={self.activation_name!r}, eps={self.eps}"

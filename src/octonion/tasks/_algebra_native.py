@@ -72,7 +72,7 @@ def _algebra_native_transform(
 def _make_unit_vector(g: torch.Generator, dim: int, dtype: torch.dtype) -> torch.Tensor:
     """Generate a unit-norm random vector of given dimension."""
     v = torch.randn(dim, generator=g, dtype=dtype)
-    return v / v.norm()
+    return v / v.norm()  # type: ignore[no-any-return]
 
 
 def build_algebra_native_single(
@@ -116,7 +116,7 @@ def build_algebra_native_single(
                 y_block = _algebra_native_transform(block_x, a_blocks[i], b_blocks[i], 8)
                 out_blocks.append(y_block)
             y_blocked = torch.stack(out_blocks, dim=1).reshape(-1, 64)  # [N, 64]
-            return y_blocked @ Q.T
+            return y_blocked @ Q.T  # type: ignore[no-any-return]
 
         x_train = torch.randn(n_train, 64, generator=g, dtype=dtype) * 0.5
         x_test = torch.randn(n_test, 64, generator=g, dtype=dtype) * 0.5
