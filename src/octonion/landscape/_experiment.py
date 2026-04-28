@@ -125,7 +125,7 @@ def _optimizer_train_config(
     Returns:
         TrainConfig instance tuned for the given optimizer.
     """
-    base = dict(
+    base: dict[str, Any] = dict(
         epochs=config.epochs,
         weight_decay=0.0,
         early_stopping_patience=max(20, config.epochs),  # Effectively disabled
@@ -428,7 +428,7 @@ def _save_result(
     path.parent.mkdir(parents=True, exist_ok=True)
 
     # Make JSON-serializable
-    serializable = {}
+    serializable: dict[str, Any] = {}
     for k, v in result.items():
         if isinstance(v, list):
             serializable[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
@@ -458,7 +458,7 @@ def _load_result(
     """
     path = _result_path(output_dir, task, optimizer, algebra, seed)
     with open(path) as f:
-        return json.load(f)
+        return json.load(f)  # type: ignore[no-any-return]
 
 
 # ---------------------------------------------------------------------------

@@ -72,7 +72,7 @@ class RealBatchNorm(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: standard real batch normalization."""
-        return self.bn(x)
+        return self.bn(x)  # type: ignore[no-any-return]
 
 
 class ComplexBatchNorm(nn.Module):
@@ -94,6 +94,14 @@ class ComplexBatchNorm(nn.Module):
         eps: Value added for numerical stability.
         momentum: Running stats momentum.
     """
+
+    # Buffers registered via register_buffer — explicit annotations let mypy
+    # see them as Tensor instead of the default Tensor | Module union.
+    running_mean: torch.Tensor
+    running_var_rr: torch.Tensor
+    running_var_ri: torch.Tensor
+    running_var_ii: torch.Tensor
+    num_batches_tracked: torch.Tensor
 
     def __init__(
         self,
@@ -169,7 +177,7 @@ class ComplexBatchNorm(nn.Module):
             Normalized tensor of shape [batch, features, 2].
         """
         input_dtype = x.dtype
-        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):  # type: ignore[attr-defined]
             x = x.float()
 
             if self.training:
@@ -237,6 +245,15 @@ class QuaternionBatchNorm(nn.Module):
         eps: Value added for numerical stability.
         momentum: Running stats momentum.
     """
+
+    # Buffers registered via register_buffer — explicit annotations let mypy
+    # see them as Tensor instead of the default Tensor | Module union.
+    running_mean: torch.Tensor
+    running_cov: torch.Tensor
+    num_batches_tracked: torch.Tensor
+    last_cond: torch.Tensor
+    _tril_rows: torch.Tensor
+    _tril_cols: torch.Tensor
 
     def __init__(
         self,
@@ -350,7 +367,7 @@ class QuaternionBatchNorm(nn.Module):
 
         identity = eye.expand_as(L)
         L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
-        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)
+        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)  # type: ignore[no-any-return]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: quaternion batch normalization.
@@ -365,7 +382,7 @@ class QuaternionBatchNorm(nn.Module):
             Normalized tensor of shape [batch, features, 4].
         """
         input_dtype = x.dtype
-        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):  # type: ignore[attr-defined]
             x = x.to(self.gamma.dtype)
 
             if self.training:
@@ -410,6 +427,15 @@ class OctonionBatchNorm(nn.Module):
         eps: Value added for numerical stability.
         momentum: Running stats momentum.
     """
+
+    # Buffers registered via register_buffer — explicit annotations let mypy
+    # see them as Tensor instead of the default Tensor | Module union.
+    running_mean: torch.Tensor
+    running_cov: torch.Tensor
+    num_batches_tracked: torch.Tensor
+    last_cond: torch.Tensor
+    _tril_rows: torch.Tensor
+    _tril_cols: torch.Tensor
 
     def __init__(
         self,
@@ -508,7 +534,7 @@ class OctonionBatchNorm(nn.Module):
 
         identity = eye.expand_as(L)
         L_inv = torch.linalg.solve_triangular(L, identity, upper=False)
-        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)
+        return (L_inv.unsqueeze(0) @ x_centered.unsqueeze(-1)).squeeze(-1)  # type: ignore[no-any-return]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: octonion batch normalization.
@@ -523,7 +549,7 @@ class OctonionBatchNorm(nn.Module):
             Normalized tensor of shape [batch, features, 8].
         """
         input_dtype = x.dtype
-        with torch.amp.autocast(device_type=x.device.type, enabled=False):
+        with torch.amp.autocast(device_type=x.device.type, enabled=False):  # type: ignore[attr-defined]
             x = x.to(self.gamma.dtype)
 
             if self.training:

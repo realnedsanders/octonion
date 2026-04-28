@@ -73,7 +73,7 @@ class RealConv1d(nn.Module):
         real_init(self.conv.weight.data.view(out_channels, -1), criterion="he")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.conv(x)
+        return self.conv(x)  # type: ignore[no-any-return]
 
 
 class RealConv2d(nn.Module):
@@ -95,13 +95,13 @@ class RealConv2d(nn.Module):
     ) -> None:
         super().__init__()
         self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size,
-            stride=stride, padding=padding, bias=bias, dtype=dtype,
+            in_channels, out_channels, kernel_size,  # type: ignore[arg-type]
+            stride=stride, padding=padding, bias=bias, dtype=dtype,  # type: ignore[arg-type]
         )
         real_init(self.conv.weight.data.view(out_channels, -1), criterion="he")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.conv(x)
+        return self.conv(x)  # type: ignore[no-any-return]
 
 
 # ── Complex Convolutions ──────────────────────────────────────────
@@ -434,29 +434,30 @@ class QuaternionConv2d(nn.Module):
         Returns:
             [B, out_ch, 4, H', W']
         """
-        B, in_ch, _, H, W = x.shape
+        B, in_ch, _, H, width = x.shape
 
         # Stack input components: [B, in_ch, 4, H, W] -> [B, 4*in_ch, H, W]
-        x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 4 * in_ch, H, W)
+        x_cat = x.permute(0, 2, 1, 3, 4).reshape(B, 4 * in_ch, H, width)
 
         # Build (or retrieve cached) Hamilton product weight matrix
+        weight: torch.Tensor
         if not self.training and self._fused_cache is not None:
-            W = self._fused_cache
+            weight = self._fused_cache
         else:
             # Build Hamilton product weight matrix: [4*out_ch, 4*in_ch, kH, kW]
             # Rows correspond to output components (r,i,j,k)
             # Columns correspond to input components (r,i,j,k)
-            W = torch.cat([
+            weight = torch.cat([
                 torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
                 torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
                 torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
                 torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
             ], dim=0)
             if not self.training:
-                self._fused_cache = W
+                self._fused_cache = weight
 
         # Single fused convolution
-        out_cat = F.conv2d(x_cat, W, stride=self.stride, padding=self.padding)
+        out_cat = F.conv2d(x_cat, weight, stride=self.stride, padding=self.padding)
 
         # Reshape back: [B, 4*out_ch, H', W'] -> [B, 4, out_ch, H', W'] -> [B, out_ch, 4, H', W']
         out_ch = self.out_channels

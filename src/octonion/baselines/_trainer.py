@@ -51,7 +51,9 @@ def seed_everything(seed: int) -> None:
 def _get_model_module(model: nn.Module) -> nn.Module:
     """Unwrap DDP wrapper if present."""
     if hasattr(model, "module"):
-        return model.module
+        inner = model.module
+        assert isinstance(inner, nn.Module)
+        return inner
     return model
 
 
@@ -107,7 +109,9 @@ def _wrap_manifold_params(
         QuaternionLinear,
     )
 
-    _algebra_layer_types = (ComplexLinear, QuaternionLinear, OctonionDenseLinear)
+    _algebra_layer_types: tuple[type[nn.Module], ...] = (
+        ComplexLinear, QuaternionLinear, OctonionDenseLinear,
+    )
     try:
         from octonion.baselines._phm_linear import PHM8Linear
         _algebra_layer_types = (*_algebra_layer_types, PHM8Linear)
@@ -183,11 +187,11 @@ def _build_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optim
         )
     elif name == "riemannian_adam":
         import geoopt
-        return geoopt.optim.RiemannianAdam(
+        return geoopt.optim.RiemannianAdam(  # type: ignore[no-any-return]
             params, lr=config.lr, weight_decay=config.weight_decay,
         )
     elif name == "shampoo":
-        from pytorch_optimizer import Shampoo
+        from pytorch_optimizer import Shampoo  # type: ignore[attr-defined]
         return Shampoo(params, lr=config.lr, weight_decay=config.weight_decay)
     else:
         raise ValueError(
@@ -253,7 +257,7 @@ def _build_scheduler(
 
 def evaluate(
     model: nn.Module,
-    loader: DataLoader,
+    loader: DataLoader[Any],
     device: str | torch.device,
     loss_fn: nn.Module | None = None,
 ) -> tuple[float, float]:
@@ -372,8 +376,8 @@ def load_checkpoint(
 
 def train_model(
     model: nn.Module,
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    train_loader: DataLoader[Any],
+    val_loader: DataLoader[Any],
     config: TrainConfig,
     output_dir: str,
     device: str | torch.device = "cuda",
@@ -424,7 +428,7 @@ def train_model(
     # experimental and may fail for certain model patterns).
     if getattr(config, "use_compile", False) and str(device).startswith("cuda"):
         try:
-            model = torch.compile(model, backend="inductor", mode="default")
+            model = torch.compile(model, backend="inductor", mode="default")  # type: ignore[assignment]
             logger.info("torch.compile enabled (inductor backend)")
         except Exception as e:
             logger.warning("torch.compile failed, falling back to eager mode: %s", e)
@@ -435,10 +439,11 @@ def train_model(
 
     # AMP setup
     use_amp = config.use_amp and device != "cpu"
-    scaler = torch.amp.GradScaler(enabled=use_amp)
+    scaler = torch.amp.GradScaler(enabled=use_amp)  # type: ignore[attr-defined]
 
-    # TensorBoard
-    writer = SummaryWriter(log_dir=output_dir)
+    # TensorBoard — typed as Any because SummaryWriter methods (add_scalar, close)
+    # are untyped in PyTorch stubs.
+    writer: Any = SummaryWriter(log_dir=output_dir)  # type: ignore[no-untyped-call]
 
     # LR warmup configuration
     warmup_epochs = config.warmup_epochs
@@ -537,19 +542,19 @@ def train_model(
                         targets: torch.Tensor = targets,
                     ) -> torch.Tensor:
                         optimizer.zero_grad(set_to_none=True)
-                        with torch.amp.autocast(amp_device_type, enabled=use_amp):  # noqa: B023 — loop-invariant
+                        with torch.amp.autocast(amp_device_type, enabled=use_amp):  # type: ignore[attr-defined] # noqa: B023 — loop-invariant
                             outputs = model(inputs)
                             loss = loss_fn(outputs, targets)
                         loss.backward()
                         batch_loss_value[0] = loss.item()  # noqa: B023 — mutation via list index, not rebind
-                        return loss
+                        return loss  # type: ignore[no-any-return]
 
-                    optimizer.step(closure)
+                    optimizer.step(closure)  # type: ignore[arg-type]
                     epoch_loss += batch_loss_value[0]
                 else:
                     optimizer.zero_grad(set_to_none=True)
 
-                    with torch.amp.autocast(amp_device_type, enabled=use_amp):
+                    with torch.amp.autocast(amp_device_type, enabled=use_amp):  # type: ignore[attr-defined]
                         outputs = model(inputs)
                         loss = loss_fn(outputs, targets)
 
@@ -610,7 +615,7 @@ def train_model(
             # ── Validation ──
             # Use same autocast context as training to avoid torch._dynamo
             # recompile churn (GLOBAL_STATE changed: grad_mode autocast).
-            with torch.amp.autocast(amp_device_type, enabled=use_amp):
+            with torch.amp.autocast(amp_device_type, enabled=use_amp):  # type: ignore[attr-defined]
                 val_loss, val_acc = evaluate(model, val_loader, device, loss_fn)
             val_losses.append(val_loss)
             val_accuracies.append(val_acc)
@@ -696,8 +701,8 @@ def train_model(
 
 def run_optuna_study(
     model_builder_fn: Callable[[AlgebraType], nn.Module],
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    train_loader: DataLoader[Any],
+    val_loader: DataLoader[Any],
     algebra: AlgebraType,
     n_trials: int = 50,
     study_name: str = "hp_search",
@@ -777,7 +782,7 @@ def run_optuna_study(
             if trial.should_prune():
                 raise optuna.TrialPruned()
 
-        return result["best_val_loss"]
+        return float(result["best_val_loss"])
 
     study.optimize(objective, n_trials=n_trials)
 
