@@ -354,7 +354,7 @@ def plot_category_routing_paths(
         test_labels: Tensor or array of shape [N] with integer category labels.
         save_path: Path to save the PNG figure.
     """
-    categories = sorted(set(int(l) for l in test_labels))
+    categories = sorted({int(label) for label in test_labels})
     n_cats = len(categories)
 
     if n_cats == 0:

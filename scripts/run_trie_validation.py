@@ -178,7 +178,7 @@ def experiment_subalgebra_routing(
 
         # Distribution of categories across subalgebras
         mode_counts = {}
-        for cat_idx, mode in category_modes.items():
+        for _cat_idx, mode in category_modes.items():
             mode_counts[mode] = mode_counts.get(mode, 0) + 1
 
         logger.info(f"    Within-category consistency: {mean_within:.3f}")

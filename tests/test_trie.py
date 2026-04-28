@@ -48,12 +48,12 @@ def _accuracy(trie: OctonionTrie, samples, labels, cats=None):
     if cats is None:
         cats = set(labels)
     correct = total = 0
-    for s, l in zip(samples, labels, strict=False):
-        if l not in cats:
+    for s, label in zip(samples, labels, strict=False):
+        if label not in cats:
             continue
         total += 1
         leaf = trie.query(s)
-        if leaf.dominant_category == l:
+        if leaf.dominant_category == label:
             correct += 1
     return correct / max(total, 1)
 
@@ -223,8 +223,8 @@ class TestTrieAlignedCategories:
 
         trie = OctonionTrie(associator_threshold=0.3, seed=42)
         for _ep in range(3):
-            for s, l in zip(train_s, train_l, strict=False):
-                trie.insert(s, category=l)
+            for s, label in zip(train_s, train_l, strict=False):
+                trie.insert(s, category=label)
 
         acc = _accuracy(trie, test_s, test_l)
         assert acc > 0.95, f"Aligned categories accuracy {acc:.3f} < 0.95"
@@ -244,18 +244,18 @@ class TestTrieStabilityPlasticity:
         # Phase 1: categories 0-3
         p1_cats = set(range(4))
         for _ep in range(3):
-            for s, l in zip(train_s, train_l, strict=False):
-                if l in p1_cats:
-                    trie.insert(s, category=l)
+            for s, label in zip(train_s, train_l, strict=False):
+                if label in p1_cats:
+                    trie.insert(s, category=label)
 
         acc_before = _accuracy(trie, test_s, test_l, p1_cats)
 
         # Phase 2: categories 4-6
         p2_cats = set(range(4, 7))
         for _ep in range(3):
-            for s, l in zip(train_s, train_l, strict=False):
-                if l in p2_cats:
-                    trie.insert(s, category=l)
+            for s, label in zip(train_s, train_l, strict=False):
+                if label in p2_cats:
+                    trie.insert(s, category=label)
 
         acc_after = _accuracy(trie, test_s, test_l, p1_cats)
         acc_new = _accuracy(trie, test_s, test_l, p2_cats)
@@ -277,15 +277,15 @@ class TestTrieStabilityPlasticity:
 
         # Phase 1: categories 0-2
         for _ep in range(3):
-            for s, l in zip(train_s, train_l, strict=False):
-                if l < 3:
-                    trie.insert(s, category=l)
+            for s, label in zip(train_s, train_l, strict=False):
+                if label < 3:
+                    trie.insert(s, category=label)
 
         # Phase 2: categories 3-5
         for _ep in range(3):
-            for s, l in zip(train_s, train_l, strict=False):
-                if l >= 3:
-                    trie.insert(s, category=l)
+            for s, label in zip(train_s, train_l, strict=False):
+                if label >= 3:
+                    trie.insert(s, category=label)
 
         # All categories should be reachable
         overall = _accuracy(trie, test_s, test_l)

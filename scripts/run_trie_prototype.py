@@ -416,18 +416,18 @@ def gen_data(n_cats, n_samples, noise=0.05, seed=42, dtype=torch.float64):
 def accuracy(trie, samples, labels, cats):
     correct, total = 0, 0
     per_cat = {}
-    for s, l in zip(samples, labels, strict=False):
-        if l not in cats:
+    for s, label in zip(samples, labels, strict=False):
+        if label not in cats:
             continue
         total += 1
         leaf = trie.query(s)
         pred = leaf.dominant_category
-        if l not in per_cat:
-            per_cat[l] = {"c": 0, "t": 0}
-        per_cat[l]["t"] += 1
-        if pred == l:
+        if label not in per_cat:
+            per_cat[label] = {"c": 0, "t": 0}
+        per_cat[label]["t"] += 1
+        if pred == label:
             correct += 1
-            per_cat[l]["c"] += 1
+            per_cat[label]["c"] += 1
     return correct / max(total, 1), per_cat
 
 
@@ -453,7 +453,7 @@ def run_test(
     all_c = p1 | p2
 
     # Phase 1
-    p1_idx = [i for i, l in enumerate(train_l) if l < n_p1]
+    p1_idx = [i for i, label in enumerate(train_l) if label < n_p1]
     for ep in range(epochs):
         for idx in p1_idx:
             trie.insert(train_s[idx], category=train_l[idx])
@@ -468,7 +468,7 @@ def run_test(
         logger.info(f"    cat{c}: {r['c']}/{r['t']}")
 
     # Phase 2
-    p2_idx = [i for i, l in enumerate(train_l) if l >= n_p1]
+    p2_idx = [i for i, label in enumerate(train_l) if label >= n_p1]
     for ep in range(epochs):
         for idx in p2_idx:
             trie.insert(train_s[idx], category=train_l[idx])

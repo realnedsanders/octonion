@@ -335,7 +335,7 @@ class AlgebraNetwork(nn.Module):
 
         # Stage 1: no downsampling (stride=1 on all blocks)
         self.stage1 = nn.ModuleList()
-        for i in range(blocks_per_stage[0]):
+        for _i in range(blocks_per_stage[0]):
             stride = 1
             self.stage1.append(
                 _ResidualBlock(self, in_ch, stage_filters[0], stride=stride)

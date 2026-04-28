@@ -649,7 +649,7 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
         logger.info("OBSERVATION WINDOW COMPARISON")
         logger.info("=" * 90)
         obs_labels = [str(w) for w in OBSERVATION_WINDOWS]
-        logger.info(f"{'Benchmark':<15} " + " ".join(f"{'win=' + l:>10}" for l in obs_labels) + f" {'Winner':>10}")
+        logger.info(f"{'Benchmark':<15} " + " ".join(f"{'win=' + lab:>10}" for lab in obs_labels) + f" {'Winner':>10}")
         logger.info("-" * (15 + 11 * len(obs_labels) + 10))
 
         for bm in benchmarks:
@@ -687,7 +687,7 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
         logger.info("UPDATE FREQUENCY COMPARISON (per D-16)")
         logger.info("=" * 90)
         freq_labels = [f"per-{f}" for f in UPDATE_FREQUENCIES]
-        logger.info(f"{'Benchmark':<15} " + " ".join(f"{l:>10}" for l in freq_labels) + f" {'Best':>10}")
+        logger.info(f"{'Benchmark':<15} " + " ".join(f"{lab:>10}" for lab in freq_labels) + f" {'Best':>10}")
         logger.info("-" * (15 + 11 * len(freq_labels) + 10))
 
         for bm in benchmarks:

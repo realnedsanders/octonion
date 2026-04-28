@@ -145,7 +145,7 @@ def collect_gradient_variance_across_seeds(
         seed_history: list[dict[str, Any]] = []
         seed_norms: list[float] = []
 
-        for step in range(n_steps):
+        for _step in range(n_steps):
             model.train()
             optimizer.zero_grad()
             outputs = model(data_x)
