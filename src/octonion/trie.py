@@ -191,7 +191,7 @@ class PerNodeEMAPolicy(ThresholdPolicy):
         mean = node._policy_state["ema_mean"]
         var = node._policy_state["ema_var"]
         std = math.sqrt(max(var, 0.0))
-        return mean + self.k * std
+        return float(mean + self.k * std)
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
         return self.sim_threshold
@@ -251,7 +251,7 @@ class PerNodeMeanStdPolicy(ThresholdPolicy):
         M2 = node._policy_state["welford_M2"]
         var = M2 / count
         std = math.sqrt(max(var, 0.0))
-        return mean + self.k * std
+        return float(mean + self.k * std)
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
         return self.sim_threshold
@@ -381,7 +381,7 @@ class AlgebraicPurityPolicy(ThresholdPolicy):
             var_s = 0.0
 
         combined = self.assoc_weight * var_a + self.sim_weight * var_s
-        return self.base_assoc * (1.0 + self.sensitivity * combined)
+        return float(self.base_assoc * (1.0 + self.sensitivity * combined))
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
         return self.sim_threshold
@@ -479,7 +479,7 @@ class MetaTriePolicy(ThresholdPolicy):
     def get_assoc_threshold(
         self, node: TrieNode, depth: int, parent: TrieNode | None = None
     ) -> float:
-        return node._policy_state.get("meta_threshold", self.base_assoc)
+        return float(node._policy_state.get("meta_threshold", self.base_assoc))
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
         return self.sim_threshold
