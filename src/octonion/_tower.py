@@ -25,6 +25,8 @@ class Real(NormedDivisionAlgebra):
 
     __slots__ = ("_data",)
 
+    _data: torch.Tensor
+
     def __init__(self, data: torch.Tensor) -> None:
         if data.shape[-1] != 1:
             raise ValueError(
@@ -113,6 +115,8 @@ class Complex(NormedDivisionAlgebra):
     """
 
     __slots__ = ("_data",)
+
+    _data: torch.Tensor
 
     def __init__(self, data: torch.Tensor) -> None:
         if data.shape[-1] != 2:
@@ -218,6 +222,8 @@ class Quaternion(NormedDivisionAlgebra):
     """
 
     __slots__ = ("_data",)
+
+    _data: torch.Tensor
 
     def __init__(self, data: torch.Tensor) -> None:
         if data.shape[-1] != 4:

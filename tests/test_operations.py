@@ -9,7 +9,7 @@ Covers:
 """
 
 import torch
-from conftest import ATOL_FLOAT64, octonions
+from tests.conftest import ATOL_FLOAT64, octonions
 from hypothesis import given, settings
 
 from octonion import Octonion

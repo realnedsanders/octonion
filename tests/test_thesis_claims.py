@@ -12,7 +12,7 @@ import math
 
 import pytest
 import torch
-from conftest import ATOL_FLOAT64, unit_octonions
+from tests.conftest import ATOL_FLOAT64, unit_octonions
 from hypothesis import given, settings
 
 from octonion import Octonion

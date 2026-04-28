@@ -17,7 +17,7 @@ reporting (max/mean/std of relative errors) per user decision.
 import hypothesis.strategies as st
 import pytest
 import torch
-from conftest import (
+from tests.conftest import (
     ATOL_FLOAT64,
     nonzero_octonions,
     octonions,

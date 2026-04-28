@@ -27,7 +27,7 @@ Primitives tested:
 """
 
 import torch
-from conftest import octonion_tensors
+from tests.conftest import octonion_tensors
 from hypothesis import assume, given, settings
 
 from octonion._multiplication import octonion_mul

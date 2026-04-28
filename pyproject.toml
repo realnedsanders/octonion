@@ -109,6 +109,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+exclude = ["docs/"]
 
 [[tool.mypy.overrides]]
 module = "geoopt"
@@ -117,3 +118,13 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "seaborn"
 ignore_missing_imports = true
+
+# Tests + research scripts: relax strict mode where it adds friction without
+# proportional payoff. src/octonion/ stays fully strict — that's where typing
+# earns its keep. Tests and scripts still get type-checking, just without the
+# requirement that every test fixture and analysis helper be fully annotated.
+[[tool.mypy.overrides]]
+module = ["tests.*", "scripts.*", "conftest"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
