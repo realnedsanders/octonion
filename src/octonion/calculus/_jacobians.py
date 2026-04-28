@@ -102,7 +102,7 @@ def jacobian_exp(o: torch.Tensor) -> torch.Tensor:
 
     # Safe denominators
     safe_r = torch.where(near_zero, torch.ones_like(r), r)
-    safe_r_sq = safe_r ** 2
+    safe_r ** 2
     safe_r_cu = safe_r ** 3
 
     cos_r = torch.cos(r)   # [..., 1]

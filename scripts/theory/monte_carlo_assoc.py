@@ -289,7 +289,7 @@ def sample_subalgebra_proximity_norms(
             norms = torch.norm(assoc, dim=-1)
 
             max_norm = norms.max().item()
-            mean_norm = norms.mean().item()
+            norms.mean().item()
 
             per_subalgebra[sub_idx][eps] = max_norm
             aggregated[eps] = max(aggregated[eps], max_norm)

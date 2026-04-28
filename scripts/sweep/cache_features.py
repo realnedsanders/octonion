@@ -616,7 +616,6 @@ def _cache_text(
 
     categories = SUBSET_CATEGORIES if mode == "subset" else None
     benchmark_name = "text_4class" if mode == "subset" else "text_20class"
-    class_names = SUBSET_CATEGORIES if mode == "subset" else SHORT_NAMES_20
 
     logger.info(f"\n[{benchmark_name}] Loading 20 Newsgroups ({mode})...")
     train = fetch_20newsgroups(

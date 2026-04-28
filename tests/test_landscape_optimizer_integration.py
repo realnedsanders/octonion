@@ -191,7 +191,7 @@ def test_wrap_manifold_stiefel() -> None:
         model, AlgebraType.OCTONION, manifold_type="stiefel"
     )
     # Stiefel wraps 2D parameters with rows >= cols
-    has_manifold = any(
+    any(
         isinstance(p, geoopt.ManifoldParameter) for p in model.parameters()
     )
     # Note: stiefel may not wrap all params if shape constraints not met

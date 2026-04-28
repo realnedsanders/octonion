@@ -220,7 +220,7 @@ def report_progress(results: dict) -> dict[str, Any]:
             opt_data = task_data.get(opt, {})
             for alg in algs:
                 alg_data = opt_data.get(alg, {})
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     total += 1
                     if isinstance(run, dict):
                         if "error" in run:
@@ -292,7 +292,7 @@ def plot_convergence_profiles(results: dict, output_dir: str) -> list[str]:
 
                 # Collect val_losses across seeds
                 all_curves: list[list[float]] = []
-                for seed, run in sorted(alg_data.items()):
+                for _seed, run in sorted(alg_data.items()):
                     if isinstance(run, dict) and "val_losses" in run:
                         vl = run["val_losses"]
                         if vl:
@@ -368,7 +368,6 @@ def plot_hessian_evolution(results: dict, output_dir: str) -> list[str]:
     """
     saved_paths: list[str] = []
     algebras = _get_all_algebras(results)
-    checkpoints = [0.0, 0.25, 0.5, 1.0]
 
     # Collect Hessian data from results
     # The experiment runner may store hessian_spectrum data in result.json
@@ -380,7 +379,7 @@ def plot_hessian_evolution(results: dict, output_dir: str) -> list[str]:
         for opt_data in task_data.values():
             for alg_name, alg_data in opt_data.items():
                 hessian_data.setdefault(alg_name, {})
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if not isinstance(run, dict):
                         continue
                     hessian_info = run.get("hessian_spectrum", {})
@@ -514,7 +513,7 @@ def plot_curvature_comparison(results: dict, output_dir: str) -> str | None:
         for opt_data in task_data.values():
             for alg_name, alg_data in opt_data.items():
                 curvature_data[task_name].setdefault(alg_name, [])
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if isinstance(run, dict) and "curvature" in run:
                         curv = run["curvature"]
                         if isinstance(curv, (int, float)) and np.isfinite(curv):
@@ -598,7 +597,7 @@ def plot_gradient_variance(results: dict, output_dir: str) -> list[str]:
             for alg_name, alg_data in opt_data.items():
                 grad_variance_data.setdefault(alg_name, [])
                 best_loss_data.setdefault(alg_name, [])
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if not isinstance(run, dict):
                         continue
                     # Check for explicit gradient stats
@@ -649,7 +648,7 @@ def plot_gradient_variance(results: dict, output_dir: str) -> list[str]:
         ax.grid(True, alpha=0.3, axis="y")
 
         # Add value labels on bars
-        for bar, mean, std in zip(bars, means, stds):
+        for bar, mean, std in zip(bars, means, stds, strict=False):
             ax.text(
                 bar.get_x() + bar.get_width() / 2.0,
                 bar.get_height() + std + 0.01 * max(max(means), 1e-10),
@@ -704,7 +703,7 @@ def compute_pairwise_stats(
             for alg_name in algebras:
                 alg_data = opt_data.get(alg_name, {})
                 losses = []
-                for seed, run in sorted(alg_data.items()):
+                for _seed, run in sorted(alg_data.items()):
                     if isinstance(run, dict):
                         bvl = run.get("best_val_loss")
                         if bvl is not None and np.isfinite(bvl):
@@ -740,7 +739,7 @@ def compute_pairwise_stats(
             # Apply Holm-Bonferroni correction
             if raw_p_values:
                 corrections = holm_bonferroni(raw_p_values)
-                for comp, corr in zip(comparisons, corrections):
+                for comp, corr in zip(comparisons, corrections, strict=False):
                     comp["holm_bonferroni"] = corr
 
             pairwise[task_name][opt_name] = comparisons
@@ -773,9 +772,9 @@ def compute_gate_verdict(
         r8d_losses: list[float] = []
         initial_loss = float("inf")
 
-        for opt_name, opt_data in task_data.items():
+        for _opt_name, opt_data in task_data.items():
             for alg_name, alg_data in opt_data.items():
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if not isinstance(run, dict):
                         continue
                     final_loss = run.get("final_val_loss", run.get("best_val_loss", float("inf")))
@@ -862,9 +861,9 @@ def build_full_report(
             all_epochs: list[int] = []
             n_errors = 0
 
-            for opt_name, opt_data in task_data.items():
+            for _opt_name, opt_data in task_data.items():
                 alg_data = opt_data.get(alg_name, {})
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if not isinstance(run, dict):
                         continue
                     if "error" in run:
@@ -979,7 +978,7 @@ def _build_literature_comparison(
         for opt_data in task_data.values():
             for alg_name, alg_data in opt_data.items():
                 curvature_by_algebra.setdefault(alg_name, [])
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if isinstance(run, dict) and "curvature" in run:
                         curv = run["curvature"]
                         if isinstance(curv, (int, float)) and np.isfinite(curv):
@@ -1012,7 +1011,7 @@ def _build_literature_comparison(
         for opt_data in task_data.values():
             for alg_name, alg_data in opt_data.items():
                 convergence_speed.setdefault(alg_name, [])
-                for seed, run in alg_data.items():
+                for _seed, run in alg_data.items():
                     if not isinstance(run, dict):
                         continue
                     vl = run.get("val_losses", [])
@@ -1075,14 +1074,14 @@ def generate_pivot_plan(
 
     # Identify which tasks passed vs failed
     tasks_within_2x = [t for t, d in per_task.items() if d.get("within_2x", False)]
-    tasks_within_3x = [t for t, d in per_task.items() if d.get("within_3x", False)]
+    [t for t, d in per_task.items() if d.get("within_3x", False)]
     tasks_beyond_3x = [t for t, d in per_task.items() if not d.get("within_3x", True)]
     tasks_diverged = [
         t for t, d in per_task.items() if d.get("divergence_rate", 0) > 0.5
     ]
 
     # Compute some stats for the report
-    convergence = full_report.get("convergence_profiles", {})
+    full_report.get("convergence_profiles", {})
 
     content = f"""# Pivot Plan: Phase 5 Gate Verdict {verdict_str}
 

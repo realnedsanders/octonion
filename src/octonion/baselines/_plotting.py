@@ -121,7 +121,7 @@ def plot_comparison_bars(
     ax.set_xticklabels(algebras, fontsize=11)
 
     # Add value labels on bars
-    for bar, mean, std in zip(bars, means, stds):
+    for bar, mean, std in zip(bars, means, stds, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2.0,
             bar.get_height() + std + 0.01 * max(means),

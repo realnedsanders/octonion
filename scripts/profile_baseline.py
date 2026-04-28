@@ -88,15 +88,14 @@ def parse_args() -> argparse.Namespace:
 
 def resolve_device(requested: str) -> torch.device:
     """Resolve device, falling back to CPU if CUDA is unavailable."""
-    if requested.startswith("cuda"):
-        if not torch.cuda.is_available():
-            warnings.warn(
-                f"CUDA requested but not available. Falling back to CPU. "
-                f"(Requested: {requested!r})",
-                UserWarning,
-                stacklevel=2,
-            )
-            return torch.device("cpu")
+    if requested.startswith("cuda") and not torch.cuda.is_available():
+        warnings.warn(
+            f"CUDA requested but not available. Falling back to CPU. "
+            f"(Requested: {requested!r})",
+            UserWarning,
+            stacklevel=2,
+        )
+        return torch.device("cpu")
     return torch.device(requested)
 
 
@@ -307,7 +306,7 @@ def print_summary_table(results: dict[str, dict[str, float]]) -> None:
 
     headers = ["Algebra", "Params", "CUDA ms/iter", "CPU ms/iter", "Peak MB"]
     col_widths = [12, 12, 14, 14, 10]
-    header_row = "  ".join(h.ljust(w) for h, w in zip(headers, col_widths))
+    header_row = "  ".join(h.ljust(w) for h, w in zip(headers, col_widths, strict=False))
     print(header_row)
     print("-" * len(header_row))
 

@@ -694,7 +694,7 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
             freq_values = UPDATE_FREQUENCIES
             freq_accs: dict[str, float] = {}
 
-            for freq_val, freq_lbl in zip(freq_values, freq_labels):
+            for freq_val, freq_lbl in zip(freq_values, freq_labels, strict=False):
                 rows = conn.execute(
                     """
                     SELECT policy_params, accuracy

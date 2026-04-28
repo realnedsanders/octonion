@@ -364,7 +364,7 @@ def plot_category_routing_paths(
     # Build heatmap: category x subalgebra slot
     cat_slot_counts = np.zeros((n_cats, 7), dtype=np.float64)
 
-    for sample, label in zip(test_samples, test_labels):
+    for sample, label in zip(test_samples, test_labels, strict=False):
         cat_idx = categories.index(int(label))
         # Trace routing path
         x = sample.to(trie.dtype)
@@ -483,7 +483,7 @@ def generate_diagnostics(
 
         # Train: insert training samples
         n_epochs = best_config.get("n_epochs", 1)
-        for epoch in range(n_epochs):
+        for _epoch in range(n_epochs):
             for i in range(len(train_x)):
                 cat = int(train_y[i].item()) if hasattr(train_y[i], "item") else int(train_y[i])
                 trie.insert(train_x[i], category=cat)
@@ -743,7 +743,7 @@ def _json_default(obj: Any) -> Any:
         if not np.isfinite(val):
             return None
         return val
-    elif isinstance(obj, np.ndarray) or isinstance(obj, torch.Tensor):
+    elif isinstance(obj, (np.ndarray, torch.Tensor)):
         return obj.tolist()
     elif isinstance(obj, Path):
         return str(obj)

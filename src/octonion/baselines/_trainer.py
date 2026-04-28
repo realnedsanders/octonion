@@ -567,7 +567,7 @@ def train_model(
 
             # ── Gradient statistics ──
             grad_norms: list[float] = []
-            for name, param in model.named_parameters():
+            for _name, param in model.named_parameters():
                 if param.grad is not None:
                     grad_norms.append(param.grad.norm().item())
 
@@ -583,7 +583,7 @@ def train_model(
 
             # ── BN condition number monitoring ──
             max_cond = 0.0
-            for name, mod in model.named_modules():
+            for _name, mod in model.named_modules():
                 if hasattr(mod, "last_cond"):
                     c = mod.last_cond.item()
                     if c > max_cond:
@@ -735,7 +735,7 @@ def run_optuna_study(
         optimizer_name = trial.suggest_categorical("optimizer", ["adam", "adamw", "sgd"])
         scheduler_name = trial.suggest_categorical("scheduler", ["cosine", "step", "plateau"])
         batch_size = trial.suggest_categorical("batch_size", [64, 128, 256])
-        gradient_clip = trial.suggest_float("gradient_clip", 0.0, 5.0)
+        trial.suggest_float("gradient_clip", 0.0, 5.0)
 
         # Build config with reduced epochs for search
         config = TrainConfig(

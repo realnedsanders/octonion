@@ -121,7 +121,7 @@ def _make_config(
 
 def test_sqlite_init(db_path: str) -> None:
     """_init_db creates SQLite database with sweep_results table and all expected columns."""
-    runner = SweepRunner(db_path, n_workers=1)
+    SweepRunner(db_path, n_workers=1)
 
     conn = sqlite3.connect(db_path)
     try:
@@ -165,7 +165,7 @@ def test_sqlite_init(db_path: str) -> None:
 
 def test_wal_mode(db_path: str) -> None:
     """_init_db sets WAL journal mode on the database."""
-    runner = SweepRunner(db_path, n_workers=1)
+    SweepRunner(db_path, n_workers=1)
 
     conn = sqlite3.connect(db_path)
     try:
@@ -275,7 +275,7 @@ def test_worker_writes_epochs(db_path: str, features_dir: str) -> None:
     Test with 1 config, 2 epochs on tiny synthetic data.
     """
     # Initialize DB first
-    runner = SweepRunner(db_path, n_workers=1)
+    SweepRunner(db_path, n_workers=1)
 
     config = _make_config(config_id=99, epochs=2)
 
@@ -316,7 +316,7 @@ def test_concurrent_writes(db_path: str, features_dir: str) -> None:
 
     3 workers, 3 configs each, all complete without 'database is locked' errors.
     """
-    runner = SweepRunner(db_path, n_workers=3)
+    SweepRunner(db_path, n_workers=3)
 
     configs = [
         _make_config(config_id=i, epochs=1, seed=i)

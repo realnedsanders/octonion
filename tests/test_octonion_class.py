@@ -175,7 +175,7 @@ class TestOctonionEquality:
         """Octonion != Octonion when components differ."""
         a = Octonion(torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64))
         b = Octonion(torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 9.0], dtype=torch.float64))
-        assert not (a == b)
+        assert a != b
 
 
 class TestOctonionConjugate:

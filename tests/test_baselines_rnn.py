@@ -191,7 +191,7 @@ class TestSequentialTimesteps:
         h = torch.zeros(B, HIDDEN_SIZE)
         c = torch.zeros(B, HIDDEN_SIZE)
         outputs = []
-        for t in range(self.NUM_STEPS):
+        for _t in range(self.NUM_STEPS):
             x = torch.randn(B, INPUT_SIZE)
             h, c = real_cell(x, (h, c))
             outputs.append(h.clone())
@@ -202,7 +202,7 @@ class TestSequentialTimesteps:
     def test_sequential_timesteps_complex(self, complex_cell):
         h = torch.zeros(B, HIDDEN_SIZE, 2)
         outputs = []
-        for t in range(self.NUM_STEPS):
+        for _t in range(self.NUM_STEPS):
             x = torch.randn(B, INPUT_SIZE, 2)
             h = complex_cell(x, h)
             outputs.append(h.clone())
@@ -213,7 +213,7 @@ class TestSequentialTimesteps:
         h = torch.zeros(B, HIDDEN_SIZE, 4)
         c = torch.zeros(B, HIDDEN_SIZE, 4)
         outputs = []
-        for t in range(self.NUM_STEPS):
+        for _t in range(self.NUM_STEPS):
             x = torch.randn(B, INPUT_SIZE, 4)
             h, c = quaternion_cell(x, (h, c))
             outputs.append(h.clone())
@@ -224,7 +224,7 @@ class TestSequentialTimesteps:
         h = torch.zeros(B, HIDDEN_SIZE, 8)
         c = torch.zeros(B, HIDDEN_SIZE, 8)
         outputs = []
-        for t in range(self.NUM_STEPS):
+        for _t in range(self.NUM_STEPS):
             x = torch.randn(B, INPUT_SIZE, 8)
             h, c = octonion_cell(x, (h, c))
             outputs.append(h.clone())

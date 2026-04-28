@@ -55,7 +55,7 @@ def _accuracy(trie: OctonionTrie, samples, labels, cats=None):
     if cats is None:
         cats = set(labels)
     correct = total = 0
-    for s, l in zip(samples, labels):
+    for s, l in zip(samples, labels, strict=False):
         if l not in cats:
             continue
         total += 1
@@ -95,15 +95,15 @@ def test_global_policy_backward_compat():
 
     # Trie 1: old-style API
     trie1 = OctonionTrie(associator_threshold=0.5, similarity_threshold=0.15, seed=42)
-    for ep in range(3):
-        for s, l in zip(train_s, train_l):
+    for _ep in range(3):
+        for s, l in zip(train_s, train_l, strict=False):
             trie1.insert(s, category=l)
 
     # Trie 2: new policy API with same parameters
     policy = GlobalPolicy(assoc_threshold=0.5, sim_threshold=0.15)
     trie2 = OctonionTrie(policy=policy, seed=42)
-    for ep in range(3):
-        for s, l in zip(train_s, train_l):
+    for _ep in range(3):
+        for s, l in zip(train_s, train_l, strict=False):
             trie2.insert(s, category=l)
 
     stats1 = trie1.stats()
@@ -512,8 +512,8 @@ def test_adaptive_changes_structure():
     trie_global = OctonionTrie(
         policy=GlobalPolicy(assoc_threshold=0.3), seed=42
     )
-    for ep in range(3):
-        for s, l in zip(train_s, train_l):
+    for _ep in range(3):
+        for s, l in zip(train_s, train_l, strict=False):
             trie_global.insert(s, category=l)
 
     # Adaptive policy with very tight k=0.5
@@ -521,8 +521,8 @@ def test_adaptive_changes_structure():
         policy=PerNodeEMAPolicy(alpha=0.1, k=0.5, base_assoc=0.3, min_obs=2),
         seed=42,
     )
-    for ep in range(3):
-        for s, l in zip(train_s, train_l):
+    for _ep in range(3):
+        for s, l in zip(train_s, train_l, strict=False):
             trie_adaptive.insert(s, category=l)
 
     stats_g = trie_global.stats()

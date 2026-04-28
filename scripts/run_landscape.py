@@ -250,9 +250,9 @@ def _build_gate_input(
         r8d_losses: list[float] = []
         initial_loss = float("inf")
 
-        for opt_name, opt_data in task_data.items():
+        for _opt_name, opt_data in task_data.items():
             for alg_name, alg_data in opt_data.items():
-                for seed, run_result in alg_data.items():
+                for _seed, run_result in alg_data.items():
                     if isinstance(run_result, dict):
                         final_loss = run_result.get("final_val_loss", float("inf"))
                         if alg_name == "O":
@@ -317,7 +317,7 @@ def main() -> None:
     for task_data in results.values():
         for opt_data in task_data.values():
             for alg_data in opt_data.values():
-                for seed, run_result in alg_data.items():
+                for _seed, run_result in alg_data.items():
                     if isinstance(run_result, dict):
                         if "error" in run_result:
                             n_failed += 1

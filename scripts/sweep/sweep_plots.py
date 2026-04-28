@@ -397,9 +397,9 @@ def plot_pareto_frontier(
         )
 
         # Connect Pareto points
-        sorted_pareto = sorted(zip(pareto_nodes, pareto_acc))
+        sorted_pareto = sorted(zip(pareto_nodes, pareto_acc, strict=False))
         if sorted_pareto:
-            px, py = zip(*sorted_pareto)
+            px, py = zip(*sorted_pareto, strict=False)
             ax.plot(px, py, "r--", linewidth=1.5, alpha=0.7)
 
         ax.set_xlabel("Node Count", fontsize=12)

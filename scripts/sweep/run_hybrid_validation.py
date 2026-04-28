@@ -389,7 +389,7 @@ def generate_multiseed_configs(
     sweep_configs: list[SweepConfig] = []
     config_id = MULTISEED_CONFIG_ID_OFFSET
 
-    for rank, cfg in enumerate(top_configs):
+    for _rank, cfg in enumerate(top_configs):
         for benchmark in benchmarks:
             for seed in VALIDATION_SEEDS:
                 sweep_configs.append(

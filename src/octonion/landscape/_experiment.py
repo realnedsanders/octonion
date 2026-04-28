@@ -432,7 +432,7 @@ def _save_result(
     for k, v in result.items():
         if isinstance(v, list):
             serializable[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
-        elif isinstance(v, (int, float, str, bool)) or isinstance(v, dict):
+        elif isinstance(v, (int, float, str, bool, dict)):
             serializable[k] = v
         else:
             serializable[k] = str(v)

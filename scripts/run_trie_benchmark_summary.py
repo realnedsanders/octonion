@@ -227,7 +227,7 @@ def print_comparison_table(benchmarks: list[dict[str, Any]]) -> None:
 
         ub = bm.get("upper_bound")
         if ub is not None:
-            ub_label = bm.get("upper_bound_label", "UB")
+            bm.get("upper_bound_label", "UB")
             row += f" | {fmt_acc(ub):>{ACC_COL}}"
         else:
             row += f" | {'  --  ':>{ACC_COL}}"

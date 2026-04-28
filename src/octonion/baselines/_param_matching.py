@@ -220,20 +220,22 @@ def find_matched_width(
     """
     if topology == "mlp":
         lo, hi = 1, 4096  # generous upper bound
-        build_fn = lambda w: _build_simple_mlp(
-            algebra=algebra, hidden=w, depth=depth,
-            input_dim=input_dim, output_dim=output_dim,
-        )
+        def build_fn(w):
+            return _build_simple_mlp(
+                    algebra=algebra, hidden=w, depth=depth,
+                    input_dim=input_dim, output_dim=output_dim,
+                )
     elif topology == "conv2d":
         # Start with a tight upper bound. Conv2d params grow quadratically
         # with base_hidden * multiplier, so bh=64 gives 512 base filters
         # for real (multiplier=8), which is already huge. Start at 64 and
         # expand only if needed.
         lo, hi = 1, 64
-        build_fn = lambda w: _build_conv_model(
-            algebra=algebra, base_hidden=w, depth=depth,
-            input_dim=input_dim, output_dim=output_dim, **kwargs,
-        )
+        def build_fn(w):
+            return _build_conv_model(
+                    algebra=algebra, base_hidden=w, depth=depth,
+                    input_dim=input_dim, output_dim=output_dim, **kwargs,
+                )
         # Quick check: if hi is too small, expand
         hi_model = build_fn(hi)
         hi_params = sum(p.numel() for p in hi_model.parameters() if p.requires_grad)

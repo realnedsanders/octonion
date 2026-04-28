@@ -466,7 +466,8 @@ def run_condition_numbers() -> dict:
                     torch.manual_seed(SEED + 1000)
                     a_fixed = torch.randn(8, dtype=torch.float64)
                     a_fixed = a_fixed / a_fixed.norm() * magnitude
-                    fn = lambda x, a=a_fixed: octonion_mul(a, x)
+                    def fn(x, a=a_fixed):
+                        return octonion_mul(a, x)
                 else:
                     fn = op_fn
 
@@ -672,7 +673,7 @@ def run_mitigation() -> dict:
 
                 h64 = x64
                 h32 = x32
-                for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32)):
+                for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32, strict=False)):
                     h64 = layer_f64(h64)
                     h32 = layer_f32(h32)
                     depth = i + 1
@@ -720,7 +721,7 @@ def run_mitigation() -> dict:
 
                     h64 = x64
                     h32 = x32
-                    for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32)):
+                    for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32, strict=False)):
                         h64 = layer_f64(h64)
                         h32 = layer_f32(h32)
                         depth = i + 1
@@ -934,7 +935,7 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
 
     checkpoint_depths = [10, 50, 100, 200, 300, 400, 500]
 
-    for ax, algebra in zip(axes, ALGEBRAS):
+    for ax, algebra in zip(axes, ALGEBRAS, strict=False):
         alg_name = algebra.short_name
         alg_data = mit_results.get(alg_name, {})
 

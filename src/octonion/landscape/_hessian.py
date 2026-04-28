@@ -113,7 +113,7 @@ def compute_full_hessian(
         # Build parameter dict from flat vector for functional_call
         param_dict: dict[str, torch.Tensor] = {}
         offset = 0
-        for name, shape, numel in zip(param_names, param_shapes, param_numels):
+        for name, shape, numel in zip(param_names, param_shapes, param_numels, strict=False):
             param_dict[name] = flat[offset : offset + numel].reshape(shape)
             offset += numel
         # Use torch.func.functional_call to thread gradient through params
@@ -262,8 +262,7 @@ def stochastic_lanczos(
         alphas = torch.zeros(actual_iters, device=device)
         betas = torch.zeros(actual_iters, device=device)
 
-        v_prev = torch.zeros_like(v)
-        beta_prev = 0.0
+        torch.zeros_like(v)
 
         for k in range(actual_iters):
             # Hessian-vector product

@@ -92,8 +92,8 @@ def test_depth_sweep_smoke() -> None:
         ]
     )
     with torch.no_grad():
-        for l64, l32 in zip(layers_f64, layers_f32):
-            for p32, p64 in zip(l32.parameters(), l64.parameters()):
+        for l64, l32 in zip(layers_f64, layers_f32, strict=False):
+            for p32, p64 in zip(l32.parameters(), l64.parameters(), strict=False):
                 p32.copy_(p64.float())
 
     x = torch.randn(2, hidden, 8, dtype=torch.float64)
@@ -121,7 +121,8 @@ def test_condition_number_smoke() -> None:
     from octonion.calculus._numeric import numeric_jacobian
 
     a = torch.randn(8, dtype=torch.float64)
-    fn = lambda x: octonion_mul(a, x)
+    def fn(x):
+        return octonion_mul(a, x)
     J = numeric_jacobian(fn, torch.randn(8, dtype=torch.float64))
     sv = torch.linalg.svdvals(J)
     cond = (sv[0] / sv[-1].clamp(min=1e-30)).item()
@@ -140,7 +141,7 @@ def test_dtype_comparison_smoke() -> None:
     layer64 = OctonionDenseLinear(4, 4, bias=False, dtype=torch.float64)
     layer32 = OctonionDenseLinear(4, 4, bias=False, dtype=torch.float32)
     with torch.no_grad():
-        for p32, p64 in zip(layer32.parameters(), layer64.parameters()):
+        for p32, p64 in zip(layer32.parameters(), layer64.parameters(), strict=False):
             p32.copy_(p64.float())
     x = torch.randn(2, 4, 8, dtype=torch.float64)
     x = x / x.norm(dim=-1, keepdim=True)  # unit magnitude
@@ -224,7 +225,7 @@ def test_stripped_chain_depth500_no_nan() -> None:
             x32 = x64.float()
 
             h64, h32 = x64, x32
-            for l64, l32 in zip(layers_f64, layers_f32):
+            for l64, l32 in zip(layers_f64, layers_f32, strict=False):
                 h64 = l64(h64)
                 h32 = l32(h32)
 

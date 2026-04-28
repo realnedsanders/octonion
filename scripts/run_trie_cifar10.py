@@ -662,10 +662,7 @@ def main() -> None:
     logger.info(f"  Output: {output_dir}")
 
     # Determine which encoders to run
-    if args.encoder == "all":
-        encoder_names = list(ENCODER_CONFIGS.keys())
-    else:
-        encoder_names = [args.encoder]
+    encoder_names = list(ENCODER_CONFIGS.keys()) if args.encoder == "all" else [args.encoder]
     logger.info(f"  Encoders: {encoder_names}")
 
     # Seed for reproducibility

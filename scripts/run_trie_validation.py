@@ -257,8 +257,8 @@ def experiment_associator_novelty(
         is_transition.append(labels[i] != labels[i - 1])
 
     # Compute statistics
-    within_norms = [n for n, t in zip(assoc_norms, is_transition) if not t]
-    transition_norms = [n for n, t in zip(assoc_norms, is_transition) if t]
+    within_norms = [n for n, t in zip(assoc_norms, is_transition, strict=False) if not t]
+    transition_norms = [n for n, t in zip(assoc_norms, is_transition, strict=False) if t]
 
     mean_within = sum(within_norms) / max(len(within_norms), 1)
     mean_transition = sum(transition_norms) / max(len(transition_norms), 1)

@@ -220,7 +220,6 @@ class OctonionTrie:
                     # Rumination rejected: this input doesn't belong here
                     self.rumination_rejections += 1
                     # Try to find a different home
-                    found_alt = False
                     product = octonion_mul(
                         node.routing_key.unsqueeze(0), x.unsqueeze(0)
                     ).squeeze(0)
@@ -254,7 +253,6 @@ class OctonionTrie:
                 activations = subalgebra_activation(product)
                 ranked = activations.argsort(descending=True)
 
-                created = False
                 for alt_sub in ranked:
                     alt_sub = alt_sub.item()
                     if alt_sub not in node.children:
@@ -418,7 +416,7 @@ def gen_data(n_cats, n_samples, noise=0.05, seed=42, dtype=torch.float64):
 def accuracy(trie, samples, labels, cats):
     correct, total = 0, 0
     per_cat = {}
-    for s, l in zip(samples, labels):
+    for s, l in zip(samples, labels, strict=False):
         if l not in cats:
             continue
         total += 1

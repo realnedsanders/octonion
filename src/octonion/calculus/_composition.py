@@ -123,10 +123,7 @@ def evaluate_tree(tree: TreeNode, operands: list[torch.Tensor]) -> torch.Tensor:
 
     left_val = evaluate_tree(tree.left, operands)
 
-    if tree.right is not None:
-        right_val = evaluate_tree(tree.right, operands)
-    else:
-        right_val = None
+    right_val = evaluate_tree(tree.right, operands) if tree.right is not None else None
 
     dispatch = _OP_DISPATCH.get(tree.op)
     if dispatch is None:

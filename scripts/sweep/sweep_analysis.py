@@ -512,7 +512,7 @@ def run_friedman_test(
     # Friedman test
     try:
         # scipy.stats.friedmanchisquare expects groups as separate arrays
-        groups = [rank_matrix[:, j] for j in range(n_strategies)]
+        [rank_matrix[:, j] for j in range(n_strategies)]
         # Need raw accuracy values, not ranks, for friedmanchisquare
         acc_groups = [accuracy_matrix[:, j] for j in range(n_strategies)]
 
@@ -657,7 +657,7 @@ def compute_structural_variance(
                 "assoc_threshold": assoc_t,
                 "n_seeds": n_seeds,
             }
-            for col_idx, (col_name, display_name) in enumerate(metrics):
+            for col_idx, (_col_name, display_name) in enumerate(metrics):
                 values = np.array(
                     [r[col_idx] for r in rows if r[col_idx] is not None],
                     dtype=np.float64,
@@ -1046,7 +1046,7 @@ def characterize_regimes(
         difficulties = {"easy": 1, "medium": 2, "hard": 3}
         diff_scores = []
         improvements = []
-        for bm, data in per_benchmark.items():
+        for _bm, data in per_benchmark.items():
             d = data.get("difficulty", "unknown")
             if d in difficulties:
                 diff_scores.append(difficulties[d])
@@ -1131,7 +1131,7 @@ def plot_strategy_comparison(
     ax.grid(True, axis="y", alpha=0.3)
 
     # Annotate with values
-    for bar, mean in zip(bars, means):
+    for bar, mean in zip(bars, means, strict=False):
         if mean > 0:
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
@@ -1261,7 +1261,7 @@ def plot_friedman_ranks(
     ax.set_title(title, fontsize=13)
 
     # Annotate with rank values
-    for bar, rank in zip(bars, ranks):
+    for bar, rank in zip(bars, ranks, strict=False):
         ax.text(
             bar.get_width() + 0.1,
             bar.get_y() + bar.get_height() / 2,

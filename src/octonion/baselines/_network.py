@@ -382,7 +382,7 @@ class AlgebraNetwork(nn.Module):
 
         # Stack of RNN cells
         self.rnn_cells = nn.ModuleList()
-        for layer_idx in range(config.depth):
+        for _layer_idx in range(config.depth):
             cell = self._get_rnn_cell(hidden, hidden)
             self.rnn_cells.append(cell)
 

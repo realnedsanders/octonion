@@ -205,7 +205,7 @@ class TestCheckpointing:
         assert meta["best_val_loss"] == pytest.approx(best_val_loss)
 
         # Model weights should match
-        for p1, p2 in zip(model.parameters(), model2.parameters()):
+        for p1, p2 in zip(model.parameters(), model2.parameters(), strict=False):
             torch.testing.assert_close(p1.data, p2.data)
 
 

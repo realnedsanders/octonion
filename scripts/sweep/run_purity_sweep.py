@@ -657,12 +657,11 @@ def print_independent_signal_analysis(db_path: str, benchmarks: list[str]) -> No
                             "accuracy": acc,
                             "params": f"sw={sw}, sens={pp.get('sensitivity', '?')}",
                         }
-                elif aw > 0 and sw > 0:
-                    if acc > best_c["accuracy"]:
-                        best_c = {
-                            "accuracy": acc,
-                            "params": f"aw={aw}, sw={sw}, sens={pp.get('sensitivity', '?')}",
-                        }
+                elif aw > 0 and sw > 0 and acc > best_c["accuracy"]:
+                    best_c = {
+                        "accuracy": acc,
+                        "params": f"aw={aw}, sw={sw}, sens={pp.get('sensitivity', '?')}",
+                    }
 
             logger.info(
                 f"  Phase A (assoc only): {best_a['accuracy']:.4f} -- {best_a['params']}"

@@ -86,7 +86,7 @@ def _compare_gradients(
     )
 
     max_diff = 0.0
-    for i, (gc, gg) in enumerate(zip(grads_cpu, grads_gpu)):
+    for i, (gc, gg) in enumerate(zip(grads_cpu, grads_gpu, strict=False)):
         diff = torch.abs(gc - gg)
         d = diff.max().item()
         max_diff = max(max_diff, d)

@@ -470,10 +470,7 @@ def run_comparison(
 
     # ── Step 7: Apply Holm-Bonferroni correction ──
     raw_p_values = [p["t_p_value"] for p in pairwise.values()]
-    if raw_p_values:
-        corrected = holm_bonferroni(raw_p_values)
-    else:
-        corrected = []
+    corrected = holm_bonferroni(raw_p_values) if raw_p_values else []
 
     # ── Step 8: Generate comparison plots ──
     plot_comparison_bars(

@@ -48,7 +48,7 @@ def _accuracy(trie: OctonionTrie, samples, labels, cats=None):
     if cats is None:
         cats = set(labels)
     correct = total = 0
-    for s, l in zip(samples, labels):
+    for s, l in zip(samples, labels, strict=False):
         if l not in cats:
             continue
         total += 1
@@ -222,8 +222,8 @@ class TestTrieAlignedCategories:
         test_s, test_l = _generate_samples(centers, 50, noise=0.05, seed=7777)
 
         trie = OctonionTrie(associator_threshold=0.3, seed=42)
-        for ep in range(3):
-            for s, l in zip(train_s, train_l):
+        for _ep in range(3):
+            for s, l in zip(train_s, train_l, strict=False):
                 trie.insert(s, category=l)
 
         acc = _accuracy(trie, test_s, test_l)
@@ -243,8 +243,8 @@ class TestTrieStabilityPlasticity:
 
         # Phase 1: categories 0-3
         p1_cats = set(range(4))
-        for ep in range(3):
-            for s, l in zip(train_s, train_l):
+        for _ep in range(3):
+            for s, l in zip(train_s, train_l, strict=False):
                 if l in p1_cats:
                     trie.insert(s, category=l)
 
@@ -252,8 +252,8 @@ class TestTrieStabilityPlasticity:
 
         # Phase 2: categories 4-6
         p2_cats = set(range(4, 7))
-        for ep in range(3):
-            for s, l in zip(train_s, train_l):
+        for _ep in range(3):
+            for s, l in zip(train_s, train_l, strict=False):
                 if l in p2_cats:
                     trie.insert(s, category=l)
 
@@ -276,14 +276,14 @@ class TestTrieStabilityPlasticity:
         trie = OctonionTrie(associator_threshold=0.3, seed=42)
 
         # Phase 1: categories 0-2
-        for ep in range(3):
-            for s, l in zip(train_s, train_l):
+        for _ep in range(3):
+            for s, l in zip(train_s, train_l, strict=False):
                 if l < 3:
                     trie.insert(s, category=l)
 
         # Phase 2: categories 3-5
-        for ep in range(3):
-            for s, l in zip(train_s, train_l):
+        for _ep in range(3):
+            for s, l in zip(train_s, train_l, strict=False):
                 if l >= 3:
                     trie.insert(s, category=l)
 
@@ -320,7 +320,7 @@ class TestRumination:
         # Insert 2 similar samples into same branch
         base = torch.zeros(8, dtype=torch.float64)
         base[0] = 1.0
-        for i in range(2):
+        for _i in range(2):
             sample = base + 0.01 * torch.randn(8, dtype=torch.float64)
             sample = sample / sample.norm()
             trie.insert(sample, category=0)
@@ -340,7 +340,7 @@ class TestRumination:
         base[0] = 0.9
         base[1] = 0.4
         base = base / base.norm()
-        for i in range(10):
+        for _i in range(10):
             sample = base + 0.02 * torch.randn(8, dtype=torch.float64)
             sample = sample / sample.norm()
             trie.insert(sample, category=0)
@@ -417,7 +417,7 @@ class TestAllSlotsOccupied:
                 sample = sample / sample.norm()
                 trie.insert(sample, category=cat_idx)
 
-        n_root_children = len(trie.root.children)
+        len(trie.root.children)
 
         # Now insert an 8th category — should not create a new root child
         # (max 7 subalgebra slots)
