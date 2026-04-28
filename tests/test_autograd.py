@@ -25,9 +25,8 @@ Primitives tested:
 
 import torch
 import torch.autograd
-from hypothesis import assume, given, settings
-
 from conftest import octonion_tensors
+from hypothesis import assume, given, settings
 
 from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
@@ -41,7 +40,6 @@ from octonion.calculus import (
     jacobian_conjugate,
     jacobian_cross_product,
     jacobian_exp,
-    jacobian_inner_product,
     jacobian_inverse,
     jacobian_log,
     jacobian_mul,
@@ -55,7 +53,6 @@ from octonion.calculus._autograd_functions import (
     OctonionLogFunction,
     OctonionMulFunction,
 )
-
 
 # =============================================================================
 # Forward correctness tests

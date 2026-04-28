@@ -17,7 +17,8 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from collections.abc import Callable
+from typing import Any
 
 import torch
 

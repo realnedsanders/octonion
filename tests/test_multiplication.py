@@ -5,9 +5,8 @@ the Baez 2002 mod-7 convention.
 """
 
 import torch
-from hypothesis import given, settings
-
 from conftest import ATOL_FLOAT64, octonion_tensors
+from hypothesis import given, settings
 
 from octonion._fano import FANO_PLANE
 from octonion._multiplication import STRUCTURE_CONSTANTS, octonion_mul

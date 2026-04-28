@@ -25,13 +25,23 @@ from octonion.baselines._algebra_linear import (
     QuaternionLinear,
     RealLinear,
 )
-from octonion.baselines._dense_mixing import DenseMixingLinear
-from octonion.baselines._phm_linear import PHM8Linear
 from octonion.baselines._algebra_rnn import (
     ComplexGRUCell,
     OctonionLSTMCell,
     QuaternionLSTMCell,
     RealLSTMCell,
+)
+from octonion.baselines._benchmarks import (
+    PUBLISHED_RESULTS,
+    build_cifar10_data,
+    build_cifar100_data,
+    cifar_network_config,
+    cifar_train_config,
+    reproduction_report,
+)
+from octonion.baselines._comparison import (
+    ComparisonReport,
+    run_comparison,
 )
 from octonion.baselines._config import (
     AlgebraType,
@@ -39,6 +49,7 @@ from octonion.baselines._config import (
     NetworkConfig,
     TrainConfig,
 )
+from octonion.baselines._dense_mixing import DenseMixingLinear
 from octonion.baselines._initialization import (
     complex_init,
     octonion_init,
@@ -54,30 +65,19 @@ from octonion.baselines._normalization import (
     QuaternionBatchNorm,
     RealBatchNorm,
 )
-from octonion.baselines._stabilization import (
-    StabilizingNorm,
-)
 from octonion.baselines._param_matching import (
     find_matched_width,
     flop_report,
     param_report,
 )
-from octonion.baselines._benchmarks import (
-    PUBLISHED_RESULTS,
-    build_cifar10_data,
-    build_cifar100_data,
-    cifar_network_config,
-    cifar_train_config,
-    reproduction_report,
-)
-from octonion.baselines._comparison import (
-    ComparisonReport,
-    run_comparison,
-)
+from octonion.baselines._phm_linear import PHM8Linear
 from octonion.baselines._plotting import (
     plot_comparison_bars,
     plot_convergence,
     plot_param_table,
+)
+from octonion.baselines._stabilization import (
+    StabilizingNorm,
 )
 from octonion.baselines._stats import (
     cohen_d,

@@ -54,7 +54,7 @@ def test_policy_var_a_always_zero():
         a = associator(buf_oct, node_oct, node_oct)
         assoc_norms.append(a.components.norm().item())
 
-    print(f"\nAssociator norms from policy computation (should all be ~0):")
+    print("\nAssociator norms from policy computation (should all be ~0):")
     print(f"  max: {max(assoc_norms):.2e}")
     print(f"  min: {min(assoc_norms):.2e}")
 
@@ -74,7 +74,7 @@ def test_policy_var_a_always_zero():
     print(f"\n  Threshold with assoc_weight=0.5: {threshold:.6f}")
     print(f"  Threshold with assoc_weight=0.0: {threshold_no_assoc:.6f}")
     print(f"  Difference: {abs(threshold - threshold_no_assoc):.2e}")
-    print(f"\n[PASS] var_a is always 0; assoc_weight has no effect on threshold.")
+    print("\n[PASS] var_a is always 0; assoc_weight has no effect on threshold.")
 
 
 def test_fix_produces_nonzero_variance():
@@ -108,7 +108,7 @@ def test_fix_produces_nonzero_variance():
 
     mean_a = sum(assoc_norms) / len(assoc_norms)
     var_a = sum((v - mean_a) ** 2 for v in assoc_norms) / len(assoc_norms)
-    print(f"\n=== After fix: [buf, child, parent] ===")
+    print("\n=== After fix: [buf, child, parent] ===")
     print(f"  assoc_norms range: [{min(assoc_norms):.4f}, {max(assoc_norms):.4f}]")
     print(f"  mean: {mean_a:.4f}")
     print(f"  var_a: {var_a:.6f}")
@@ -126,7 +126,7 @@ def test_fix_produces_nonzero_variance():
     assert threshold_with_parent != threshold_no_parent, (
         "Expected different thresholds with/without parent"
     )
-    print(f"\n[PASS] Fix confirmed: assoc_weight now contributes to threshold.")
+    print("\n[PASS] Fix confirmed: assoc_weight now contributes to threshold.")
 
 
 if __name__ == "__main__":

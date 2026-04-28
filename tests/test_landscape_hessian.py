@@ -12,18 +12,15 @@ Covers:
 from __future__ import annotations
 
 import numpy as np
-import pytest
 import torch
 import torch.nn as nn
 
+from octonion.landscape._curvature import measure_curvature
 from octonion.landscape._hessian import (
     compute_full_hessian,
     compute_hessian_spectrum,
-    hessian_vector_product,
     stochastic_lanczos,
 )
-from octonion.landscape._curvature import measure_curvature
-
 
 # ---------------------------------------------------------------------------
 # Helpers

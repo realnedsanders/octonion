@@ -14,7 +14,6 @@ from __future__ import annotations
 import pytest
 import torch
 
-
 # ── Normalization parameter count tests ────────────────────────────
 
 
@@ -413,7 +412,7 @@ class TestOctonionConvFusedEquivalence:
 
     @staticmethod
     def _unfused_forward_2d(
-        layer: "torch.nn.Module", x: torch.Tensor,
+        layer: torch.nn.Module, x: torch.Tensor,
     ) -> torch.Tensor:
         """Reference unfused implementation for numerical comparison."""
         from octonion._multiplication import STRUCTURE_CONSTANTS as C
@@ -457,7 +456,7 @@ class TestOctonionConvFusedEquivalence:
 
     @staticmethod
     def _unfused_forward_1d(
-        layer: "torch.nn.Module", x: torch.Tensor,
+        layer: torch.nn.Module, x: torch.Tensor,
     ) -> torch.Tensor:
         """Reference unfused implementation for 1D."""
         from octonion._multiplication import STRUCTURE_CONSTANTS as C

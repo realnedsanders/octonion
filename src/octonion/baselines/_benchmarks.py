@@ -24,12 +24,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import torch
 from torch.utils.data import DataLoader, Subset
 
 from octonion.baselines._config import AlgebraType, NetworkConfig, TrainConfig
-
 
 # ── Published Results ──────────────────────────────────────────────
 

@@ -16,10 +16,8 @@ from octonion.trie import (
     OctonionTrie,
     PerNodeEMAPolicy,
     PerNodeMeanStdPolicy,
-    ThresholdPolicy,
     TrieNode,
 )
-
 
 # -- Helpers (copied from test_trie.py for independence) ---------------------
 

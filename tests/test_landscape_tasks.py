@@ -6,7 +6,6 @@ with known optimal losses, enabling rigorous loss ratio comparisons.
 
 from __future__ import annotations
 
-import pytest
 import torch
 from torch.utils.data import TensorDataset
 
@@ -17,7 +16,6 @@ from octonion.tasks import (
     build_cross_product_recovery,
     build_sinusoidal_regression,
 )
-
 
 # ---------------------------------------------------------------------------
 # 1. Algebra-native single-layer task

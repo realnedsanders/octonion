@@ -244,6 +244,7 @@ class TestCIFARTrainConfig:
         - Milestones adjusted by -warmup_epochs so scheduler hits them at real epochs 120, 150
         """
         import torch
+
         from octonion.baselines._trainer import _build_optimizer, _build_scheduler
 
         tc = cifar_train_config("cifar10")

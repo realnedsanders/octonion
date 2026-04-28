@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sqlite3
-import sys
 from pathlib import Path
 
 import matplotlib
@@ -85,7 +84,7 @@ def plot_heatmap(
     conn.row_factory = sqlite3.Row
     try:
         # Build query with fixed params
-        conditions = [f"benchmark = ?"]
+        conditions = ["benchmark = ?"]
         params: list = [benchmark]
 
         for col, val in fixed_params.items():

@@ -8,13 +8,11 @@ Covers:
 - Cross product antisymmetry and Fano plane consistency
 """
 
-import pytest
 import torch
+from conftest import ATOL_FLOAT64, octonions
 from hypothesis import given, settings
 
-from conftest import ATOL_FLOAT64, octonions, unit_octonions
-
-from octonion import Octonion, PureOctonion
+from octonion import Octonion
 from octonion._operations import (
     commutator,
     cross_product,

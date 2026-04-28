@@ -949,12 +949,12 @@ def run_purity_sweep(
     configs = generate_purity_sweep_configs(benchmarks, db_path, seed=SEED)
 
     n_per_bm = len(configs) // max(len(benchmarks), 1)
-    logger.info(f"  Policy: AlgebraicPurityPolicy")
+    logger.info("  Policy: AlgebraicPurityPolicy")
     logger.info(f"  Configs per benchmark: {n_per_bm}")
     logger.info(f"  Total configs: {len(configs)}")
     logger.info(f"  Benchmarks: {', '.join(benchmarks)}")
     logger.info(f"  Epochs: {DEFAULT_EPOCHS}")
-    logger.info(f"  Signal phases: A (assoc only), B (sim only), C (combined)")
+    logger.info("  Signal phases: A (assoc only), B (sim only), C (combined)")
 
     # 2. Run sweep
     t0 = time.time()
@@ -1002,7 +1002,7 @@ def run_noise_interaction(
 
     logger.info(f"  Total noise interaction configs: {len(configs)}")
     logger.info(f"  Noise levels: {NOISE_LEVELS}")
-    logger.info(f"  Strategies included: global, ema, mean_std, depth, purity")
+    logger.info("  Strategies included: global, ema, mean_std, depth, purity")
     logger.info(f"  Benchmarks: {', '.join(benchmarks)}")
 
     if not configs:

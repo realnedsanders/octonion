@@ -22,7 +22,6 @@ from __future__ import annotations
 import pytest
 import torch
 
-from octonion._multiplication import octonion_mul
 from octonion.calculus._autograd_functions import (
     OctonionConjugateFunction,
     OctonionExpFunction,
@@ -138,7 +137,6 @@ class TestGPUCPUParity:
         t = torch.randn(8, dtype=torch.float64)
         t[0] = abs(t[0]) + 1.0  # Ensure positive scalar part
 
-        from octonion.calculus._autograd_functions import OctonionLogFunction
 
         t_cpu = t.clone().requires_grad_(True)
         t_gpu = t.clone().cuda().requires_grad_(True)

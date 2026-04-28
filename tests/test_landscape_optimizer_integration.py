@@ -20,7 +20,6 @@ from octonion.baselines._config import AlgebraType, NetworkConfig, TrainConfig
 from octonion.baselines._network import AlgebraNetwork
 from octonion.baselines._trainer import _build_optimizer, _wrap_manifold_params
 
-
 # ── Fixtures ────────────────────────────────────────────────────────
 
 
@@ -396,8 +395,8 @@ def test_gate_yellow() -> None:
 
 def test_gate_ratio_uses_min() -> None:
     """Gate uses min(best_ratio, median_ratio) as gate_ratio per task."""
+
     from octonion.landscape._gate import evaluate_gate
-    import numpy as np
 
     # Construct a case where best_ratio != median_ratio
     results = {

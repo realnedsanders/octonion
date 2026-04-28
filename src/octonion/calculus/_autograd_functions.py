@@ -23,8 +23,6 @@ import torch
 from octonion._multiplication import STRUCTURE_CONSTANTS, octonion_mul
 from octonion._octonion import Octonion
 from octonion._operations import (
-    cross_product,
-    inner_product,
     octonion_exp,
     octonion_log,
 )

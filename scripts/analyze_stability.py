@@ -272,9 +272,7 @@ def run_depth_sweep() -> dict:
                         out32 = forward_stripped_chain(layers_f32, x32)
 
                         # Relative error (every sample produces an entry)
-                        if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
-                            errors.append(float("inf"))
-                        elif out64.norm().item() <= 1e-30:
+                        if not torch.isfinite(out32).all() or not torch.isfinite(out64).all() or out64.norm().item() <= 1e-30:
                             errors.append(float("inf"))
                         else:
                             rel_err = (out32.double() - out64).norm() / out64.norm()
@@ -362,9 +360,7 @@ def run_depth_sweep() -> dict:
                             out64 = model_f64(x64)
                             out32 = model_f32(x32)
 
-                            if not torch.isfinite(out32).all() or not torch.isfinite(out64).all():
-                                errors.append(float("inf"))
-                            elif out64.norm().item() <= 1e-30:
+                            if not torch.isfinite(out32).all() or not torch.isfinite(out64).all() or out64.norm().item() <= 1e-30:
                                 errors.append(float("inf"))
                             else:
                                 rel_err = (out32.double() - out64).norm() / out64.norm()
@@ -681,9 +677,7 @@ def run_mitigation() -> dict:
                     h32 = layer_f32(h32)
                     depth = i + 1
                     if depth in checkpoint_depths:
-                        if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
-                            baseline_errors[depth].append(float("inf"))
-                        elif h64.norm().item() <= 1e-30:
+                        if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
                             baseline_errors[depth].append(float("inf"))
                         else:
                             rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -734,9 +728,7 @@ def run_mitigation() -> dict:
                             h64 = stabilizer_f64(h64)
                             h32 = stabilizer_f32(h32)
                         if depth in checkpoint_depths:
-                            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
-                                mitigated_errors[depth].append(float("inf"))
-                            elif h64.norm().item() <= 1e-30:
+                            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
                                 mitigated_errors[depth].append(float("inf"))
                             else:
                                 rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -1100,7 +1092,7 @@ def main() -> None:
 
     elapsed = time.time() - start_time
     print(f"\nTotal time: {elapsed:.1f}s")
-    print(f"Results saved to: results/stability/")
+    print("Results saved to: results/stability/")
 
 
 if __name__ == "__main__":

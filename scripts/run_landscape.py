@@ -289,7 +289,7 @@ def main() -> None:
         * len(config.algebras) * len(config.seeds)
     )
     print(f"\n{'='*60}")
-    print(f"  Phase 5: Optimization Landscape Experiment")
+    print("  Phase 5: Optimization Landscape Experiment")
     print(f"{'='*60}")
     print(f"  Tasks:      {len(config.tasks)} ({', '.join(config.tasks)})")
     print(f"  Algebras:   {len(config.algebras)} ({', '.join(a.short_name for a in config.algebras)})")
@@ -301,9 +301,9 @@ def main() -> None:
     print(f"  Device:     {config.device}")
     print(f"  Output:     {config.output_dir}")
     if args.smoke:
-        print(f"  Mode:       SMOKE TEST")
+        print("  Mode:       SMOKE TEST")
     if args.resume:
-        print(f"  Resume:     YES (skipping existing results)")
+        print("  Resume:     YES (skipping existing results)")
     print(f"{'='*60}\n")
 
     # Run experiment
@@ -326,7 +326,7 @@ def main() -> None:
 
     # Print summary
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT COMPLETE")
+    print("  EXPERIMENT COMPLETE")
     print(f"{'='*60}")
     print(f"  Total time:    {elapsed:.1f}s ({elapsed/60:.1f}min)")
     print(f"  Runs completed: {n_completed}")
@@ -352,7 +352,7 @@ def main() -> None:
             json.dump(gate_serializable, f, indent=2)
         print(f"  Gate result:   {gate_output_path}")
     else:
-        print(f"\n  Gate evaluation: SKIPPED (need O and R8D algebras)")
+        print("\n  Gate evaluation: SKIPPED (need O and R8D algebras)")
 
     print(f"{'='*60}\n")
 

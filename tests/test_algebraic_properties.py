@@ -13,31 +13,26 @@ All tests use Hypothesis property-based testing with detailed precision statisti
 reporting (max/mean/std of relative errors) per user decision.
 """
 
-from typing import Dict
-
-import pytest
-import torch
-from hypothesis import example, given, settings, target
 
 import hypothesis.strategies as st
-
+import pytest
+import torch
 from conftest import (
     ATOL_FLOAT64,
     nonzero_octonions,
     octonions,
     subalgebra_octonions,
-    unit_octonions,
 )
+from hypothesis import example, given, settings, target
 
 from octonion import Octonion, associator
-
 
 # =============================================================================
 # Precision tracking utilities
 # =============================================================================
 
 
-def report_precision(errors: torch.Tensor, test_name: str) -> Dict[str, float]:
+def report_precision(errors: torch.Tensor, test_name: str) -> dict[str, float]:
     """Compute and print precision statistics for a set of errors.
 
     Args:
@@ -61,7 +56,7 @@ def report_precision(errors: torch.Tensor, test_name: str) -> Dict[str, float]:
 
 def check_moufang(
     a: Octonion, b: Octonion, c: Octonion, tol: float = ATOL_FLOAT64
-) -> Dict[str, dict]:
+) -> dict[str, dict]:
     """Verify all four Moufang identities and return detailed error statistics.
 
     The four identities (using x=a, y=b, z=c):
@@ -77,7 +72,7 @@ def check_moufang(
     Returns:
         Dict with per-identity error statistics and overall pass/fail.
     """
-    results: Dict[str, dict] = {}
+    results: dict[str, dict] = {}
 
     # Identity 1: z(x(zy)) = ((zx)z)y
     lhs1 = c * (a * (c * b))

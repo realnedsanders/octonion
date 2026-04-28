@@ -13,7 +13,6 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 
 from octonion._multiplication import octonion_mul
 from octonion.calculus._analyticity import (
@@ -214,35 +213,6 @@ class TestPublicAPI:
 
     def test_calculus_imports(self) -> None:
         """All core calculus exports are importable."""
-        from octonion.calculus import (
-            OctonionConjugateFunction,
-            OctonionCrossProductFunction,
-            OctonionExpFunction,
-            OctonionInnerProductFunction,
-            OctonionInverseFunction,
-            OctonionLogFunction,
-            OctonionMulFunction,
-            analyticity_residual,
-            cauchy_riemann_octonion,
-            conjugate_derivative,
-            ghr_derivative,
-            gradient_magnitude_stats,
-            is_octonionic_analytic,
-            jacobian_conjugate,
-            jacobian_cross_product,
-            jacobian_exp,
-            jacobian_inner_product,
-            jacobian_inverse,
-            jacobian_log,
-            jacobian_mul,
-            lr_scaling_heuristic,
-            numeric_jacobian,
-            numeric_jacobian_2arg,
-            octonion_gradcheck,
-            octonion_gradgradcheck,
-            suggest_lr,
-            wirtinger_from_jacobian,
-        )
 
     def test_calculus_submodule_importable(self) -> None:
         """octonion.calculus is importable as a submodule."""

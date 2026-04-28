@@ -3,7 +3,7 @@
 import pytest
 import torch
 
-from octonion import Real, Complex, Quaternion
+from octonion import Complex, Quaternion, Real
 
 
 class TestReal:

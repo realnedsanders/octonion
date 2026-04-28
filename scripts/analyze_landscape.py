@@ -47,7 +47,6 @@ import matplotlib.pyplot as plt
 
 from octonion.baselines._config import AlgebraType
 from octonion.baselines._stats import (
-    cohen_d,
     confidence_interval,
     holm_bonferroni,
     paired_comparison,
@@ -1297,7 +1296,7 @@ def main() -> None:
     results_dir = args.results_dir
 
     print(f"\n{'='*60}")
-    print(f"  Phase 5: Optimization Landscape Analysis")
+    print("  Phase 5: Optimization Landscape Analysis")
     print(f"{'='*60}")
     print(f"  Results dir: {results_dir}")
     print(f"  Mode:        {'run + analyze' if args.run else 'analyze only'}")
@@ -1413,7 +1412,7 @@ def main() -> None:
     print(f"  {gate_result['summary']}")
 
     if gate_result.get("per_task"):
-        print(f"\n  Per-task ratios (O/R8D):")
+        print("\n  Per-task ratios (O/R8D):")
         for task_name, task_metrics in gate_result["per_task"].items():
             ratio = task_metrics.get("gate_ratio", float("nan"))
             status = "PASS" if task_metrics.get("within_2x") else (
@@ -1455,7 +1454,7 @@ def main() -> None:
         all_plots.append(curv_path)
 
     print(f"\n{'='*60}")
-    print(f"  ANALYSIS COMPLETE")
+    print("  ANALYSIS COMPLETE")
     print(f"{'='*60}")
     print(f"  Gate verdict:    {verdict_str}")
     print(f"  Plots generated: {len(all_plots)}")

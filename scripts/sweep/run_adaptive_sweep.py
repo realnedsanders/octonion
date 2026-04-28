@@ -19,7 +19,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import logging
 import sqlite3

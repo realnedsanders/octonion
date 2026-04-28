@@ -34,8 +34,6 @@ if _scripts_dir not in sys.path:
 from sweep.sweep_runner import (
     SweepConfig,
     SweepRunner,
-    generate_consolidation_sweep_configs,
-    generate_epoch_sweep_configs,
     generate_global_sweep_configs,
 )
 
@@ -114,7 +112,7 @@ def run_phase1(
     logger.info(f"  Noise values: {n_noise} values {NOISE_VALUES}")
     logger.info(f"  Benchmarks: {n_benchmarks} ({', '.join(benchmarks)})")
     logger.info(f"  Total configs: {len(configs)} ({n_assoc} x {n_sim} x {n_noise} x {n_benchmarks})")
-    logger.info(f"  Fixed: epochs=3, consolidation=(0.05, 3)")
+    logger.info("  Fixed: epochs=3, consolidation=(0.05, 3)")
 
     t0 = time.time()
     results = runner.run(configs, features_dir)

@@ -12,7 +12,6 @@ Convention: Baez 2002, mod-7. The triples are (1,2,4), (2,3,5), (3,4,6),
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Tuple
 
 import torch
 
@@ -29,7 +28,7 @@ class FanoPlane:
     """
 
     # The 7 oriented triples (using 1-indexed imaginary unit labels)
-    triples: Tuple[Tuple[int, int, int], ...] = (
+    triples: tuple[tuple[int, int, int], ...] = (
         (1, 2, 4),
         (2, 3, 5),
         (3, 4, 6),
@@ -40,7 +39,7 @@ class FanoPlane:
     )
 
     @property
-    def lines(self) -> List[frozenset[int]]:
+    def lines(self) -> list[frozenset[int]]:
         """The 7 unoriented lines (sets of 3 points)."""
         return [frozenset(t) for t in self.triples]
 
@@ -58,7 +57,7 @@ class FanoPlane:
             M[k - 1, line_idx] = 1
         return M
 
-    def quaternionic_subalgebra(self, line_index: int) -> Tuple[int, int, int]:
+    def quaternionic_subalgebra(self, line_index: int) -> tuple[int, int, int]:
         """Return the triple of imaginary unit indices forming the line_index-th subalgebra.
 
         Each line of the Fano plane defines a quaternionic subalgebra
@@ -73,7 +72,7 @@ class FanoPlane:
         return self.triples[line_index]
 
     @property
-    def automorphism_generators(self) -> List[dict[int, int]]:
+    def automorphism_generators(self) -> list[dict[int, int]]:
         """Generators of GL(3, F_2), the symmetry group of the Fano plane (order 168).
 
         These are permutations of {1,...,7} that preserve the incidence structure.

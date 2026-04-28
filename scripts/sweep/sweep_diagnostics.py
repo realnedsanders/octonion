@@ -18,7 +18,6 @@ import json
 import logging
 import math
 import sqlite3
-import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -436,7 +435,7 @@ def generate_diagnostics(
     Returns:
         Summary dict with generated files and benchmark info.
     """
-    from octonion.trie import GlobalPolicy, OctonionTrie
+    from octonion.trie import OctonionTrie
 
     features_dir = Path(features_dir)
     db_path = Path(db_path)
@@ -744,9 +743,7 @@ def _json_default(obj: Any) -> Any:
         if not np.isfinite(val):
             return None
         return val
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, torch.Tensor):
+    elif isinstance(obj, np.ndarray) or isinstance(obj, torch.Tensor):
         return obj.tolist()
     elif isinstance(obj, Path):
         return str(obj)

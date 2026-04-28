@@ -6,14 +6,12 @@ worker function, concurrent writes, and result querying.
 
 from __future__ import annotations
 
-import json
 import pickle
 import sqlite3
 import sys
-from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 
@@ -24,10 +22,8 @@ from sweep.sweep_runner import (
     SweepConfig,
     SweepRunner,
     _run_single_config,
-    _write_results_batch,
     generate_global_sweep_configs,
 )
-
 
 # ── Fixtures ───────────────────────────────────────────────────────
 

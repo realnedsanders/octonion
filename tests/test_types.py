@@ -2,7 +2,7 @@
 
 import torch
 
-from octonion import NormedDivisionAlgebra, Octonion, Real, Complex, Quaternion
+from octonion import Complex, NormedDivisionAlgebra, Octonion, Quaternion, Real
 
 
 class TestNormedDivisionAlgebraContract:

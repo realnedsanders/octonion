@@ -23,17 +23,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import torch
 import numpy as np
+import torch
 
 # Ensure project root is on path for imports
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from octonion._octonion import Octonion, associator
 from octonion._fano import FANO_PLANE
-from octonion._multiplication import octonion_mul, STRUCTURE_CONSTANTS
+from octonion._multiplication import octonion_mul
 
 # Egan's exact analytical result for E[||[a,b,c]||] on S^7
 EGAN_THEORETICAL_MEAN = 147456 / (42875 * math.pi)

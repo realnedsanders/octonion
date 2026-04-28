@@ -50,13 +50,6 @@ from octonion.calculus._analyticity import (
     cauchy_riemann_octonion,
     is_octonionic_analytic,
 )
-from octonion.calculus._chain_rule import compose_jacobians, naive_chain_rule_jacobian
-from octonion.calculus._composition import (
-    CompositionBuilder,
-    Leaf,
-    Node,
-    all_parenthesizations,
-)
 from octonion.calculus._autograd_functions import (
     OctonionConjugateFunction,
     OctonionCrossProductFunction,
@@ -65,6 +58,13 @@ from octonion.calculus._autograd_functions import (
     OctonionInverseFunction,
     OctonionLogFunction,
     OctonionMulFunction,
+)
+from octonion.calculus._chain_rule import compose_jacobians, naive_chain_rule_jacobian
+from octonion.calculus._composition import (
+    CompositionBuilder,
+    Leaf,
+    Node,
+    all_parenthesizations,
 )
 from octonion.calculus._ghr import (
     conjugate_derivative,

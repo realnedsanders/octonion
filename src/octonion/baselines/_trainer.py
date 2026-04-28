@@ -17,8 +17,9 @@ import os
 import random
 import signal
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import torch

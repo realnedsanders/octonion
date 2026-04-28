@@ -408,7 +408,7 @@ class QuaternionConv2d(nn.Module):
         # Eval-mode fused weight cache. Invalidated by .train().
         self._fused_cache: torch.Tensor | None = None
 
-    def train(self, mode: bool = True) -> "QuaternionConv2d":
+    def train(self, mode: bool = True) -> QuaternionConv2d:
         """Override train() to invalidate the fused weight cache."""
         super().train(mode)
         if mode:
@@ -628,7 +628,7 @@ class OctonionConv2d(nn.Module):
         # eval calls. Invalidated by .train() -> avoids stale cache.
         self._fused_cache: torch.Tensor | None = None
 
-    def train(self, mode: bool = True) -> "OctonionConv2d":
+    def train(self, mode: bool = True) -> OctonionConv2d:
         """Override train() to invalidate the fused weight cache.
 
         When entering train mode, weights may change (gradient updates),

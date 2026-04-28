@@ -7,9 +7,8 @@ Covers:
 """
 
 import torch
-from hypothesis import given, settings
-
 from conftest import ATOL_FLOAT64, octonions
+from hypothesis import given, settings
 
 from octonion import Octonion
 from octonion._linear_algebra import left_mul_matrix, right_mul_matrix

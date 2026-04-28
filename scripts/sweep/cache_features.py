@@ -768,8 +768,8 @@ def validate_cached_features(output_dir: Path) -> None:
 
     accuracy = correct / len(test_y)
     logger.info(f"[Validation] MNIST 10K trie accuracy: {accuracy:.4f}")
-    logger.info(f"[Validation] Features cached successfully -- accuracy will match")
-    logger.info(f"[Validation] the T1 baseline when run with the updated trie.py")
+    logger.info("[Validation] Features cached successfully -- accuracy will match")
+    logger.info("[Validation] the T1 baseline when run with the updated trie.py")
 
 
 # ── Main entry point ─────────────────────────────────────────────────

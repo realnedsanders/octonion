@@ -25,13 +25,12 @@ import torch
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from octonion.calculus._chain_rule import compose_jacobians, naive_chain_rule_jacobian
 from octonion.calculus._composition import (
     Leaf,
     Node,
     all_parenthesizations,
-    evaluate_tree,
 )
-from octonion.calculus._chain_rule import compose_jacobians, naive_chain_rule_jacobian
 from octonion.calculus._inspector import tree_to_string
 
 

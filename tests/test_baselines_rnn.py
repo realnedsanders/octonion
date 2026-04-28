@@ -9,7 +9,6 @@ from __future__ import annotations
 import pytest
 import torch
 
-
 # ── Fixtures ─────────────────────────────────────────────────────
 
 B = 4  # batch size

@@ -16,9 +16,7 @@ from __future__ import annotations
 
 import pytest
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-
 
 # ── Reference implementation: Tier 1 (Tier 1 tril vectorization) ────
 # Captured here BEFORE vectorization so the test is self-contained
@@ -110,9 +108,9 @@ def _build_nonzero_entries(C: torch.Tensor) -> list[tuple[int, int, int, float]]
 
 try:
     from octonion.baselines._normalization import (
-        _tril_to_symmetric,
-        QuaternionBatchNorm,
         OctonionBatchNorm,
+        QuaternionBatchNorm,
+        _tril_to_symmetric,
     )
     _NORMALIZATION_AVAILABLE = True
 except ImportError:
@@ -129,8 +127,8 @@ except ImportError:
     _CONFIG_AVAILABLE = False
 
 try:
-    from octonion.baselines._algebra_linear import OctonionDenseLinear
     from octonion._multiplication import STRUCTURE_CONSTANTS
+    from octonion.baselines._algebra_linear import OctonionDenseLinear
     _LINEAR_AVAILABLE = True
 except ImportError:
     OctonionDenseLinear = None  # type: ignore[assignment, misc]

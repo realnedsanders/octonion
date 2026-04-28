@@ -11,7 +11,6 @@ Tests follow the behavior specs from 03-04-PLAN.md:
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -20,7 +19,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from octonion.baselines._config import TrainConfig
-
 
 # ── Tiny model and data fixtures ──────────────────────────────────
 

@@ -9,8 +9,6 @@ where e0 is the real/scalar part.
 
 from __future__ import annotations
 
-from typing import Tuple
-
 import torch
 
 from octonion._multiplication import octonion_mul
@@ -206,7 +204,7 @@ class Octonion(NormedDivisionAlgebra):
         data = torch.cat([q1, q2], dim=-1)
         return cls(data)
 
-    def to_quaternion_pair(self) -> Tuple[torch.Tensor, torch.Tensor]:
+    def to_quaternion_pair(self) -> tuple[torch.Tensor, torch.Tensor]:
         """Split this octonion into two quaternion tensors.
 
         Returns (q1, q2) where q1 = self.components[..., :4] and

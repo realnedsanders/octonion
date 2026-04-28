@@ -20,8 +20,6 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 
 from __future__ import annotations
 
-from typing import Tuple
-
 import torch
 
 from octonion._multiplication import STRUCTURE_CONSTANTS
@@ -29,7 +27,7 @@ from octonion._multiplication import STRUCTURE_CONSTANTS
 
 def jacobian_mul(
     a: torch.Tensor, b: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic 8x8 Jacobians for octonion_mul(a, b).
 
     For f(a, b) = a * b with structure constants C[i,j,k]:
@@ -376,7 +374,7 @@ def jacobian_inverse(o: torch.Tensor) -> torch.Tensor:
 
 def jacobian_inner_product(
     a: torch.Tensor, b: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic Jacobians for inner_product(a, b) = sum_i a_i * b_i.
 
     This is a scalar-valued function of two octonion arguments.
@@ -398,7 +396,7 @@ def jacobian_inner_product(
 
 def jacobian_cross_product(
     a: torch.Tensor, b: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic 8x8 Jacobians for cross_product(a, b).
 
     The cross product is defined as:

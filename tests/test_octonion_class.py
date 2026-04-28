@@ -3,7 +3,7 @@
 import pytest
 import torch
 
-from octonion import Octonion, UnitOctonion, PureOctonion, associator
+from octonion import Octonion, PureOctonion, UnitOctonion, associator
 from octonion._multiplication import octonion_mul
 from octonion._random import random_octonion
 

@@ -35,7 +35,6 @@ from sklearn.linear_model import LogisticRegression
 sys.path.insert(0, str(Path(__file__).parent))
 from trie_benchmark_utils import (
     compute_per_class_accuracy,
-    plot_confusion_matrix,
     plot_learning_curves,
     run_sklearn_baselines,
     run_trie_classifier,
@@ -408,7 +407,8 @@ def run_experiment(
     cm_path = output_dir / f"confusion_matrix_{mode}.png"
 
     # Custom confusion matrix plot with appropriate figsize
-    from sklearn.metrics import confusion_matrix as sk_confusion_matrix, ConfusionMatrixDisplay
+    from sklearn.metrics import ConfusionMatrixDisplay
+    from sklearn.metrics import confusion_matrix as sk_confusion_matrix
 
     cm = sk_confusion_matrix(test_labels, trie_preds)
     fig, ax = plt.subplots(figsize=figsize)

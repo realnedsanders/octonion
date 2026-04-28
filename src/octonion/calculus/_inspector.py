@@ -9,8 +9,7 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 
 from __future__ import annotations
 
-from octonion.calculus._composition import Leaf, Node, TreeNode
-
+from octonion.calculus._composition import Leaf, TreeNode
 
 # Operation symbols for mathematical notation
 _OP_SYMBOLS = {

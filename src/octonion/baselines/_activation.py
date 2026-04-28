@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 # Map activation names to PyTorch functions
 _ACTIVATION_FNS: dict[str, callable] = {
     "relu": F.relu,

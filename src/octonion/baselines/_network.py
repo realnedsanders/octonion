@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from octonion.baselines._activation import NormPreservingActivation, SplitActivation
 from octonion.baselines._algebra_conv import (
@@ -99,7 +98,7 @@ class _ResidualBlock(nn.Module):
 
     def __init__(
         self,
-        network: "AlgebraNetwork",
+        network: AlgebraNetwork,
         in_channels: int,
         out_channels: int,
         stride: int = 1,

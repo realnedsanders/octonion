@@ -5,6 +5,7 @@ quaternionic subalgebra. Measures the empirical scaling exponent.
 """
 
 import torch
+
 from octonion import Octonion
 from octonion._octonion import associator
 

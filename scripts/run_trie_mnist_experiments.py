@@ -93,8 +93,8 @@ def encode_cnn_features(
     Trains a minimal CNN for 3 epochs, extracts penultimate layer features,
     then PCA-projects those features to n_dims.
     """
-    from torchvision.datasets import MNIST
     from torch.utils.data import DataLoader, TensorDataset
+    from torchvision.datasets import MNIST
 
     # Train a small CNN
     class SmallCNN(nn.Module):

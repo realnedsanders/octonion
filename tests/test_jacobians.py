@@ -27,30 +27,28 @@ Primitives tested:
 """
 
 import torch
-from hypothesis import given, settings, assume
-
-from conftest import octonion_tensors, nonzero_octonion_tensors
+from conftest import octonion_tensors
+from hypothesis import assume, given, settings
 
 from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
 from octonion._operations import (
+    cross_product,
+    inner_product,
     octonion_exp,
     octonion_log,
-    inner_product,
-    cross_product,
 )
 from octonion.calculus import (
-    jacobian_mul,
-    jacobian_exp,
-    jacobian_log,
     jacobian_conjugate,
-    jacobian_inverse,
-    jacobian_inner_product,
     jacobian_cross_product,
+    jacobian_exp,
+    jacobian_inner_product,
+    jacobian_inverse,
+    jacobian_log,
+    jacobian_mul,
     numeric_jacobian,
     numeric_jacobian_2arg,
 )
-
 
 # Numeric Jacobian step size for tests (larger = less roundoff, more truncation;
 # eps=1e-5 balances both for inputs up to magnitude ~10).

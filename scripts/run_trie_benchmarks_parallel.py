@@ -12,13 +12,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import subprocess
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

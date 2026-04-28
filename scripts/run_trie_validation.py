@@ -507,13 +507,13 @@ def main() -> None:
         r1 = all_results["subalgebra_routing"]
         best_noise = min(r1["noise_levels"].keys(), key=lambda k: float(k))
         worst_noise = max(r1["noise_levels"].keys(), key=lambda k: float(k))
-        logger.info(f"\n  Exp 1 - Subalgebra Routing:")
+        logger.info("\n  Exp 1 - Subalgebra Routing:")
         logger.info(f"    Best noise ({best_noise}):  within={r1['noise_levels'][best_noise]['within_consistency']:.3f}, separation={r1['noise_levels'][best_noise]['cross_separation']:.3f}")
         logger.info(f"    Worst noise ({worst_noise}): within={r1['noise_levels'][worst_noise]['within_consistency']:.3f}, separation={r1['noise_levels'][worst_noise]['cross_separation']:.3f}")
 
     if "associator_novelty" in all_results:
         r2 = all_results["associator_novelty"]
-        logger.info(f"\n  Exp 2 - Associator Novelty:")
+        logger.info("\n  Exp 2 - Associator Novelty:")
         logger.info(f"    Spike ratio: {r2['spike_ratio']:.2f}x")
         logger.info(f"    Transitions above p99: {r2['transitions_above_p99']}/{r2['n_transitions']}")
 

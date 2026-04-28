@@ -20,6 +20,10 @@ import os
 
 import torch
 
+from octonion.calculus._chain_rule import (
+    compose_jacobians,
+    naive_chain_rule_jacobian,
+)
 from octonion.calculus._composition import (
     CompositionBuilder,
     Leaf,
@@ -27,13 +31,8 @@ from octonion.calculus._composition import (
     all_parenthesizations,
     evaluate_tree,
 )
-from octonion.calculus._chain_rule import (
-    compose_jacobians,
-    naive_chain_rule_jacobian,
-)
 from octonion.calculus._inspector import inspect_tree, tree_to_string
 from octonion.calculus._numeric import numeric_jacobian
-
 
 # ============================================================================
 # TestBinaryTrees: Verify Catalan numbers and tree structure
@@ -464,7 +463,7 @@ class TestParenthesizationExhaustive:
             json.dump(full_report, f, indent=2)
 
         # Print summary
-        print(f"\n=== SC-2 Parenthesization Report ===")
+        print("\n=== SC-2 Parenthesization Report ===")
         print(f"Patterns tested: {len(report)}")
         print(
             f"Max rel error across all: "
@@ -537,7 +536,7 @@ class TestNaiveVsCorrectDemonstration:
         )
 
         # Report magnitude
-        print(f"\n=== SC-3 Naive vs Correct ===")
+        print("\n=== SC-3 Naive vs Correct ===")
         print(f"Trials: {n_trials}")
         print(f"Mean gradient difference: {mean_diff:.6f}")
         print(f"Min: {min(differences):.6f}, Max: {max(differences):.6f}")

@@ -445,7 +445,7 @@ def evaluate_encoder(
     logger.info(f"  Features: train={train_x.shape}, test={test_x.shape}")
 
     # Run sklearn baselines
-    logger.info(f"  Running sklearn baselines...")
+    logger.info("  Running sklearn baselines...")
     baseline_results = run_sklearn_baselines(train_x, train_y, test_x, test_y)
 
     # Print baseline accuracies
@@ -482,7 +482,7 @@ def evaluate_encoder(
 
     # Per-class accuracy
     per_class = compute_per_class_accuracy(test_y, y_pred, CLASSES)
-    logger.info(f"  Per-class trie accuracy:")
+    logger.info("  Per-class trie accuracy:")
     for cls_name, stats in per_class.items():
         logger.info(
             f"    {cls_name:>12s}: {stats['correct']:3d}/{stats['total']:3d} = {stats['accuracy']:.3f}"
@@ -491,7 +491,7 @@ def evaluate_encoder(
     # Learning curves: trie accuracy at different training set sizes
     fractions = [0.1, 0.25, 0.5, 1.0]
     learning_curve_data: dict[str, list[dict]] = {"trie": [], "knn_k5": []}
-    logger.info(f"  Computing learning curves...")
+    logger.info("  Computing learning curves...")
     for frac in fractions:
         n_sub = max(10, int(n_train * frac))
         sub_train_x = train_x[:n_sub]

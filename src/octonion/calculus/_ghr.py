@@ -53,8 +53,6 @@ Convention: Baez 2002, mod-7 Fano plane basis.
 
 from __future__ import annotations
 
-from typing import Tuple
-
 import torch
 
 
@@ -107,7 +105,7 @@ def conjugate_derivative(f_real_partials: torch.Tensor) -> torch.Tensor:
 
 def wirtinger_from_jacobian(
     J: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Convert an 8x8 real Jacobian to the (df/do, df/do*) Wirtinger pair.
 
     Given the real Jacobian J[k, i] = d f(o)_k / d o_i, this function

@@ -9,8 +9,8 @@ from __future__ import annotations
 import torch
 
 from octonion.baselines._config import AlgebraType
-from octonion.baselines._phm_linear import PHM8Linear
 from octonion.baselines._param_matching import find_matched_width
+from octonion.baselines._phm_linear import PHM8Linear
 
 
 class TestPHM8LinearShapes:

@@ -11,7 +11,6 @@ import torch
 
 from octonion.baselines._config import AlgebraType, NetworkConfig
 
-
 # Only the 4 original algebras have AlgebraNetwork support.
 # PHM8 and R8_DENSE are standalone layers used through _SimpleAlgebraMLP.
 ALL_ALGEBRAS = [
@@ -486,7 +485,7 @@ class TestResNetConv2D:
 
     def test_residual_connections_present(self):
         """Residual connections are present (output differs from non-residual forward)."""
-        from octonion.baselines._network import _ResidualBlock, AlgebraNetwork
+        from octonion.baselines._network import AlgebraNetwork, _ResidualBlock
 
         config = _make_config(
             AlgebraType.REAL,

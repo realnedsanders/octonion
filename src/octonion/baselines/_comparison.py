@@ -16,18 +16,17 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 
 from octonion.baselines._config import (
     AlgebraType,
     ComparisonConfig,
-    NetworkConfig,
-    TrainConfig,
 )
 from octonion.baselines._param_matching import (
     _build_conv_model,
@@ -231,7 +230,7 @@ def run_comparison(
     # For MLP, input_dim is the flat feature dimension (e.g. 784 for MNIST).
     # Both use the same variable; the model builder interprets it correctly.
 
-    def _build_model(algebra: AlgebraType, width: int) -> "torch.nn.Module":
+    def _build_model(algebra: AlgebraType, width: int) -> torch.nn.Module:
         """Build a model using the appropriate topology builder."""
         if is_conv2d:
             return _build_conv_model(

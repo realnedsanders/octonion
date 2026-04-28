@@ -25,9 +25,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from octonion.baselines._config import AlgebraType, TrainConfig
 from octonion.baselines._param_matching import _SimpleAlgebraMLP, find_matched_width
 from octonion.baselines._trainer import seed_everything, train_model
-from octonion.landscape._curvature import measure_curvature
-from octonion.landscape._gradient_stats import collect_gradient_stats
-from octonion.landscape._hessian import compute_hessian_spectrum
 from octonion.tasks import (
     build_algebra_native_multi,
     build_algebra_native_single,
@@ -435,9 +432,7 @@ def _save_result(
     for k, v in result.items():
         if isinstance(v, list):
             serializable[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
-        elif isinstance(v, (int, float, str, bool)):
-            serializable[k] = v
-        elif isinstance(v, dict):
+        elif isinstance(v, (int, float, str, bool)) or isinstance(v, dict):
             serializable[k] = v
         else:
             serializable[k] = str(v)

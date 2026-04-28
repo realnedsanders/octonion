@@ -11,8 +11,6 @@ torch.Generator.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import torch
 
 from octonion._octonion import Octonion
@@ -20,10 +18,10 @@ from octonion._octonion import Octonion
 
 def random_octonion(
     *,
-    batch_size: Optional[int] = None,
+    batch_size: int | None = None,
     dtype: torch.dtype = torch.float64,
-    device: Optional[torch.device] = None,
-    generator: Optional[torch.Generator] = None,
+    device: torch.device | None = None,
+    generator: torch.Generator | None = None,
 ) -> Octonion:
     """Generate a random octonion with Gaussian-distributed components.
 
@@ -46,10 +44,10 @@ def random_octonion(
 
 def random_unit_octonion(
     *,
-    batch_size: Optional[int] = None,
+    batch_size: int | None = None,
     dtype: torch.dtype = torch.float64,
-    device: Optional[torch.device] = None,
-    generator: Optional[torch.Generator] = None,
+    device: torch.device | None = None,
+    generator: torch.Generator | None = None,
 ) -> Octonion:
     """Generate a random unit octonion (uniformly distributed on S^7).
 
@@ -77,10 +75,10 @@ def random_unit_octonion(
 
 def random_pure_octonion(
     *,
-    batch_size: Optional[int] = None,
+    batch_size: int | None = None,
     dtype: torch.dtype = torch.float64,
-    device: Optional[torch.device] = None,
-    generator: Optional[torch.Generator] = None,
+    device: torch.device | None = None,
+    generator: torch.Generator | None = None,
 ) -> Octonion:
     """Generate a random pure (imaginary) octonion with real part = 0.
 

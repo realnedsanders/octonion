@@ -29,7 +29,6 @@ from octonion.baselines._algebra_linear import (
 )
 from octonion.baselines._config import AlgebraType
 
-
 # ── SC-1: StabilizingNorm ─────────────────────────────────────────
 
 
@@ -230,9 +229,7 @@ def test_stripped_chain_depth500_no_nan() -> None:
                 h32 = l32(h32)
 
             # Apply the same guard logic as the analysis script
-            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all():
-                errors.append(float("inf"))
-            elif h64.norm().item() <= 1e-30:
+            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
                 errors.append(float("inf"))
             else:
                 rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -240,15 +237,15 @@ def test_stripped_chain_depth500_no_nan() -> None:
 
     assert len(errors) == n_samples, "Every sample must produce an error entry"
     for e in errors:
-        assert not np.isnan(e), f"Got NaN error — guard logic is broken"
+        assert not np.isnan(e), "Got NaN error — guard logic is broken"
         assert e >= 0 or np.isinf(e), f"Error must be non-negative or inf, got {e}"
 
 
 def test_json_serialization_no_nan_infinity() -> None:
     """_sanitize_for_json produces valid JSON with no bare NaN/Infinity."""
     # Import from the script by adding its directory to sys.path
-    import sys
     import os
+    import sys
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
     from analyze_stability import _sanitize_for_json
 
@@ -276,7 +273,6 @@ def test_json_serialization_no_nan_infinity() -> None:
 def test_condition_number_composition_octonion() -> None:
     """2-layer O chain: condition number is finite or inf, never NaN."""
     torch.manual_seed(42)
-    from octonion._multiplication import octonion_mul
     from octonion.calculus._numeric import numeric_jacobian
 
     hidden = 4

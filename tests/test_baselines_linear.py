@@ -11,8 +11,6 @@ Tests follow the behavior spec from 03-01-PLAN.md Task 2:
 
 from __future__ import annotations
 
-import math
-
 import pytest
 import torch
 
@@ -30,7 +28,6 @@ from octonion.baselines._param_matching import (
     flop_report,
     param_report,
 )
-
 
 # ── Output shape tests ──────────────────────────────────────────────
 

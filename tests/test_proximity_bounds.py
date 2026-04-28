@@ -9,15 +9,14 @@ from __future__ import annotations
 
 import math
 
+import hypothesis.strategies as st
 import pytest
 import torch
-from hypothesis import given, settings, assume
-import hypothesis.strategies as st
+from hypothesis import assume, given, settings
 
 from octonion import Octonion
 from octonion._fano import FANO_PLANE
 from octonion._octonion import associator
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 

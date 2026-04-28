@@ -196,7 +196,7 @@ def main() -> None:
     knn_time = time.time() - t0
     logger.info(f"  kNN accuracy: {knn_acc:.3f} ({knn_time:.1f}s)")
 
-    logger.info(f"\nRunning kNN baseline (k=1)...")
+    logger.info("\nRunning kNN baseline (k=1)...")
     knn1_acc = knn_baseline(train_x, train_y, test_x, test_y, k=1)
     logger.info(f"  1-NN accuracy: {knn1_acc:.3f}")
 

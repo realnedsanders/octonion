@@ -20,7 +20,6 @@ from octonion.baselines._config import (
     TrainConfig,
 )
 
-
 # ── Test fixtures ─────────────────────────────────────────────────
 
 # Network overrides for tests: ref_hidden=25 with input_dim=32 ensures
@@ -461,8 +460,6 @@ class TestConv2dComparison:
 
     def test_conv2d_cifar_shape_no_crash(self) -> None:
         """CIFAR-shaped data [B, 3, 32, 32] flows through conv2d without shape mismatch."""
-        from octonion.baselines._config import NetworkConfig
-        from octonion.baselines._network import AlgebraNetwork
         from octonion.baselines._param_matching import _build_conv_model
 
         for algebra in [AlgebraType.REAL, AlgebraType.QUATERNION]:

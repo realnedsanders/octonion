@@ -2,7 +2,7 @@
 
 import torch
 
-from octonion import Octonion, random_octonion, random_unit_octonion, random_pure_octonion
+from octonion import Octonion, random_octonion, random_pure_octonion, random_unit_octonion
 
 
 class TestRandomOctonion:

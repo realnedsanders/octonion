@@ -28,7 +28,6 @@ import argparse
 import json
 import logging
 import sqlite3
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -1253,8 +1252,8 @@ def plot_friedman_ranks(
     ax.set_yticklabels(strategies, fontsize=12)
     ax.set_xlabel("Mean Rank (lower is better)", fontsize=12)
 
-    p_val = friedman_result.get("p_value", None)
-    stat = friedman_result.get("statistic", None)
+    p_val = friedman_result.get("p_value")
+    stat = friedman_result.get("statistic")
     title = "Friedman Test: Cross-Benchmark Strategy Ranks"
     if p_val is not None and stat is not None:
         sig = "SIGNIFICANT" if p_val < ALPHA else "not significant"

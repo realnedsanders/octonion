@@ -1,11 +1,9 @@
 """Tests for the octonionic trie."""
 
 import torch
-import pytest
 
 from octonion._fano import FANO_PLANE
 from octonion.trie import OctonionTrie, TrieNode, subalgebra_activation
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
