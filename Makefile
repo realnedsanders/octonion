@@ -1,18 +1,24 @@
 DOCKER := docker compose run --rm dev
+UV := $(DOCKER) uv run
+PYTHON := $(UV) python
 
 # ── Tests ────────────────────────────────────────────────────────────
 
 .PHONY: test
 test: ## Run all tests
-	$(DOCKER) uv run pytest
+	$(UV) pytest
 
 .PHONY: lint
 lint: ## Run ruff linter
-	$(DOCKER) uv run ruff check src/
+	$(UV) ruff check --fix .
+	$(UV) ruff format .
+
+typecheck:
+	$(UV) mypy .
 
 .PHONY: docs
 docs: ## Build docs locally (catches docstring issues before CI)
-	$(DOCKER) uv run --with mkdocs-material --with "mkdocstrings[python]" --with mkdocs-gen-files --with mkdocs-literate-nav mkdocs build --strict
+	$(UV) --with mkdocs-material --with "mkdocstrings[python]" --with mkdocs-gen-files --with mkdocs-literate-nav mkdocs build --strict
 
 # ── Scripts ──────────────────────────────────────────────────────────
 # Auto-generates a `run-<stem>` target for every scripts/*.py file.
@@ -23,7 +29,7 @@ SCRIPT_TARGETS := $(patsubst scripts/%.py,run-%,$(filter-out scripts/__init__.py
 
 .PHONY: $(SCRIPT_TARGETS)
 $(SCRIPT_TARGETS): run-%: scripts/%.py
-	$(DOCKER) uv run python $< $(ARGS)
+	$(UV) python $< $(ARGS)
 
 .PHONY: list-scripts
 list-scripts: ## List available run-* targets
