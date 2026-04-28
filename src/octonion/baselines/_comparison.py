@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import torch
 
 from octonion.baselines._config import (
     AlgebraType,

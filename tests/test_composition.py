@@ -237,8 +237,10 @@ class TestChainRule:
         for idx, name in enumerate(["a", "b", "c"]):
             ops = [a, b, c]
 
+            # ops/tree captured by reference but invariant across iterations;
+            # numeric_jacobian invokes f synchronously within this iteration.
             def f(x: torch.Tensor, i=idx) -> torch.Tensor:
-                ops_copy = list(ops)
+                ops_copy = list(ops)  # noqa: B023 — see comment above
                 ops_copy[i] = x
                 return evaluate_tree(tree, ops_copy)
 
@@ -391,13 +393,15 @@ class TestParenthesizationExhaustive:
             # Compare against numeric Jacobian for each operand
             per_operand_errors: list[float] = []
             for op_idx in range(5):
-                # Create function for numeric differentiation
+                # operands/tree are loop-invariant; f is invoked synchronously
+                # by numeric_jacobian within this iteration.
                 def f(x: torch.Tensor, idx=op_idx) -> torch.Tensor:
                     ops_copy = [
-                        o.detach().clone() for o in operands
+                        o.detach().clone()
+                        for o in operands  # noqa: B023 — see comment above
                     ]
                     ops_copy[idx] = x
-                    return evaluate_tree(tree, ops_copy)
+                    return evaluate_tree(tree, ops_copy)  # noqa: B023 — see comment above
 
                 J_numeric = numeric_jacobian(f, operands[op_idx].detach())
                 # Autograd gradient = sum of rows of the Jacobian (since loss = sum)

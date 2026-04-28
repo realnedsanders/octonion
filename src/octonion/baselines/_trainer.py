@@ -526,16 +526,22 @@ def train_model(
                 targets = batch[1].to(device, non_blocking=True)
 
                 if is_lbfgs:
-                    # LBFGS requires a closure that re-evaluates the model
+                    # LBFGS requires a closure that re-evaluates the model.
+                    # Bind inputs/targets as default args so the closure captures
+                    # this iteration's values defensively (LBFGS only invokes
+                    # synchronously today, but binding is cheap insurance).
                     batch_loss_value = [0.0]
 
-                    def closure() -> torch.Tensor:
+                    def closure(
+                        inputs: torch.Tensor = inputs,
+                        targets: torch.Tensor = targets,
+                    ) -> torch.Tensor:
                         optimizer.zero_grad(set_to_none=True)
-                        with torch.amp.autocast(amp_device_type, enabled=use_amp):
+                        with torch.amp.autocast(amp_device_type, enabled=use_amp):  # noqa: B023 — loop-invariant
                             outputs = model(inputs)
                             loss = loss_fn(outputs, targets)
                         loss.backward()
-                        batch_loss_value[0] = loss.item()
+                        batch_loss_value[0] = loss.item()  # noqa: B023 — mutation via list index, not rebind
                         return loss
 
                     optimizer.step(closure)
