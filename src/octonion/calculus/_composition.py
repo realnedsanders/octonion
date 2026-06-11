@@ -197,9 +197,7 @@ class CompositionBuilder:
         """
         trees = all_parenthesizations(n)
         if index < 0 or index >= len(trees):
-            raise IndexError(
-                f"Parenthesization index {index} out of range [0, {len(trees)})"
-            )
+            raise IndexError(f"Parenthesization index {index} out of range [0, {len(trees)})")
         return cls(trees[index])
 
     def evaluate(self, operands: list[torch.Tensor]) -> torch.Tensor:

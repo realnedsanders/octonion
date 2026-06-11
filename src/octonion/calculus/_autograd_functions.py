@@ -277,9 +277,7 @@ class OctonionInverseFunction(torch.autograd.Function):
         # First term: sum_k grad_output[k] * diag_conj[k,i] / n2
         # diag_conj is diagonal, so sum_k grad_output[k] * diag_conj[k,i]
         # = grad_output[i] * diag_conj[i,i] (only k=i survives)
-        signs = torch.ones(
-            *o.shape[:-1], 8, dtype=o.dtype, device=o.device
-        )
+        signs = torch.ones(*o.shape[:-1], 8, dtype=o.dtype, device=o.device)
         signs[..., 1:] = -1.0
         term1 = signs * grad_output / n2
 

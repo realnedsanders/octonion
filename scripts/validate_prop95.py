@@ -142,6 +142,7 @@ def measure_scaling_same_element():
 
         if prev_norm is not None and norm > 0 and prev_norm > 0:
             import math
+
             eps_ratio = prev_eps / eps
             norm_ratio = prev_norm / norm
             alpha = math.log(norm_ratio) / math.log(eps_ratio)

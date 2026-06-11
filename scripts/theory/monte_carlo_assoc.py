@@ -57,9 +57,7 @@ def _sample_unit_octonions(n: int, seed: int = 42) -> torch.Tensor:
     return x / norms
 
 
-def sample_random_associator_norms(
-    n_samples: int = 100000, seed: int = 42
-) -> torch.Tensor:
+def sample_random_associator_norms(n_samples: int = 100000, seed: int = 42) -> torch.Tensor:
     """Sample associator norms ||[a,b,c]|| for random unit octonion triples.
 
     Validates against Egan's analytical result:
@@ -102,12 +100,10 @@ def sample_within_class_norms(
     Returns:
         Dict mapping class_id -> Tensor of associator norms for that class.
     """
-    features = torch.load(
-        os.path.join(features_path, "features.pt"), weights_only=True
-    ).to(torch.float64)
-    labels = torch.load(
-        os.path.join(features_path, "labels.pt"), weights_only=True
+    features = torch.load(os.path.join(features_path, "features.pt"), weights_only=True).to(
+        torch.float64
     )
+    labels = torch.load(os.path.join(features_path, "labels.pt"), weights_only=True)
 
     # Normalize to unit octonions
     norms = torch.norm(features, dim=-1, keepdim=True)
@@ -161,12 +157,10 @@ def sample_between_class_norms(
     Returns:
         Tensor of associator norms for between-class triples.
     """
-    features = torch.load(
-        os.path.join(features_path, "features.pt"), weights_only=True
-    ).to(torch.float64)
-    labels = torch.load(
-        os.path.join(features_path, "labels.pt"), weights_only=True
+    features = torch.load(os.path.join(features_path, "features.pt"), weights_only=True).to(
+        torch.float64
     )
+    labels = torch.load(os.path.join(features_path, "labels.pt"), weights_only=True)
 
     # Normalize to unit octonions
     norms = torch.norm(features, dim=-1, keepdim=True)
@@ -176,22 +170,22 @@ def sample_between_class_norms(
     n_classes = len(classes)
 
     if n_classes < 3:
-        raise ValueError(
-            f"Need at least 3 classes for between-class sampling, got {n_classes}"
-        )
+        raise ValueError(f"Need at least 3 classes for between-class sampling, got {n_classes}")
 
     gen = torch.Generator().manual_seed(seed)
 
     # Group features by class
-    cls_features = {
-        cls: features[labels == cls] for cls in classes
-    }
+    cls_features = {cls: features[labels == cls] for cls in classes}
 
     all_norms = []
     for _ in range(n_samples):
         # Pick 3 different classes
         cls_idx = torch.randperm(n_classes, generator=gen)[:3]
-        c1, c2, c3 = classes[cls_idx[0].item()], classes[cls_idx[1].item()], classes[cls_idx[2].item()]
+        c1, c2, c3 = (
+            classes[cls_idx[0].item()],
+            classes[cls_idx[1].item()],
+            classes[cls_idx[2].item()],
+        )
 
         # Pick one random sample from each class
         f1 = cls_features[c1]
@@ -260,9 +254,7 @@ def sample_subalgebra_proximity_norms(
             base = base / torch.norm(base, dim=-1, keepdim=True)
 
             # Generate perturbation in orthogonal directions
-            perturb = torch.randn(
-                n_per * 3, 4, dtype=torch.float64, generator=gen
-            ) * eps
+            perturb = torch.randn(n_per * 3, 4, dtype=torch.float64, generator=gen) * eps
 
             # Construct full 8D octonion
             full = torch.zeros(n_per * 3, 8, dtype=torch.float64)
@@ -276,8 +268,8 @@ def sample_subalgebra_proximity_norms(
 
             # Split into triples
             a = full[:n_per]
-            b = full[n_per:2*n_per]
-            c = full[2*n_per:3*n_per]
+            b = full[n_per : 2 * n_per]
+            c = full[2 * n_per : 3 * n_per]
 
             # Compute associator norms
             ab = octonion_mul(a, b)
@@ -449,26 +441,33 @@ def fit_distribution(norms: torch.Tensor) -> dict[str, Any]:
     return results
 
 
-def _plot_random_distribution(
-    norms: torch.Tensor, output_dir: str
-) -> None:
+def _plot_random_distribution(norms: torch.Tensor, output_dir: str) -> None:
     """Plot histogram of random associator norms with Egan's mean marked."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     data = norms.numpy()
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.hist(data, bins=100, density=True, alpha=0.7, color="steelblue",
-            label="Monte Carlo samples")
-    ax.axvline(EGAN_THEORETICAL_MEAN, color="red", linestyle="--", linewidth=2,
-               label=f"Egan theoretical mean = {EGAN_THEORETICAL_MEAN:.4f}")
-    ax.axvline(data.mean(), color="orange", linestyle="-", linewidth=2,
-               label=f"MC sample mean = {data.mean():.4f}")
+    ax.hist(data, bins=100, density=True, alpha=0.7, color="steelblue", label="Monte Carlo samples")
+    ax.axvline(
+        EGAN_THEORETICAL_MEAN,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Egan theoretical mean = {EGAN_THEORETICAL_MEAN:.4f}",
+    )
+    ax.axvline(
+        data.mean(),
+        color="orange",
+        linestyle="-",
+        linewidth=2,
+        label=f"MC sample mean = {data.mean():.4f}",
+    )
     ax.set_xlabel("Associator norm ||[a,b,c]||", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
-    ax.set_title("Distribution of Associator Norms for Random Unit Octonions on S^7",
-                 fontsize=13)
+    ax.set_title("Distribution of Associator Norms for Random Unit Octonions on S^7", fontsize=13)
     ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3)
 
@@ -485,6 +484,7 @@ def _plot_within_vs_between(
 ) -> None:
     """Plot overlapping histograms of within-class and between-class norms."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -492,15 +492,37 @@ def _plot_within_vs_between(
     all_within = torch.cat([v for v in within.values() if len(v) > 0])
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.hist(all_within.numpy(), bins=80, density=True, alpha=0.6,
-            color="green", label=f"Within-class (n={len(all_within)})")
-    ax.hist(between.numpy(), bins=80, density=True, alpha=0.6,
-            color="red", label=f"Between-class (n={len(between)})")
+    ax.hist(
+        all_within.numpy(),
+        bins=80,
+        density=True,
+        alpha=0.6,
+        color="green",
+        label=f"Within-class (n={len(all_within)})",
+    )
+    ax.hist(
+        between.numpy(),
+        bins=80,
+        density=True,
+        alpha=0.6,
+        color="red",
+        label=f"Between-class (n={len(between)})",
+    )
 
-    ax.axvline(all_within.mean().item(), color="darkgreen", linestyle="--",
-               linewidth=2, label=f"Within mean = {all_within.mean():.4f}")
-    ax.axvline(between.mean().item(), color="darkred", linestyle="--",
-               linewidth=2, label=f"Between mean = {between.mean():.4f}")
+    ax.axvline(
+        all_within.mean().item(),
+        color="darkgreen",
+        linestyle="--",
+        linewidth=2,
+        label=f"Within mean = {all_within.mean():.4f}",
+    )
+    ax.axvline(
+        between.mean().item(),
+        color="darkred",
+        linestyle="--",
+        linewidth=2,
+        label=f"Between mean = {between.mean():.4f}",
+    )
 
     ax.set_xlabel("Associator norm ||[a,b,c]||", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
@@ -514,11 +536,10 @@ def _plot_within_vs_between(
     print(f"Saved: {path}")
 
 
-def _plot_subalgebra_bound(
-    aggregated: dict[float, float], output_dir: str
-) -> None:
+def _plot_subalgebra_bound(aggregated: dict[float, float], output_dir: str) -> None:
     """Log-log plot of epsilon vs max associator norm (O(eps^2) scaling)."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -526,21 +547,28 @@ def _plot_subalgebra_bound(
     max_norms = [aggregated[eps] for eps in epsilons]
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.loglog(epsilons, max_norms, "o-", color="steelblue", linewidth=2,
-              markersize=8, label="Max ||[a,b,c]|| (measured)")
+    ax.loglog(
+        epsilons,
+        max_norms,
+        "o-",
+        color="steelblue",
+        linewidth=2,
+        markersize=8,
+        label="Max ||[a,b,c]|| (measured)",
+    )
 
     # Reference O(eps^2) line
     eps_arr = np.array(epsilons)
     # Scale reference line to match at smallest epsilon
     scale = max_norms[0] / (epsilons[0] ** 2) if epsilons[0] > 0 else 1.0
-    ref_line = scale * eps_arr ** 2
-    ax.loglog(epsilons, ref_line, "--", color="red", linewidth=1.5,
-              label=r"$O(\epsilon^2)$ reference")
+    ref_line = scale * eps_arr**2
+    ax.loglog(
+        epsilons, ref_line, "--", color="red", linewidth=1.5, label=r"$O(\epsilon^2)$ reference"
+    )
 
     ax.set_xlabel(r"Angular distance $\epsilon$ from subalgebra", fontsize=12)
     ax.set_ylabel("Max associator norm", fontsize=12)
-    ax.set_title("Subalgebra Proximity Bound: Associator Norm vs Angular Distance",
-                 fontsize=13)
+    ax.set_title("Subalgebra Proximity Bound: Associator Norm vs Angular Distance", fontsize=13)
     ax.legend(fontsize=11)
     ax.grid(True, alpha=0.3, which="both")
 
@@ -550,11 +578,10 @@ def _plot_subalgebra_bound(
     print(f"Saved: {path}")
 
 
-def _plot_fano_separations(
-    separations: torch.Tensor, output_dir: str
-) -> None:
+def _plot_fano_separations(separations: torch.Tensor, output_dir: str) -> None:
     """Heatmap of pairwise subalgebra angular separations."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -569,8 +596,7 @@ def _plot_fano_separations(
     ax.set_yticks(range(7))
 
     # Label with Fano plane triples
-    labels = [f"S{i}: ({t[0]},{t[1]},{t[2]})"
-              for i, t in enumerate(FANO_PLANE.triples)]
+    labels = [f"S{i}: ({t[0]},{t[1]},{t[2]})" for i, t in enumerate(FANO_PLANE.triples)]
     ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
     ax.set_yticklabels(labels, fontsize=9)
 
@@ -579,12 +605,12 @@ def _plot_fano_separations(
         for j in range(7):
             val = data_deg[i, j]
             color = "white" if val > data_deg.max() * 0.6 else "black"
-            ax.text(j, i, f"{val:.1f}", ha="center", va="center",
-                    color=color, fontsize=8)
+            ax.text(j, i, f"{val:.1f}", ha="center", va="center", color=color, fontsize=8)
 
     plt.colorbar(im, ax=ax, label="Angular separation (degrees)")
-    ax.set_title("Pairwise Angular Separations Between\nFano Plane Quaternionic Subalgebras",
-                 fontsize=13)
+    ax.set_title(
+        "Pairwise Angular Separations Between\nFano Plane Quaternionic Subalgebras", fontsize=13
+    )
 
     path = os.path.join(output_dir, "fano_separations.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
@@ -624,8 +650,7 @@ def run_analysis(
     results["random_max"] = float(random_norms.max().item())
     results["egan_theoretical_mean"] = float(EGAN_THEORETICAL_MEAN)
     results["egan_deviation_pct"] = float(
-        abs(results["random_mean"] - EGAN_THEORETICAL_MEAN)
-        / EGAN_THEORETICAL_MEAN * 100
+        abs(results["random_mean"] - EGAN_THEORETICAL_MEAN) / EGAN_THEORETICAL_MEAN * 100
     )
 
     print(f"  MC mean = {results['random_mean']:.6f}")
@@ -638,8 +663,10 @@ def run_analysis(
     print("Fitting distributions...")
     dist_fit = fit_distribution(random_norms)
     results["distribution_fit"] = dist_fit
-    print(f"  Best fit: {dist_fit['best_fit']['distribution']} "
-          f"(KS p-value = {dist_fit['best_fit']['ks_pvalue']:.6f})")
+    print(
+        f"  Best fit: {dist_fit['best_fit']['distribution']} "
+        f"(KS p-value = {dist_fit['best_fit']['ks_pvalue']:.6f})"
+    )
 
     # --- 3. Within-class vs between-class (if features available) ---
     if features_dir and os.path.isdir(features_dir):

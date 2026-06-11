@@ -47,9 +47,7 @@ def cohen_d(a: list[float], b: list[float]) -> float:
     return float((np.mean(a_arr) - np.mean(b_arr)) / pooled_std)
 
 
-def confidence_interval(
-    data: list[float], confidence: float = 0.95
-) -> tuple[float, float]:
+def confidence_interval(data: list[float], confidence: float = 0.95) -> tuple[float, float]:
     """Compute confidence interval using t-distribution.
 
     Handles small sample sizes via t-distribution instead of normal.
@@ -76,9 +74,7 @@ def confidence_interval(
     return (mean - margin, mean + margin)
 
 
-def paired_comparison(
-    results_a: list[float], results_b: list[float]
-) -> dict[str, Any]:
+def paired_comparison(results_a: list[float], results_b: list[float]) -> dict[str, Any]:
     """Perform paired statistical comparison between two result sets.
 
     Computes:
@@ -149,9 +145,7 @@ def paired_comparison(
     }
 
 
-def holm_bonferroni(
-    p_values: list[float], alpha: float = 0.05
-) -> list[dict[str, Any]]:
+def holm_bonferroni(p_values: list[float], alpha: float = 0.05) -> list[dict[str, Any]]:
     """Apply Holm-Bonferroni step-down correction for multiple testing.
 
     Controls family-wise error rate by adjusting p-values using the

@@ -82,9 +82,7 @@ class TestAssociatorNormRange:
         """Associator norm must be in [0, 2] for unit octonions."""
         assoc = associator(a, b, c)
         norm = assoc._data.norm().item()
-        assert 0.0 <= norm <= 2.0 + ATOL_FLOAT64, (
-            f"Associator norm {norm} outside [0, 2]"
-        )
+        assert 0.0 <= norm <= 2.0 + ATOL_FLOAT64, f"Associator norm {norm} outside [0, 2]"
 
     def test_upper_bound_approachable(self) -> None:
         """The upper bound of 2 should be approachable (max observed > 1.5).
@@ -133,9 +131,7 @@ class TestG2Invariance:
     covers a non-trivially generated group element.
     """
 
-    @pytest.mark.parametrize(
-        "gen_idx", [0, 1], ids=["cycle_7", "quad_res"]
-    )
+    @pytest.mark.parametrize("gen_idx", [0, 1], ids=["cycle_7", "quad_res"])
     @given(a=unit_octonions(), b=unit_octonions(), c=unit_octonions())
     @settings(max_examples=2000, deadline=None)
     def test_fano_automorphism_preserves_associator_norm(
@@ -145,15 +141,18 @@ class TestG2Invariance:
         perm = FANO_PLANE.automorphism_generators[gen_idx]
 
         original = associator(a, b, c)._data.norm().item()
-        transformed = associator(
-            _apply_fano_automorphism(a, perm),
-            _apply_fano_automorphism(b, perm),
-            _apply_fano_automorphism(c, perm),
-        )._data.norm().item()
+        transformed = (
+            associator(
+                _apply_fano_automorphism(a, perm),
+                _apply_fano_automorphism(b, perm),
+                _apply_fano_automorphism(c, perm),
+            )
+            ._data.norm()
+            .item()
+        )
 
         assert abs(original - transformed) < ATOL_FLOAT64, (
-            f"Associator norm changed under automorphism: "
-            f"{original:.12f} -> {transformed:.12f}"
+            f"Associator norm changed under automorphism: {original:.12f} -> {transformed:.12f}"
         )
 
     @given(a=unit_octonions(), b=unit_octonions(), c=unit_octonions())
@@ -170,11 +169,15 @@ class TestG2Invariance:
         composed = _compose_perm(gen1, gen2)
 
         original = associator(a, b, c)._data.norm().item()
-        transformed = associator(
-            _apply_fano_automorphism(a, composed),
-            _apply_fano_automorphism(b, composed),
-            _apply_fano_automorphism(c, composed),
-        )._data.norm().item()
+        transformed = (
+            associator(
+                _apply_fano_automorphism(a, composed),
+                _apply_fano_automorphism(b, composed),
+                _apply_fano_automorphism(c, composed),
+            )
+            ._data.norm()
+            .item()
+        )
 
         assert abs(original - transformed) < ATOL_FLOAT64, (
             f"Associator norm changed under composed automorphism: "

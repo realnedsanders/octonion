@@ -172,13 +172,9 @@ def test_wrap_manifold_sphere() -> None:
     import geoopt
 
     model = _tiny_octonion_model()
-    model = _wrap_manifold_params(
-        model, AlgebraType.OCTONION, manifold_type="sphere"
-    )
+    model = _wrap_manifold_params(model, AlgebraType.OCTONION, manifold_type="sphere")
     # Check that at least one parameter is a ManifoldParameter
-    has_manifold = any(
-        isinstance(p, geoopt.ManifoldParameter) for p in model.parameters()
-    )
+    has_manifold = any(isinstance(p, geoopt.ManifoldParameter) for p in model.parameters())
     assert has_manifold, "No ManifoldParameter found after sphere wrapping"
 
 
@@ -187,13 +183,9 @@ def test_wrap_manifold_stiefel() -> None:
     import geoopt
 
     model = _tiny_octonion_model()
-    model = _wrap_manifold_params(
-        model, AlgebraType.OCTONION, manifold_type="stiefel"
-    )
+    model = _wrap_manifold_params(model, AlgebraType.OCTONION, manifold_type="stiefel")
     # Stiefel wraps 2D parameters with rows >= cols
-    any(
-        isinstance(p, geoopt.ManifoldParameter) for p in model.parameters()
-    )
+    any(isinstance(p, geoopt.ManifoldParameter) for p in model.parameters())
     # Note: stiefel may not wrap all params if shape constraints not met
     # Just verify the function runs without error
     assert True
@@ -214,20 +206,17 @@ def test_wrap_manifold_real_noop() -> None:
     )
     model = AlgebraNetwork(config)
     model = _wrap_manifold_params(model, AlgebraType.REAL, manifold_type="sphere")
-    has_manifold = any(
-        isinstance(p, geoopt.ManifoldParameter) for p in model.parameters()
-    )
+    has_manifold = any(isinstance(p, geoopt.ManifoldParameter) for p in model.parameters())
     assert not has_manifold, "REAL algebra should not have ManifoldParameters"
 
 
 def test_riemannian_adam_stiefel_3_steps() -> None:
-    """Riemannian Adam with Stiefel manifold runs 3 steps without error on a tiny OctonionLinear model."""
+    """Riemannian Adam with Stiefel manifold runs 3 steps without error
+    on a tiny OctonionLinear model."""
     import geoopt
 
     model = _tiny_octonion_model()
-    model = _wrap_manifold_params(
-        model, AlgebraType.OCTONION, manifold_type="stiefel"
-    )
+    model = _wrap_manifold_params(model, AlgebraType.OCTONION, manifold_type="stiefel")
     optimizer = geoopt.optim.RiemannianAdam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
     x = torch.randn(4, 8)
@@ -246,9 +235,7 @@ def test_riemannian_adam_sphere_3_steps() -> None:
     import geoopt
 
     model = _tiny_octonion_model()
-    model = _wrap_manifold_params(
-        model, AlgebraType.OCTONION, manifold_type="sphere"
-    )
+    model = _wrap_manifold_params(model, AlgebraType.OCTONION, manifold_type="sphere")
     optimizer = geoopt.optim.RiemannianAdam(model.parameters(), lr=1e-3)
     loss_fn = nn.MSELoss()
     x = torch.randn(4, 8)

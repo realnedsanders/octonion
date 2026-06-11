@@ -63,8 +63,7 @@ def _algebra_from_shortname(name: str) -> AlgebraType:
     """
     if name not in _SHORT_TO_ALGEBRA:
         raise ValueError(
-            f"Unknown algebra short name: {name!r}. "
-            f"Valid: {list(_SHORT_TO_ALGEBRA.keys())}"
+            f"Unknown algebra short name: {name!r}. Valid: {list(_SHORT_TO_ALGEBRA.keys())}"
         )
     return _SHORT_TO_ALGEBRA[name]
 
@@ -107,14 +106,16 @@ def _discover_runs(results_dir: str) -> list[dict[str, Any]]:
                         continue
                     result_file = seed_dir / "result.json"
                     if result_file.exists():
-                        runs.append({
-                            "task": task_dir.name,
-                            "optimizer": opt_dir.name,
-                            "algebra": alg_dir.name,
-                            "seed": int(seed_dir.name.split("_")[1]),
-                            "seed_dir": seed_dir,
-                            "result_file": result_file,
-                        })
+                        runs.append(
+                            {
+                                "task": task_dir.name,
+                                "optimizer": opt_dir.name,
+                                "algebra": alg_dir.name,
+                                "seed": int(seed_dir.name.split("_")[1]),
+                                "seed_dir": seed_dir,
+                                "result_file": result_file,
+                            }
+                        )
     return runs
 
 
@@ -189,9 +190,7 @@ def run_post_analysis(
     # Hessian analysis
     # -----------------------------------------------------------------------
     if not skip_hessian:
-        hessian_runs = [
-            r for r in runs if r["seed"] in config.hessian_seeds
-        ]
+        hessian_runs = [r for r in runs if r["seed"] in config.hessian_seeds]
         logger.info(f"Hessian analysis: {len(hessian_runs)} runs with hessian seeds")
 
         for run in hessian_runs:
@@ -205,8 +204,11 @@ def run_post_analysis(
 
                 # Find available checkpoint files
                 ckpt_dir = _hessian_checkpoint_dir(
-                    results_dir, run["task"], run["optimizer"],
-                    run["algebra"], run["seed"],
+                    results_dir,
+                    run["task"],
+                    run["optimizer"],
+                    run["algebra"],
+                    run["seed"],
                 )
                 if not ckpt_dir.exists():
                     logger.warning(
@@ -230,9 +232,7 @@ def run_post_analysis(
                 for frac in config.hessian_checkpoints:
                     ckpt_path = ckpt_dir / f"checkpoint_{frac:.2f}.pt"
                     if not ckpt_path.exists():
-                        logger.warning(
-                            f"Checkpoint not found: {ckpt_path}"
-                        )
+                        logger.warning(f"Checkpoint not found: {ckpt_path}")
                         continue
 
                     # Load checkpoint (raw state_dict format)
@@ -242,8 +242,10 @@ def run_post_analysis(
 
                     # Compute Hessian spectrum
                     spectrum = compute_hessian_spectrum(
-                        model, loss_fn,
-                        hessian_x.to(device), hessian_y.to(device),
+                        model,
+                        loss_fn,
+                        hessian_x.to(device),
+                        hessian_y.to(device),
                         device=device,
                     )
 
@@ -262,9 +264,12 @@ def run_post_analysis(
                     )
 
                 if hessian_spectrum:
-                    _update_result_json(run["result_file"], {
-                        "hessian_spectrum": hessian_spectrum,
-                    })
+                    _update_result_json(
+                        run["result_file"],
+                        {
+                            "hessian_spectrum": hessian_spectrum,
+                        },
+                    )
                     counts["hessian_computed"] += 1
 
             except Exception as e:
@@ -291,8 +296,11 @@ def run_post_analysis(
 
                 # Need converged checkpoint (frac=1.0)
                 ckpt_dir = _hessian_checkpoint_dir(
-                    results_dir, run["task"], run["optimizer"],
-                    run["algebra"], run["seed"],
+                    results_dir,
+                    run["task"],
+                    run["optimizer"],
+                    run["algebra"],
+                    run["seed"],
                 )
                 converged_ckpt = ckpt_dir / "checkpoint_1.00.pt"
 
@@ -317,8 +325,10 @@ def run_post_analysis(
 
                 # Measure curvature
                 curv_result = measure_curvature(
-                    model, loss_fn,
-                    data_x.to(device), data_y.to(device),
+                    model,
+                    loss_fn,
+                    data_x.to(device),
+                    data_y.to(device),
                     n_directions=config.n_curvature_directions,
                 )
 
@@ -328,10 +338,13 @@ def run_post_analysis(
                     for k, v in curv_result.items()
                 }
 
-                _update_result_json(run["result_file"], {
-                    "curvature": curv_result["mean_curvature"],
-                    "curvature_detail": curvature_detail,
-                })
+                _update_result_json(
+                    run["result_file"],
+                    {
+                        "curvature": curv_result["mean_curvature"],
+                        "curvature_detail": curvature_detail,
+                    },
+                )
                 counts["curvature_computed"] += 1
 
                 logger.info(
@@ -363,8 +376,7 @@ def run_post_analysis(
             try:
                 # Check if gradient_variance file exists
                 grad_var_path = (
-                    Path(results_dir) / task_name / opt_name
-                    / f"gradient_variance_{alg_name}.json"
+                    Path(results_dir) / task_name / opt_name / f"gradient_variance_{alg_name}.json"
                 )
                 if grad_var_path.exists() and not force:
                     counts["skipped"] += 1
@@ -379,9 +391,7 @@ def run_post_analysis(
                 data_y = test_ds.tensors[1][:n_grad].to(device)
 
                 # Model factory
-                def model_factory(
-                    _alg=algebra_enum, _task=task_name, _cfg=config, _dev=device
-                ):
+                def model_factory(_alg=algebra_enum, _task=task_name, _cfg=config, _dev=device):
                     return _build_model(_alg, _task, _cfg).to(_dev)
 
                 # Collect gradient variance
@@ -410,8 +420,10 @@ def run_post_analysis(
 
                 # Update each seed's result.json with gradient_stats
                 matching_runs = [
-                    r for r in runs
-                    if r["task"] == task_name and r["optimizer"] == opt_name
+                    r
+                    for r in runs
+                    if r["task"] == task_name
+                    and r["optimizer"] == opt_name
                     and r["algebra"] == alg_name
                 ]
                 for run in matching_runs:
@@ -428,21 +440,25 @@ def run_post_analysis(
                         if seed_idx is not None and seed_idx < len(grad_result["per_seed_stats"]):
                             seed_stats = grad_result["per_seed_stats"][seed_idx]
                             if seed_stats:
-                                grad_norm_mean = sum(
-                                    s["grad_norm_mean"] for s in seed_stats
-                                ) / len(seed_stats)
+                                grad_norm_mean = sum(s["grad_norm_mean"] for s in seed_stats) / len(
+                                    seed_stats
+                                )
 
-                        _update_result_json(run["result_file"], {
-                            "gradient_stats": {
-                                "grad_norm_std": grad_norm_std,
-                                "grad_norm_mean": grad_norm_mean,
-                                "cross_seed_variance": cross_seed_variance,
+                        _update_result_json(
+                            run["result_file"],
+                            {
+                                "gradient_stats": {
+                                    "grad_norm_std": grad_norm_std,
+                                    "grad_norm_mean": grad_norm_mean,
+                                    "cross_seed_variance": cross_seed_variance,
+                                },
                             },
-                        })
+                        )
                     except Exception as e:
                         logger.warning(
                             f"Failed to update gradient_stats for "
-                            f"{run['task']}/{run['optimizer']}/{run['algebra']}/seed_{run['seed']}: {e}"
+                            f"{run['task']}/{run['optimizer']}/{run['algebra']}"
+                            f"/seed_{run['seed']}: {e}"
                         )
 
                 counts["gradient_computed"] += 1
@@ -452,10 +468,7 @@ def run_post_analysis(
                 )
 
             except Exception as e:
-                logger.error(
-                    f"Gradient variance failed for "
-                    f"{task_name}/{opt_name}/{alg_name}: {e}"
-                )
+                logger.error(f"Gradient variance failed for {task_name}/{opt_name}/{alg_name}: {e}")
                 counts["errors"] += 1
 
     return counts
@@ -473,51 +486,69 @@ def main() -> None:
         "on saved experiment checkpoints.",
     )
     parser.add_argument(
-        "--results-dir", default="results/landscape",
+        "--results-dir",
+        default="results/landscape",
         help="Path to the results directory (default: results/landscape)",
     )
     parser.add_argument(
-        "--device", default="cuda",
+        "--device",
+        default="cuda",
         help="Device for computation (default: cuda)",
     )
     parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Overwrite existing analysis results",
     )
     parser.add_argument(
-        "--skip-hessian", action="store_true",
+        "--skip-hessian",
+        action="store_true",
         help="Skip Hessian eigenspectrum computation",
     )
     parser.add_argument(
-        "--skip-curvature", action="store_true",
+        "--skip-curvature",
+        action="store_true",
         help="Skip curvature measurement",
     )
     parser.add_argument(
-        "--skip-gradient", action="store_true",
+        "--skip-gradient",
+        action="store_true",
         help="Skip gradient variance collection",
     )
     parser.add_argument(
-        "--epochs", type=int, default=100,
+        "--epochs",
+        type=int,
+        default=100,
         help="Number of training epochs (must match training config, default: 100)",
     )
     parser.add_argument(
-        "--base-hidden", type=int, default=16,
+        "--base-hidden",
+        type=int,
+        default=16,
         help="Base hidden size (must match training config, default: 16)",
     )
     parser.add_argument(
-        "--n-train", type=int, default=50_000,
+        "--n-train",
+        type=int,
+        default=50_000,
         help="Number of training samples (must match training config, default: 50000)",
     )
     parser.add_argument(
-        "--n-test", type=int, default=10_000,
+        "--n-test",
+        type=int,
+        default=10_000,
         help="Number of test samples (must match training config, default: 10000)",
     )
     parser.add_argument(
-        "--hessian-seeds", type=str, default="0,4,9,14,19",
+        "--hessian-seeds",
+        type=str,
+        default="0,4,9,14,19",
         help="Comma-separated list of Hessian seed indices (default: 0,4,9,14,19)",
     )
     parser.add_argument(
-        "--n-curvature-directions", type=int, default=50,
+        "--n-curvature-directions",
+        type=int,
+        default=50,
         help="Number of random directions for curvature measurement (default: 50)",
     )
 

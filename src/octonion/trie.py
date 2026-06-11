@@ -117,9 +117,10 @@ class ThresholdPolicy(ABC):
         """Return (min_share, min_count) for consolidation at this node."""
         ...
 
-    def on_insert(self, node: TrieNode, x: torch.Tensor, assoc_norm: float) -> None:
+    def on_insert(  # noqa: B027 — intentionally non-abstract: a no-op default hook
+        self, node: TrieNode, x: torch.Tensor, assoc_norm: float
+    ) -> None:
         """Optional hook called after each insertion for policy updates."""
-        pass
 
 
 class GlobalPolicy(ThresholdPolicy):
@@ -302,7 +303,7 @@ class DepthPolicy(ThresholdPolicy):
     def get_assoc_threshold(
         self, node: TrieNode, depth: int, parent: TrieNode | None = None
     ) -> float:
-        return self.base_assoc * (self.decay_factor ** depth)
+        return self.base_assoc * (self.decay_factor**depth)
 
     def get_sim_threshold(self, node: TrieNode, depth: int) -> float:
         return self.sim_threshold
@@ -415,11 +416,11 @@ class MetaTriePolicy(ThresholdPolicy):
 
     # Compounding multiplicative factors per D-13
     ACTIONS = {
-        0: 0.7,   # tighten fast
-        1: 0.9,   # tighten slow
-        2: 1.0,   # keep
-        3: 1.1,   # loosen slow
-        4: 1.4,   # loosen fast
+        0: 0.7,  # tighten fast
+        1: 0.9,  # tighten slow
+        2: 1.0,  # keep
+        3: 1.1,  # loosen slow
+        4: 1.4,  # loosen fast
     }
     _OPPOSITE = {0: 4, 1: 3, 2: 2, 3: 1, 4: 0}
     # Target ratio: mean_norm / threshold ≈ 0.5 means threshold is well-calibrated
@@ -431,15 +432,15 @@ class MetaTriePolicy(ThresholdPolicy):
         sim_threshold: float = 0.1,
         min_share: float = 0.05,
         min_count: int = 3,
-        signal_encoding: str = "algebraic",       # or "signal_vector" per D-14
-        update_frequency: int = 10,               # per D-16: per-N-compatible-routings
-        observation_window: int = 5,              # samples before evaluating
-        exploration_rate: float = 0.2,            # initial epsilon
-        exploration_decay: float = 0.995,         # per-update-event decay
-        exploration_min: float = 0.01,            # floor
-        generalize_every: int = 10,               # sweep every N updates
-        generalize_fraction: float = 0.3,         # fraction per sweep
-        self_referential: bool = False,            # per D-17
+        signal_encoding: str = "algebraic",  # or "signal_vector" per D-14
+        update_frequency: int = 10,  # per D-16: per-N-compatible-routings
+        observation_window: int = 5,  # samples before evaluating
+        exploration_rate: float = 0.2,  # initial epsilon
+        exploration_decay: float = 0.995,  # per-update-event decay
+        exploration_min: float = 0.01,  # floor
+        generalize_every: int = 10,  # sweep every N updates
+        generalize_fraction: float = 0.3,  # fraction per sweep
+        self_referential: bool = False,  # per D-17
         meta_seed: int = 7919,
     ):
         self.base_assoc = base_assoc
@@ -467,9 +468,7 @@ class MetaTriePolicy(ThresholdPolicy):
         self._convergence_history: list[float] = []
         self._prev_thresholds: dict[int, float] = {}
         self._rng = torch.Generator().manual_seed(meta_seed + 1)
-        self._id_to_node: weakref.WeakValueDictionary[int, TrieNode] = (
-            weakref.WeakValueDictionary()
-        )
+        self._id_to_node: weakref.WeakValueDictionary[int, TrieNode] = weakref.WeakValueDictionary()
         self._meta_outcomes: list[bool] = []
 
     @property
@@ -529,16 +528,19 @@ class MetaTriePolicy(ThresholdPolicy):
         thresh = state.get("meta_threshold", self.base_assoc)
         mean_norm = norms_t.mean().item()
         ratio = mean_norm / max(thresh, 1e-10)
-        return torch.tensor([
-            min(ratio, 3.0),                     # norm/threshold ratio (key signal)
-            min(norms_t.std().item() / max(mean_norm, 1e-10), 2.0) if len(norms) > 1 else 0.0,
-            len(node.children) / 7.0,
-            min(node.insert_count / 100.0, 2.0),
-            min(thresh / self.base_assoc, 3.0),  # current threshold relative to base
-            node.depth / 15.0,
-            self._buffer_consistency(node),
-            min(len(norms) / 30.0, 2.0),
-        ], dtype=torch.float64)
+        return torch.tensor(
+            [
+                min(ratio, 3.0),  # norm/threshold ratio (key signal)
+                min(norms_t.std().item() / max(mean_norm, 1e-10), 2.0) if len(norms) > 1 else 0.0,
+                len(node.children) / 7.0,
+                min(node.insert_count / 100.0, 2.0),
+                min(thresh / self.base_assoc, 3.0),  # current threshold relative to base
+                node.depth / 15.0,
+                self._buffer_consistency(node),
+                min(len(norms) / 30.0, 2.0),
+            ],
+            dtype=torch.float64,
+        )
 
     def _buffer_consistency(self, node: TrieNode) -> float:
         if len(node.buffer) < 2:
@@ -569,8 +571,10 @@ class MetaTriePolicy(ThresholdPolicy):
         leaf = self.meta_trie.query(meta_input)
         recommended = leaf.dominant_category
 
-        if (recommended is None
-                or torch.rand(1, generator=self._rng).item() < self._exploration_rate):
+        if (
+            recommended is None
+            or torch.rand(1, generator=self._rng).item() < self._exploration_rate
+        ):
             action = torch.randint(0, 5, (1,), generator=self._rng).item()
         else:
             action = recommended
@@ -650,7 +654,8 @@ class MetaTriePolicy(ThresholdPolicy):
                 self._clear_pending(state)
 
         eligible = [
-            nid for nid, node in self._id_to_node.items()
+            nid
+            for nid, node in self._id_to_node.items()
             if node is not None and "meta_action_taken" not in node._policy_state
         ]
         n = max(1, int(len(eligible) * self.generalize_fraction))
@@ -665,11 +670,9 @@ class MetaTriePolicy(ThresholdPolicy):
             return
         hit_rate = sum(self._meta_outcomes[-50:]) / len(self._meta_outcomes[-50:])
         if hit_rate < 0.3:
-            self.meta_trie.assoc_threshold = max(
-                0.001, self.meta_trie.assoc_threshold * 1.05)
+            self.meta_trie.assoc_threshold = max(0.001, self.meta_trie.assoc_threshold * 1.05)
         elif hit_rate > 0.6:
-            self.meta_trie.assoc_threshold = max(
-                0.001, self.meta_trie.assoc_threshold * 0.95)
+            self.meta_trie.assoc_threshold = max(0.001, self.meta_trie.assoc_threshold * 0.95)
 
     def _track_convergence(self) -> None:
         curr = {}
@@ -863,17 +866,14 @@ class OctonionTrie:
             assoc_norm = assoc.components.norm().item()
 
             threshold = self.policy.get_assoc_threshold(child, node.depth, node)
-            if assoc_norm < threshold:
-                if best_compatible is None or sim > best_compatible[3]:
-                    best_compatible = (sub_idx, child, assoc_norm, sim)
+            if assoc_norm < threshold and (best_compatible is None or sim > best_compatible[3]):
+                best_compatible = (sub_idx, child, assoc_norm, sim)
 
         if best_compatible is not None:
             return best_compatible[0], best_compatible[1], best_compatible[2]
 
         # No compatible child: find best unoccupied subalgebra
-        product = octonion_mul(
-            node.routing_key.unsqueeze(0), x.unsqueeze(0)
-        ).squeeze(0)
+        product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
         activations = subalgebra_activation(product)
         ranked = activations.argsort(descending=True)
 
@@ -887,9 +887,7 @@ class OctonionTrie:
             node.children.keys(),
             key=lambda k: torch.dot(x, node.children[k].routing_key).item(),
         )
-        threshold = self.policy.get_assoc_threshold(
-            node.children[best_sim_idx], node.depth, node
-        )
+        threshold = self.policy.get_assoc_threshold(node.children[best_sim_idx], node.depth, node)
         return best_sim_idx, node.children[best_sim_idx], threshold + 1
 
     def _ruminate(self, node: TrieNode, x: torch.Tensor) -> bool:
@@ -947,9 +945,7 @@ class OctonionTrie:
             if assoc_norm >= threshold:
                 self.rumination_rejections += int(assoc_norm < threshold)
                 # Find unoccupied slot
-                product = octonion_mul(
-                    node.routing_key.unsqueeze(0), x.unsqueeze(0)
-                ).squeeze(0)
+                product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
                 activations = subalgebra_activation(product)
                 for alt in activations.argsort(descending=True):
                     alt_idx = alt.item()
@@ -962,9 +958,7 @@ class OctonionTrie:
             else:
                 # Rumination rejected
                 self.rumination_rejections += 1
-                product = octonion_mul(
-                    node.routing_key.unsqueeze(0), x.unsqueeze(0)
-                ).squeeze(0)
+                product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
                 activations = subalgebra_activation(product)
                 for alt in activations.argsort(descending=True):
                     alt_idx = alt.item()
@@ -1047,9 +1041,7 @@ class OctonionTrie:
         return child
 
     def _compose(self, node: TrieNode, x: torch.Tensor) -> None:
-        node.content = octonion_mul(
-            node.content.unsqueeze(0), x.unsqueeze(0)
-        ).squeeze(0)
+        node.content = octonion_mul(node.content.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
         norm = node.content.norm()
         if norm > 0:
             node.content = node.content / norm
@@ -1068,8 +1060,7 @@ class OctonionTrie:
         to_remove = [
             idx
             for idx, child in node.children.items()
-            if child.insert_count / max(total, 1) < min_share
-            and child.insert_count < min_count
+            if child.insert_count / max(total, 1) < min_share and child.insert_count < min_count
         ]
         if not to_remove or len(node.children) - len(to_remove) < 1:
             return

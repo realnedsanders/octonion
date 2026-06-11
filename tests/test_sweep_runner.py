@@ -153,9 +153,7 @@ def test_sqlite_init(db_path: str) -> None:
             "timestamp",
         }
 
-        assert expected_columns.issubset(
-            columns
-        ), f"Missing columns: {expected_columns - columns}"
+        assert expected_columns.issubset(columns), f"Missing columns: {expected_columns - columns}"
     finally:
         conn.close()
 
@@ -180,13 +178,16 @@ def test_wal_mode(db_path: str) -> None:
 
 
 def test_global_sweep_configs_benchmarks() -> None:
-    """generate_global_sweep_configs produces configs with all benchmarks and expected param ranges."""
+    """generate_global_sweep_configs produces configs with all benchmarks
+    and expected param ranges."""
     benchmarks = ["mnist", "fashion_mnist", "cifar10", "text_4class", "text_20class"]
     configs = generate_global_sweep_configs(benchmarks)
 
     # All 5 benchmarks present
     benchmark_set = {c.benchmark for c in configs}
-    assert benchmark_set == set(benchmarks), f"Missing benchmarks: {set(benchmarks) - benchmark_set}"
+    assert benchmark_set == set(benchmarks), (
+        f"Missing benchmarks: {set(benchmarks) - benchmark_set}"
+    )
 
     # Each benchmark has the same number of configs
     counts = {}
@@ -227,12 +228,8 @@ def test_global_sweep_configs_critical_region() -> None:
 
     # Should include values near both geomspace and linspace endpoints
     # linspace(0.05, 1.0, 10) includes 0.05 and 1.0
-    assert any(
-        abs(v - 0.05) < 0.01 for v in assoc_vals
-    ), "Missing value near 0.05"
-    assert any(
-        abs(v - 1.0) < 0.01 for v in assoc_vals
-    ), "Missing value near 1.0"
+    assert any(abs(v - 0.05) < 0.01 for v in assoc_vals), "Missing value near 0.05"
+    assert any(abs(v - 1.0) < 0.01 for v in assoc_vals), "Missing value near 1.0"
 
 
 # ── Test 5: SweepConfig is picklable ──────────────────────────────
@@ -318,17 +315,13 @@ def test_concurrent_writes(db_path: str, features_dir: str) -> None:
     """
     SweepRunner(db_path, n_workers=3)
 
-    configs = [
-        _make_config(config_id=i, epochs=1, seed=i)
-        for i in range(3)
-    ]
+    configs = [_make_config(config_id=i, epochs=1, seed=i) for i in range(3)]
 
     # Run via ProcessPoolExecutor to verify concurrent writes
     results: list[dict] = []
     with ProcessPoolExecutor(max_workers=3) as executor:
         futures = {
-            executor.submit(_run_single_config, cfg, features_dir, db_path): cfg
-            for cfg in configs
+            executor.submit(_run_single_config, cfg, features_dir, db_path): cfg for cfg in configs
         }
         for future in as_completed(futures):
             result = future.result()
@@ -344,9 +337,7 @@ def test_concurrent_writes(db_path: str, features_dir: str) -> None:
     # Verify all 3 configs' results are in the database
     conn = sqlite3.connect(db_path)
     try:
-        cursor = conn.execute(
-            "SELECT DISTINCT config_id FROM sweep_results ORDER BY config_id"
-        )
+        cursor = conn.execute("SELECT DISTINCT config_id FROM sweep_results ORDER BY config_id")
         config_ids = [row[0] for row in cursor.fetchall()]
         assert set(config_ids) == {0, 1, 2}, f"Expected config_ids {{0,1,2}}, got {config_ids}"
     finally:

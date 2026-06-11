@@ -80,8 +80,7 @@ def _make_near_element(
 @st.composite
 def _unit_4d(draw: st.DrawFn) -> torch.Tensor:
     """Generate a random unit 4-vector."""
-    elements = st.floats(min_value=-1.0, max_value=1.0,
-                         allow_nan=False, allow_infinity=False)
+    elements = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
     components = [draw(elements) for _ in range(4)]
     t = torch.tensor(components, dtype=torch.float64)
     assume(t.norm().item() > 0.1)
@@ -91,8 +90,7 @@ def _unit_4d(draw: st.DrawFn) -> torch.Tensor:
 @st.composite
 def _unit_8d(draw: st.DrawFn) -> torch.Tensor:
     """Generate a random unit 8-vector."""
-    elements = st.floats(min_value=-1.0, max_value=1.0,
-                         allow_nan=False, allow_infinity=False)
+    elements = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
     components = [draw(elements) for _ in range(8)]
     t = torch.tensor(components, dtype=torch.float64)
     assume(t.norm().item() > 0.1)
@@ -108,18 +106,24 @@ class TestSubalgebraProximity:
     @pytest.mark.parametrize("sub_idx", range(7))
     @pytest.mark.parametrize("epsilon", [0.1, 0.01, 0.001])
     @given(
-        a_par=_unit_4d(), a_perp=_unit_4d(),
-        b_par=_unit_4d(), b_perp=_unit_4d(),
-        c_par=_unit_4d(), c_perp=_unit_4d(),
+        a_par=_unit_4d(),
+        a_perp=_unit_4d(),
+        b_par=_unit_4d(),
+        b_perp=_unit_4d(),
+        c_par=_unit_4d(),
+        c_perp=_unit_4d(),
     )
     @settings(max_examples=200, deadline=None)
     def test_linear_scaling(
         self,
         sub_idx: int,
         epsilon: float,
-        a_par: torch.Tensor, a_perp: torch.Tensor,
-        b_par: torch.Tensor, b_perp: torch.Tensor,
-        c_par: torch.Tensor, c_perp: torch.Tensor,
+        a_par: torch.Tensor,
+        a_perp: torch.Tensor,
+        b_par: torch.Tensor,
+        b_perp: torch.Tensor,
+        c_par: torch.Tensor,
+        c_perp: torch.Tensor,
     ) -> None:
         """||[a,b,c]|| / epsilon should be bounded by a constant K.
 
@@ -153,7 +157,10 @@ class TestElementProximity:
     def test_quadratic_scaling(
         self,
         epsilon: float,
-        q: torch.Tensor, da: torch.Tensor, db: torch.Tensor, dc: torch.Tensor,
+        q: torch.Tensor,
+        da: torch.Tensor,
+        db: torch.Tensor,
+        dc: torch.Tensor,
     ) -> None:
         """||[a,b,c]|| / epsilon^2 should be bounded by a constant K.
 
@@ -167,7 +174,7 @@ class TestElementProximity:
         assoc = associator(a, b, c)
         norm = assoc._data.norm().item()
 
-        ratio = norm / (epsilon ** 2)
+        ratio = norm / (epsilon**2)
         assert ratio < 10.0, (
             f"||[a,b,c]||/epsilon^2 = {ratio:.4f} > 10 at epsilon={epsilon}, "
             f"violating O(epsilon^2) bound"
@@ -262,11 +269,10 @@ class TestBoundCalibration:
         # Document the observed maximum
         K_BOUND = 12.0
         assert max_ratio < K_BOUND, (
-            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; "
-            f"bound needs updating"
+            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; bound needs updating"
         )
         assert max_ratio > K_BOUND / 4, (
-            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND/4:.1f}; "
+            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND / 4:.1f}; "
             f"bound could be tightened (current 2x headroom is excessive)"
         )
 
@@ -288,19 +294,18 @@ class TestBoundCalibration:
             for _ in range(3):
                 delta = torch.randn(8, dtype=torch.float64, generator=gen)
                 delta = delta / delta.norm()
-                data = (q + eps * delta)
+                data = q + eps * delta
                 data = data / data.norm()
                 elems.append(Octonion(data))
 
             norm = associator(*elems)._data.norm().item()
-            max_ratio = max(max_ratio, norm / (eps ** 2))
+            max_ratio = max(max_ratio, norm / (eps**2))
 
         K_BOUND = 10.0
         assert max_ratio < K_BOUND, (
-            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; "
-            f"bound needs updating"
+            f"Observed max ratio {max_ratio:.4f} exceeds K={K_BOUND}; bound needs updating"
         )
         assert max_ratio > K_BOUND / 4, (
-            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND/4:.1f}; "
+            f"Observed max ratio {max_ratio:.4f} is far below K/4={K_BOUND / 4:.1f}; "
             f"bound could be tightened"
         )

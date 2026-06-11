@@ -24,9 +24,7 @@ import torch
 import torch.nn as nn
 
 
-def _filter_normalize(
-    direction: dict[str, torch.Tensor], model: nn.Module
-) -> None:
+def _filter_normalize(direction: dict[str, torch.Tensor], model: nn.Module) -> None:
     """Apply Li et al. 2018 filter normalization in-place.
 
     For each parameter with dim >= 2, scale each filter (row) of the direction

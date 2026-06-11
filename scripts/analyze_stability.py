@@ -76,10 +76,10 @@ ALGEBRA_LINEAR = {
 
 # Consistent colors per algebra across all plots
 ALGEBRA_COLORS = {
-    AlgebraType.REAL: "#1f77b4",       # blue
-    AlgebraType.COMPLEX: "#2ca02c",    # green
-    AlgebraType.QUATERNION: "#ff7f0e", # orange
-    AlgebraType.OCTONION: "#d62728",   # red
+    AlgebraType.REAL: "#1f77b4",  # blue
+    AlgebraType.COMPLEX: "#2ca02c",  # green
+    AlgebraType.QUATERNION: "#ff7f0e",  # orange
+    AlgebraType.OCTONION: "#d62728",  # red
 }
 
 MAGNITUDE_LABELS = {0.01: "small (0.01)", 1.0: "near-unit (1.0)", 100.0: "large (100.0)"}
@@ -87,8 +87,10 @@ MAGNITUDE_LABELS = {0.01: "small (0.01)", 1.0: "near-unit (1.0)", 100.0: "large 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
-def make_input(algebra: AlgebraType, batch: int, hidden: int,
-               magnitude: float, dtype: torch.dtype) -> torch.Tensor:
+
+def make_input(
+    algebra: AlgebraType, batch: int, hidden: int, magnitude: float, dtype: torch.dtype
+) -> torch.Tensor:
     """Generate random input tensor for an algebra at the target magnitude."""
     if algebra == AlgebraType.REAL:
         x = torch.randn(batch, hidden, dtype=dtype) * magnitude
@@ -97,15 +99,17 @@ def make_input(algebra: AlgebraType, batch: int, hidden: int,
     return x
 
 
-def make_flat_input(algebra: AlgebraType, batch: int, hidden: int,
-                    magnitude: float, dtype: torch.dtype) -> torch.Tensor:
+def make_flat_input(
+    algebra: AlgebraType, batch: int, hidden: int, magnitude: float, dtype: torch.dtype
+) -> torch.Tensor:
     """Generate flattened real-valued input for AlgebraNetwork."""
     x = torch.randn(batch, hidden * algebra.dim, dtype=dtype) * magnitude
     return x
 
 
-def build_stripped_chain(algebra: AlgebraType, depth: int, hidden: int,
-                         dtype: torch.dtype = torch.float64) -> nn.ModuleList:
+def build_stripped_chain(
+    algebra: AlgebraType, depth: int, hidden: int, dtype: torch.dtype = torch.float64
+) -> nn.ModuleList:
     """Build a chain of algebra-specific linear layers without BN or activations."""
     LinearClass = ALGEBRA_LINEAR[algebra]
     layers = nn.ModuleList()
@@ -152,8 +156,9 @@ def forward_with_checkpoints(
     return errors
 
 
-def build_full_network(algebra: AlgebraType, depth: int, hidden: int = HIDDEN,
-                       dtype: torch.dtype = torch.float64) -> AlgebraNetwork:
+def build_full_network(
+    algebra: AlgebraType, depth: int, hidden: int = HIDDEN, dtype: torch.dtype = torch.float64
+) -> AlgebraNetwork:
     """Build full AlgebraNetwork for depth sweep measurement."""
     config = NetworkConfig(
         algebra=algebra,
@@ -170,8 +175,13 @@ def build_full_network(algebra: AlgebraType, depth: int, hidden: int = HIDDEN,
     return model
 
 
-def warmup_bn(model: nn.Module, algebra: AlgebraType, hidden: int = HIDDEN,
-              n_passes: int = BN_WARMUP_PASSES, dtype: torch.dtype = torch.float64) -> None:
+def warmup_bn(
+    model: nn.Module,
+    algebra: AlgebraType,
+    hidden: int = HIDDEN,
+    n_passes: int = BN_WARMUP_PASSES,
+    dtype: torch.dtype = torch.float64,
+) -> None:
     """Run warmup passes in train mode to populate BN running statistics."""
     model.train()
     with torch.no_grad():
@@ -190,7 +200,9 @@ def compute_condition_number(fn, x: torch.Tensor, eps: float = 1e-7) -> float:
     return (sv[0] / sv[-1].clamp(min=1e-30)).item()
 
 
-def find_stable_depth(errors_by_depth: dict[int, float], threshold: float = STABILITY_THRESHOLD) -> int:
+def find_stable_depth(
+    errors_by_depth: dict[int, float], threshold: float = STABILITY_THRESHOLD
+) -> int:
     """Find max depth where error stays below threshold."""
     sorted_depths = sorted(errors_by_depth.keys())
     stable = 0
@@ -223,6 +235,7 @@ def save_json(data: dict, path: str) -> None:
 
 
 # ── Section 1: Depth Sweep / Error Accumulation (SC-1 + SC-3) ──────────
+
 
 def run_depth_sweep() -> dict:
     """Run depth sweep for both stripped chains and full AlgebraNetworks.
@@ -264,15 +277,24 @@ def run_depth_sweep() -> dict:
                 with torch.no_grad():
                     for sample_idx in range(N_SAMPLES):
                         torch.manual_seed(SEED + sample_idx + 1)
-                        x64 = make_input(algebra, batch=1, hidden=HIDDEN,
-                                         magnitude=magnitude, dtype=torch.float64)
+                        x64 = make_input(
+                            algebra,
+                            batch=1,
+                            hidden=HIDDEN,
+                            magnitude=magnitude,
+                            dtype=torch.float64,
+                        )
                         x32 = x64.float()
 
                         out64 = forward_stripped_chain(layers_f64, x64)
                         out32 = forward_stripped_chain(layers_f32, x32)
 
                         # Relative error (every sample produces an entry)
-                        if not torch.isfinite(out32).all() or not torch.isfinite(out64).all() or out64.norm().item() <= 1e-30:
+                        if (
+                            not torch.isfinite(out32).all()
+                            or not torch.isfinite(out64).all()
+                            or out64.norm().item() <= 1e-30
+                        ):
                             errors.append(float("inf"))
                         else:
                             rel_err = (out32.double() - out64).norm() / out64.norm()
@@ -291,7 +313,11 @@ def run_depth_sweep() -> dict:
                     mean_err = float(np.mean(errors))
                     std_err = 0.0 if np.isinf(mean_err) else float(np.std(errors))
                     mean_nr = float(np.mean(norm_ratios)) if norm_ratios else 0.0
-                    std_nr = 0.0 if (norm_ratios and np.isinf(np.mean(norm_ratios))) else (float(np.std(norm_ratios)) if norm_ratios else 0.0)
+                    std_nr = (
+                        0.0
+                        if (norm_ratios and np.isinf(np.mean(norm_ratios)))
+                        else (float(np.std(norm_ratios)) if norm_ratios else 0.0)
+                    )
                     results["stripped"][alg_name][str(depth)][mag_label] = {
                         "mean_rel_error": mean_err,
                         "std_rel_error": std_err,
@@ -308,8 +334,10 @@ def run_depth_sweep() -> dict:
                         "n_samples": 0,
                     }
 
-                print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
-                      f"rel_err={np.mean(errors) if errors else float('inf'):.2e}")
+                print(
+                    f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
+                    f"rel_err={np.mean(errors) if errors else float('inf'):.2e}"
+                )
 
     # ── Compute stripped stable depths (SC-3) ──
     for algebra in ALGEBRAS:
@@ -353,14 +381,23 @@ def run_depth_sweep() -> dict:
                     with torch.no_grad():
                         for sample_idx in range(N_SAMPLES):
                             torch.manual_seed(SEED + sample_idx + 1)
-                            x64 = make_flat_input(algebra, batch=1, hidden=HIDDEN,
-                                                  magnitude=magnitude, dtype=torch.float64)
+                            x64 = make_flat_input(
+                                algebra,
+                                batch=1,
+                                hidden=HIDDEN,
+                                magnitude=magnitude,
+                                dtype=torch.float64,
+                            )
                             x32 = x64.float()
 
                             out64 = model_f64(x64)
                             out32 = model_f32(x32)
 
-                            if not torch.isfinite(out32).all() or not torch.isfinite(out64).all() or out64.norm().item() <= 1e-30:
+                            if (
+                                not torch.isfinite(out32).all()
+                                or not torch.isfinite(out64).all()
+                                or out64.norm().item() <= 1e-30
+                            ):
                                 errors.append(float("inf"))
                             else:
                                 rel_err = (out32.double() - out64).norm() / out64.norm()
@@ -381,8 +418,10 @@ def run_depth_sweep() -> dict:
                             "n_samples": 0,
                         }
 
-                    print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
-                          f"rel_err={np.mean(errors) if errors else float('inf'):.2e}")
+                    print(
+                        f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: "
+                        f"rel_err={np.mean(errors) if errors else float('inf'):.2e}"
+                    )
 
                 except Exception as e:
                     print(f"    {alg_name} depth={depth:3d} mag={magnitude:6.2f}: ERROR - {e}")
@@ -412,6 +451,7 @@ def run_depth_sweep() -> dict:
 
 
 # ── Section 2: Condition Number Characterization (SC-2) ─────────────────
+
 
 def run_condition_numbers() -> dict:
     """Characterize condition numbers of primitive ops, compositions, and networks.
@@ -466,6 +506,7 @@ def run_condition_numbers() -> dict:
                     torch.manual_seed(SEED + 1000)
                     a_fixed = torch.randn(8, dtype=torch.float64)
                     a_fixed = a_fixed / a_fixed.norm() * magnitude
+
                     def fn(x, a=a_fixed):
                         return octonion_mul(a, x)
                 else:
@@ -494,8 +535,10 @@ def run_condition_numbers() -> dict:
                     "max": float("inf"),
                     "n_samples": 0,
                 }
-            print(f"    {op_name} mag={magnitude:6.2f}: "
-                  f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
+            print(
+                f"    {op_name} mag={magnitude:6.2f}: "
+                f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}"
+            )
 
     # ── N-layer compositions (all 4 algebras) ──
     print("  [2b] N-layer composition condition numbers...")
@@ -514,6 +557,7 @@ def run_condition_numbers() -> dict:
             # Build forward function for the full chain
             if algebra == AlgebraType.REAL:
                 in_dim = HIDDEN
+
                 def chain_fn(x, _layers=layers):
                     h = x
                     for layer in _layers:
@@ -521,6 +565,7 @@ def run_condition_numbers() -> dict:
                     return h
             else:
                 in_dim = HIDDEN * algebra.dim
+
                 def chain_fn(x, _layers=layers, _alg=algebra):
                     h = x.view(HIDDEN, _alg.dim)
                     for layer in _layers:
@@ -557,8 +602,10 @@ def run_condition_numbers() -> dict:
                     "max": float("inf"),
                     "n_samples": 0,
                 }
-            print(f"    {alg_name} chain depth={comp_depth}: "
-                  f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
+            print(
+                f"    {alg_name} chain depth={comp_depth}: "
+                f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}"
+            )
 
     # ── Full network condition numbers (all 4 algebras) ──
     print("  [2c] Full network condition numbers...")
@@ -612,8 +659,10 @@ def run_condition_numbers() -> dict:
                         "max": float("inf"),
                         "n_samples": 0,
                     }
-                print(f"    {alg_name} network mag={magnitude:6.2f}: "
-                      f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}")
+                print(
+                    f"    {alg_name} network mag={magnitude:6.2f}: "
+                    f"mean_cond={np.mean(conds) if conds else float('inf'):.2e}"
+                )
 
         except Exception as e:
             print(f"    {alg_name} network: ERROR - {e}")
@@ -631,6 +680,7 @@ def run_condition_numbers() -> dict:
 
 
 # ── Section 4: Mitigation Demonstration (SC-4) ─────────────────────────
+
 
 def run_mitigation() -> dict:
     """Demonstrate StabilizingNorm extends stable depth.
@@ -667,18 +717,25 @@ def run_mitigation() -> dict:
         with torch.no_grad():
             for sample_idx in range(N_SAMPLES):
                 torch.manual_seed(SEED + sample_idx + 1)
-                x64 = make_input(algebra, batch=1, hidden=HIDDEN,
-                                 magnitude=1.0, dtype=torch.float64)
+                x64 = make_input(
+                    algebra, batch=1, hidden=HIDDEN, magnitude=1.0, dtype=torch.float64
+                )
                 x32 = x64.float()
 
                 h64 = x64
                 h32 = x32
-                for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32, strict=False)):
+                for i, (layer_f64, layer_f32) in enumerate(
+                    zip(layers_f64, layers_f32, strict=False)
+                ):
                     h64 = layer_f64(h64)
                     h32 = layer_f32(h32)
                     depth = i + 1
                     if depth in checkpoint_depths:
-                        if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
+                        if (
+                            not torch.isfinite(h32).all()
+                            or not torch.isfinite(h64).all()
+                            or h64.norm().item() <= 1e-30
+                        ):
                             baseline_errors[depth].append(float("inf"))
                         else:
                             rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -715,13 +772,16 @@ def run_mitigation() -> dict:
             with torch.no_grad():
                 for sample_idx in range(N_SAMPLES):
                     torch.manual_seed(SEED + sample_idx + 1)
-                    x64 = make_input(algebra, batch=1, hidden=HIDDEN,
-                                     magnitude=1.0, dtype=torch.float64)
+                    x64 = make_input(
+                        algebra, batch=1, hidden=HIDDEN, magnitude=1.0, dtype=torch.float64
+                    )
                     x32 = x64.float()
 
                     h64 = x64
                     h32 = x32
-                    for i, (layer_f64, layer_f32) in enumerate(zip(layers_f64, layers_f32, strict=False)):
+                    for i, (layer_f64, layer_f32) in enumerate(
+                        zip(layers_f64, layers_f32, strict=False)
+                    ):
                         h64 = layer_f64(h64)
                         h32 = layer_f32(h32)
                         depth = i + 1
@@ -729,7 +789,11 @@ def run_mitigation() -> dict:
                             h64 = stabilizer_f64(h64)
                             h32 = stabilizer_f32(h32)
                         if depth in checkpoint_depths:
-                            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
+                            if (
+                                not torch.isfinite(h32).all()
+                                or not torch.isfinite(h64).all()
+                                or h64.norm().item() <= 1e-30
+                            ):
                                 mitigated_errors[depth].append(float("inf"))
                             else:
                                 rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -776,13 +840,17 @@ def run_mitigation() -> dict:
 
 # ── Plotting ─────────────────────────────────────────────────────────────
 
+
 def setup_plotting():
     """Import and configure matplotlib with seaborn styling if available."""
     import matplotlib
+
     matplotlib.use("Agg")  # Non-interactive backend
     import matplotlib.pyplot as plt
+
     try:
         import seaborn as sns
+
         sns.set_theme()
     except ImportError:
         pass
@@ -795,8 +863,10 @@ def plot_depth_sweep(depth_results: dict, output_dir: str = "results/stability")
 
     for exp_type in ["stripped", "full"]:
         fig, axes = plt.subplots(1, len(DEPTH_SWEEP_MAGNITUDES) + 1, figsize=(20, 5))
-        fig.suptitle(f"Depth Sweep: {exp_type.title()} Chain - Relative Error (float32 vs float64)",
-                     fontsize=14)
+        fig.suptitle(
+            f"Depth Sweep: {exp_type.title()} Chain - Relative Error (float32 vs float64)",
+            fontsize=14,
+        )
 
         data = depth_results.get(exp_type, {})
         if not data:
@@ -820,12 +890,23 @@ def plot_depth_sweep(depth_results: dict, output_dir: str = "results/stability")
                         errors_list.append(err)
 
                 if depths_list:
-                    ax.semilogy(depths_list, errors_list, "o-",
-                                color=ALGEBRA_COLORS[algebra], label=alg_name,
-                                markersize=5, linewidth=1.5)
+                    ax.semilogy(
+                        depths_list,
+                        errors_list,
+                        "o-",
+                        color=ALGEBRA_COLORS[algebra],
+                        label=alg_name,
+                        markersize=5,
+                        linewidth=1.5,
+                    )
 
-            ax.axhline(y=STABILITY_THRESHOLD, color="gray", linestyle="--",
-                       alpha=0.7, label="threshold (1e-3)")
+            ax.axhline(
+                y=STABILITY_THRESHOLD,
+                color="gray",
+                linestyle="--",
+                alpha=0.7,
+                label="threshold (1e-3)",
+            )
             ax.set_xlabel("Depth (layers)")
             ax.set_ylabel("Relative Error")
             ax.set_title(MAGNITUDE_LABELS.get(magnitude, f"mag={magnitude}"))
@@ -846,12 +927,19 @@ def plot_depth_sweep(depth_results: dict, output_dir: str = "results/stability")
                     depths_list.append(d)
                     errors_list.append(err)
             if depths_list:
-                ax.semilogy(depths_list, errors_list, "o-",
-                            color=ALGEBRA_COLORS[algebra], label=alg_name,
-                            markersize=5, linewidth=1.5)
+                ax.semilogy(
+                    depths_list,
+                    errors_list,
+                    "o-",
+                    color=ALGEBRA_COLORS[algebra],
+                    label=alg_name,
+                    markersize=5,
+                    linewidth=1.5,
+                )
 
-        ax.axhline(y=STABILITY_THRESHOLD, color="gray", linestyle="--",
-                   alpha=0.7, label="threshold (1e-3)")
+        ax.axhline(
+            y=STABILITY_THRESHOLD, color="gray", linestyle="--", alpha=0.7, label="threshold (1e-3)"
+        )
         ax.set_xlabel("Depth (layers)")
         ax.set_ylabel("Relative Error")
         ax.set_title("Combined (near-unit)")
@@ -904,8 +992,13 @@ def plot_condition_numbers(cond_results: dict, output_dir: str = "results/stabil
         for cd in composition_depths:
             entry = comp_data.get(str(cd), {})
             means.append(entry.get("mean", 0.0))
-        ax2.bar(x_positions + i * bar_width, means, bar_width,
-                color=ALGEBRA_COLORS[algebra], label=alg_name)
+        ax2.bar(
+            x_positions + i * bar_width,
+            means,
+            bar_width,
+            color=ALGEBRA_COLORS[algebra],
+            label=alg_name,
+        )
 
     ax2.set_xlabel("Composition Depth")
     ax2.set_ylabel("Mean Condition Number")
@@ -950,8 +1043,9 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
                 base_depths.append(d)
                 base_errors.append(err)
         if base_depths:
-            ax.semilogy(base_depths, base_errors, "k-o", label="baseline",
-                        markersize=4, linewidth=2)
+            ax.semilogy(
+                base_depths, base_errors, "k-o", label="baseline", markersize=4, linewidth=2
+            )
 
         # Mitigated curves
         colors_k = {5: "#e377c2", 10: "#7f7f7f", 20: "#bcbd22"}
@@ -967,11 +1061,19 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
                     k_depths.append(d)
                     k_errors.append(err)
             if k_depths:
-                ax.semilogy(k_depths, k_errors, "s--", color=colors_k[K],
-                            label=f"K={K}", markersize=4, linewidth=1.5)
+                ax.semilogy(
+                    k_depths,
+                    k_errors,
+                    "s--",
+                    color=colors_k[K],
+                    label=f"K={K}",
+                    markersize=4,
+                    linewidth=1.5,
+                )
 
-        ax.axhline(y=STABILITY_THRESHOLD, color="gray", linestyle=":",
-                   alpha=0.7, label="threshold (1e-3)")
+        ax.axhline(
+            y=STABILITY_THRESHOLD, color="gray", linestyle=":", alpha=0.7, label="threshold (1e-3)"
+        )
         ax.set_xlabel("Depth (layers)")
         ax.set_ylabel("Relative Error")
         ax.set_title(f"{alg_name}")
@@ -987,6 +1089,7 @@ def plot_mitigation(mit_results: dict, output_dir: str = "results/stability") ->
 
 # ── Summary Table ────────────────────────────────────────────────────────
 
+
 def print_summary(depth_results: dict, cond_results: dict, mit_results: dict) -> None:
     """Print formatted summary table to stdout."""
     print("\n" + "=" * 70)
@@ -995,13 +1098,18 @@ def print_summary(depth_results: dict, cond_results: dict, mit_results: dict) ->
 
     # SC-1: Error Accumulation (stripped chain, near-unit magnitude)
     print("\nSC-1: Error Accumulation (stripped chain, near-unit magnitude)")
-    print(f"  {'Algebra':<8} | {'Depth 10':>10} | {'Depth 50':>10} | {'Depth 100':>10} | {'Depth 500':>10}")
+    print(
+        f"  {'Algebra':<8} | {'Depth 10':>10} | {'Depth 50':>10} "
+        f"| {'Depth 100':>10} | {'Depth 500':>10}"
+    )
     print("  " + "-" * 60)
     for algebra in ALGEBRAS:
         alg_name = algebra.short_name
         row = f"  {alg_name:<8} |"
         for d in DEPTHS:
-            entry = depth_results.get("stripped", {}).get(alg_name, {}).get(str(d), {}).get("1.0", {})
+            entry = (
+                depth_results.get("stripped", {}).get(alg_name, {}).get(str(d), {}).get("1.0", {})
+            )
             err = entry.get("mean_rel_error", float("nan"))
             row += f" {err:>10.2e} |"
         print(row)
@@ -1022,8 +1130,15 @@ def print_summary(depth_results: dict, cond_results: dict, mit_results: dict) ->
     print("  " + "-" * 44)
     for algebra in ALGEBRAS:
         alg_name = algebra.short_name
-        stripped_sd = depth_results.get("stable_depths", {}).get("stripped", {}).get(alg_name, {}).get("1.0", 0)
-        full_sd = depth_results.get("stable_depths", {}).get("full", {}).get(alg_name, {}).get("1.0", 0)
+        stripped_sd = (
+            depth_results.get("stable_depths", {})
+            .get("stripped", {})
+            .get(alg_name, {})
+            .get("1.0", 0)
+        )
+        full_sd = (
+            depth_results.get("stable_depths", {}).get("full", {}).get(alg_name, {}).get("1.0", 0)
+        )
         stripped_str = f">{stripped_sd}" if stripped_sd >= max(DEPTHS) else str(stripped_sd)
         full_str = f">{full_sd}" if full_sd >= max(DEPTHS) else str(full_sd)
         print(f"  {alg_name:<8} | {stripped_str:>15} | {full_str:>15}")
@@ -1032,7 +1147,7 @@ def print_summary(depth_results: dict, cond_results: dict, mit_results: dict) ->
     print("\nSC-4: Mitigation (StabilizingNorm, stripped chain, near-unit)")
     header = f"  {'Algebra':<8} | {'Baseline':>10}"
     for K in K_VALUES:
-        header += f" | {'K='+str(K):>8}"
+        header += f" | {'K=' + str(K):>8}"
     header += f" | {'Best Ratio':>10}"
     print(header)
     print("  " + "-" * (len(header) - 2))
@@ -1057,6 +1172,7 @@ def print_summary(depth_results: dict, cond_results: dict, mit_results: dict) ->
 
 # ── Main ─────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     """Run comprehensive numerical stability analysis."""
     os.makedirs("results/stability", exist_ok=True)
@@ -1080,7 +1196,12 @@ def main() -> None:
     for exp_type in ["stripped", "full"]:
         for algebra in ALGEBRAS:
             alg_name = algebra.short_name
-            sd = depth_results.get("stable_depths", {}).get(exp_type, {}).get(alg_name, {}).get("1.0", 0)
+            sd = (
+                depth_results.get("stable_depths", {})
+                .get(exp_type, {})
+                .get(alg_name, {})
+                .get("1.0", 0)
+            )
             label = ">500" if sd >= max(DEPTHS) else str(sd)
             print(f"  {exp_type:>8} {alg_name}: stable depth = {label}")
 

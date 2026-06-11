@@ -110,8 +110,10 @@ class TestFanoCDCrosscheckBasis:
 class TestFanoCDCrosscheckRandom:
     """Random octonion pairs produce matching results (within tolerance)."""
 
-    @given(a=octonion_tensors(min_value=-100, max_value=100),
-           b=octonion_tensors(min_value=-100, max_value=100))
+    @given(
+        a=octonion_tensors(min_value=-100, max_value=100),
+        b=octonion_tensors(min_value=-100, max_value=100),
+    )
     @settings(max_examples=200)
     def test_fano_cd_random_match(self, a: torch.Tensor, b: torch.Tensor) -> None:
         """For random octonions, Fano and CD multiplication give the same result."""

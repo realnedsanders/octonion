@@ -27,7 +27,7 @@ class NormedDivisionAlgebra(ABC):
 
         For all normed division algebras: |x|^2 = sum of squared components.
         """
-        return torch.sum(self.components ** 2, dim=-1)
+        return torch.sum(self.components**2, dim=-1)
 
     @abstractmethod
     def inverse(self) -> "NormedDivisionAlgebra":

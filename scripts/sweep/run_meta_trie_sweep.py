@@ -16,10 +16,12 @@ Per D-07: All 5 benchmarks.
 
 Usage:
     # Run meta-trie sweep:
-    python scripts/sweep/run_meta_trie_sweep.py --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_meta_trie_sweep.py \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
 
     # Run expanded sweep on top-10 configs:
-    python scripts/sweep/run_meta_trie_sweep.py --expanded --features-dir results/T2/features --db results/T2/sweep.db
+    python scripts/sweep/run_meta_trie_sweep.py --expanded \\
+        --features-dir results/T2/features --db results/T2/sweep.db
 
     # Show comparison against all strategies:
     python scripts/sweep/run_meta_trie_sweep.py --compare-only --db results/T2/sweep.db
@@ -114,9 +116,7 @@ def _init_meta_convergence_table(db_path: str) -> None:
 # ── Query best configs from DB ────────────────────────────────────
 
 
-def get_top_global_assoc_thresholds(
-    db_path: str, n: int = 3
-) -> list[float]:
+def get_top_global_assoc_thresholds(db_path: str, n: int = 3) -> list[float]:
     """Query top-N assoc_threshold values from global sweep by mean accuracy.
 
     Args:
@@ -162,9 +162,7 @@ def get_top_global_assoc_thresholds(
         conn.close()
 
 
-def get_top_global_sim_thresholds(
-    db_path: str, n: int = 2
-) -> list[float]:
+def get_top_global_sim_thresholds(db_path: str, n: int = 2) -> list[float]:
     """Query top-N sim_threshold values from global sweep by mean accuracy.
 
     Args:
@@ -210,9 +208,7 @@ def get_top_global_sim_thresholds(
         conn.close()
 
 
-def get_best_per_strategy(
-    db_path: str, benchmarks: list[str]
-) -> dict[str, dict[str, Any]]:
+def get_best_per_strategy(db_path: str, benchmarks: list[str]) -> dict[str, dict[str, Any]]:
     """Query best accuracy per strategy across all benchmarks.
 
     Returns:
@@ -384,8 +380,7 @@ def generate_expanded_configs(
 
             if not rows:
                 logger.warning(
-                    f"No meta-trie results for {bm} -- "
-                    "run initial sweep first (--features-dir ...)"
+                    f"No meta-trie results for {bm} -- run initial sweep first (--features-dir ...)"
                 )
                 continue
 
@@ -416,9 +411,7 @@ def generate_expanded_configs(
                             )
                             config_id += 1
 
-        logger.info(
-            f"Generated {len(configs)} expanded meta-trie configs"
-        )
+        logger.info(f"Generated {len(configs)} expanded meta-trie configs")
         return configs
 
     finally:
@@ -489,11 +482,9 @@ def store_convergence_data(db_path: str, benchmarks: list[str]) -> None:
                 convergence_rows = []
                 for idx in range(min(n_updates, 50)):
                     # Estimate change rate (decaying over updates)
-                    change_rate = max(0.0, 0.3 * (0.9 ** idx))
+                    change_rate = max(0.0, 0.3 * (0.9**idx))
                     n_adj = min(idx + 1, 20)
-                    convergence_rows.append(
-                        (config_id, bm, idx, change_rate, n_adj)
-                    )
+                    convergence_rows.append((config_id, bm, idx, change_rate, n_adj))
 
                 if convergence_rows:
                     conn.executemany(
@@ -578,9 +569,7 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 row_str += f" {acc:>10.4f}"
 
             # Delta: meta_trie - best non-meta
-            non_meta_best = max(
-                (bm_accs[s] for s in strategies if s != "meta_trie"), default=0.0
-            )
+            non_meta_best = max((bm_accs[s] for s in strategies if s != "meta_trie"), default=0.0)
             delta = bm_accs.get("meta_trie", 0.0) - non_meta_best
             row_str += f" {delta:>+8.4f}"
             logger.info(row_str)
@@ -630,9 +619,8 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 best_acc = 0.0
                 for row in rows:
                     pp = json.loads(row["policy_params"])
-                    if pp.get("signal_encoding") == enc:
-                        if row["accuracy"] > best_acc:
-                            best_acc = row["accuracy"]
+                    if pp.get("signal_encoding") == enc and row["accuracy"] > best_acc:
+                        best_acc = row["accuracy"]
                 enc_accs[enc] = best_acc
 
             winner = max(SIGNAL_ENCODINGS, key=lambda e: enc_accs.get(e, 0.0))
@@ -649,7 +637,11 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
         logger.info("OBSERVATION WINDOW COMPARISON")
         logger.info("=" * 90)
         obs_labels = [str(w) for w in OBSERVATION_WINDOWS]
-        logger.info(f"{'Benchmark':<15} " + " ".join(f"{'win=' + lab:>10}" for lab in obs_labels) + f" {'Winner':>10}")
+        logger.info(
+            f"{'Benchmark':<15} "
+            + " ".join(f"{'win=' + lab:>10}" for lab in obs_labels)
+            + f" {'Winner':>10}"
+        )
         logger.info("-" * (15 + 11 * len(obs_labels) + 10))
 
         for bm in benchmarks:
@@ -672,9 +664,8 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 best_acc = 0.0
                 for row in rows:
                     pp = json.loads(row["policy_params"])
-                    if pp.get("observation_window") == win:
-                        if row["accuracy"] > best_acc:
-                            best_acc = row["accuracy"]
+                    if pp.get("observation_window") == win and row["accuracy"] > best_acc:
+                        best_acc = row["accuracy"]
                 win_accs[win] = best_acc
 
             winner = max(OBSERVATION_WINDOWS, key=lambda w: win_accs.get(w, 0.0))
@@ -687,7 +678,9 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
         logger.info("UPDATE FREQUENCY COMPARISON (per D-16)")
         logger.info("=" * 90)
         freq_labels = [f"per-{f}" for f in UPDATE_FREQUENCIES]
-        logger.info(f"{'Benchmark':<15} " + " ".join(f"{lab:>10}" for lab in freq_labels) + f" {'Best':>10}")
+        logger.info(
+            f"{'Benchmark':<15} " + " ".join(f"{lab:>10}" for lab in freq_labels) + f" {'Best':>10}"
+        )
         logger.info("-" * (15 + 11 * len(freq_labels) + 10))
 
         for bm in benchmarks:
@@ -712,9 +705,8 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 best_acc = 0.0
                 for row in rows:
                     pp = json.loads(row["policy_params"])
-                    if pp.get("update_frequency") == freq_val:
-                        if row["accuracy"] > best_acc:
-                            best_acc = row["accuracy"]
+                    if pp.get("update_frequency") == freq_val and row["accuracy"] > best_acc:
+                        best_acc = row["accuracy"]
                 freq_accs[freq_lbl] = best_acc
 
             winner = max(freq_labels, key=lambda f: freq_accs.get(f, 0.0))
@@ -749,9 +741,8 @@ def print_meta_trie_comparison(db_path: str, benchmarks: list[str]) -> None:
                 best_acc = 0.0
                 for row in rows:
                     pp = json.loads(row["policy_params"])
-                    if pp.get("self_referential") == sr_val:
-                        if row["accuracy"] > best_acc:
-                            best_acc = row["accuracy"]
+                    if pp.get("self_referential") == sr_val and row["accuracy"] > best_acc:
+                        best_acc = row["accuracy"]
                 sr_accs[sr_label] = best_acc
 
             winner = max(["fixed", "self-ref"], key=lambda s: sr_accs.get(s, 0.0))
@@ -905,10 +896,12 @@ def main() -> None:
         epilog="""
 Examples:
   # Run initial meta-trie sweep:
-  python scripts/sweep/run_meta_trie_sweep.py --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+  python scripts/sweep/run_meta_trie_sweep.py \\
+      --features-dir results/T2/features --db results/T2/sweep.db --workers 24
 
   # Run expanded sweep on top-10 configs:
-  python scripts/sweep/run_meta_trie_sweep.py --expanded --features-dir results/T2/features --db results/T2/sweep.db
+  python scripts/sweep/run_meta_trie_sweep.py --expanded \\
+      --features-dir results/T2/features --db results/T2/sweep.db
 
   # Show comparison only (no sweep execution):
   python scripts/sweep/run_meta_trie_sweep.py --compare-only --db results/T2/sweep.db

@@ -110,15 +110,19 @@ def _wrap_manifold_params(
     )
 
     _algebra_layer_types: tuple[type[nn.Module], ...] = (
-        ComplexLinear, QuaternionLinear, OctonionDenseLinear,
+        ComplexLinear,
+        QuaternionLinear,
+        OctonionDenseLinear,
     )
     try:
         from octonion.baselines._phm_linear import PHM8Linear
+
         _algebra_layer_types = (*_algebra_layer_types, PHM8Linear)
     except ImportError:
         pass
     try:
         from octonion.baselines._dense_mixing import DenseMixingLinear
+
         _algebra_layer_types = (*_algebra_layer_types, DenseMixingLinear)
     except ImportError:
         pass
@@ -134,7 +138,9 @@ def _wrap_manifold_params(
             if hasattr(module, "weights") and isinstance(module.weights, nn.ParameterList):
                 for idx in range(len(module.weights)):
                     param = module.weights[idx]
-                    if manifold_type == "stiefel" and (param.dim() < 2 or param.shape[-2] < param.shape[-1]):
+                    if manifold_type == "stiefel" and (
+                        param.dim() < 2 or param.shape[-2] < param.shape[-1]
+                    ):
                         continue
                     try:
                         mp = geoopt.ManifoldParameter(param.data.clone(), manifold=manifold)
@@ -146,7 +152,9 @@ def _wrap_manifold_params(
                 for pname, param in list(module.named_parameters(recurse=False)):
                     if any(skip in pname.lower() for skip in _skip_param_patterns):
                         continue
-                    if manifold_type == "stiefel" and (param.dim() < 2 or param.shape[-2] < param.shape[-1]):
+                    if manifold_type == "stiefel" and (
+                        param.dim() < 2 or param.shape[-2] < param.shape[-1]
+                    ):
                         continue
                     try:
                         mp = geoopt.ManifoldParameter(param.data.clone(), manifold=manifold)
@@ -178,20 +186,30 @@ def _build_optimizer(model: nn.Module, config: TrainConfig) -> torch.optim.Optim
         return torch.optim.AdamW(params, lr=config.lr, weight_decay=config.weight_decay)
     elif name == "sgd":
         return torch.optim.SGD(
-            params, lr=config.lr, weight_decay=config.weight_decay,
-            momentum=0.9, nesterov=getattr(config, "nesterov", False),
+            params,
+            lr=config.lr,
+            weight_decay=config.weight_decay,
+            momentum=0.9,
+            nesterov=getattr(config, "nesterov", False),
         )
     elif name == "lbfgs":
         return torch.optim.LBFGS(
-            params, lr=config.lr, max_iter=20, line_search_fn="strong_wolfe",
+            params,
+            lr=config.lr,
+            max_iter=20,
+            line_search_fn="strong_wolfe",
         )
     elif name == "riemannian_adam":
         import geoopt
+
         return geoopt.optim.RiemannianAdam(  # type: ignore[no-any-return]
-            params, lr=config.lr, weight_decay=config.weight_decay,
+            params,
+            lr=config.lr,
+            weight_decay=config.weight_decay,
         )
     elif name == "shampoo":
         from pytorch_optimizer import Shampoo  # type: ignore[attr-defined]
+
         return Shampoo(params, lr=config.lr, weight_decay=config.weight_decay)
     else:
         raise ValueError(
@@ -485,7 +503,12 @@ def train_model(
         interrupted = True
         ckpt_path = os.path.join(output_dir, "checkpoint_interrupted.pt")
         save_checkpoint(
-            ckpt_path, model, optimizer, scheduler, epoch, best_val_loss,
+            ckpt_path,
+            model,
+            optimizer,
+            scheduler,
+            epoch,
+            best_val_loss,
             {"train_losses": train_losses, "val_losses": val_losses},
         )
         logger.info(f"Interrupted: checkpoint saved to {ckpt_path}")
@@ -585,9 +608,7 @@ def train_model(
             if grad_norms:
                 grad_mean = sum(grad_norms) / len(grad_norms)
                 grad_max = max(grad_norms)
-                grad_var = (
-                    sum((g - grad_mean) ** 2 for g in grad_norms) / len(grad_norms)
-                )
+                grad_var = sum((g - grad_mean) ** 2 for g in grad_norms) / len(grad_norms)
                 writer.add_scalar("Grad/norm_mean", grad_mean, epoch)
                 writer.add_scalar("Grad/norm_max", grad_max, epoch)
                 writer.add_scalar("Grad/norm_var", grad_var, epoch)
@@ -675,7 +696,12 @@ def train_model(
             if (epoch + 1) % config.checkpoint_every == 0:
                 ckpt_path = os.path.join(output_dir, f"checkpoint_epoch{epoch + 1}.pt")
                 save_checkpoint(
-                    ckpt_path, model, optimizer, scheduler, epoch, best_val_loss,
+                    ckpt_path,
+                    model,
+                    optimizer,
+                    scheduler,
+                    epoch,
+                    best_val_loss,
                     {"train_losses": train_losses, "val_losses": val_losses},
                 )
 
@@ -769,9 +795,7 @@ def run_optuna_study(
         # Train
         trial_dir = os.path.join(output_dir, f"trial_{trial.number}")
         try:
-            result = train_model(
-                model, train_loader, val_loader, config, trial_dir, device=device
-            )
+            result = train_model(model, train_loader, val_loader, config, trial_dir, device=device)
         except Exception as e:
             logger.warning(f"Trial {trial.number} failed: {e}")
             return float("inf")

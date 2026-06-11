@@ -112,7 +112,9 @@ def plot_comparison_bars(
     bar_colors = colors[: len(algebras)]
 
     x = np.arange(len(algebras))
-    bars = ax.bar(x, means, yerr=stds, capsize=5, color=bar_colors, edgecolor="black", linewidth=0.5)
+    bars = ax.bar(
+        x, means, yerr=stds, capsize=5, color=bar_colors, edgecolor="black", linewidth=0.5
+    )
 
     ax.set_xlabel("Algebra", fontsize=12)
     ax.set_ylabel(metric_name, fontsize=12)
@@ -136,9 +138,7 @@ def plot_comparison_bars(
     plt.close(fig)
 
 
-def plot_param_table(
-    param_reports: dict[str, list[dict[str, Any]]], output_path: str
-) -> None:
+def plot_param_table(param_reports: dict[str, list[dict[str, Any]]], output_path: str) -> None:
     """Create a formatted table image of per-algebra parameter counts.
 
     Args:

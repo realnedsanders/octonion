@@ -55,9 +55,8 @@ def compute_gradient_difference(
 
         # Direction cosine similarity between correct and naive
         if correct_norm > 1e-15 and naive_norm > 1e-15:
-            cos_sim = (
-                torch.sum(correct_jacs[i] * naive_jacs[i]).item()
-                / (correct_norm * naive_norm)
+            cos_sim = torch.sum(correct_jacs[i] * naive_jacs[i]).item() / (
+                correct_norm * naive_norm
             )
         else:
             cos_sim = 1.0
@@ -90,9 +89,7 @@ def compute_gradient_difference(
     }
 
 
-def run_statistical_analysis(
-    n_operands: int, n_trials: int = 1000, seed: int = 42
-) -> dict:
+def run_statistical_analysis(n_operands: int, n_trials: int = 1000, seed: int = 42) -> dict:
     """Run n_trials random inputs and collect statistics."""
     trees = all_parenthesizations(n_operands)
     # The fully left-associated tree is trees[-1] (naive == correct for it).
@@ -110,18 +107,16 @@ def run_statistical_analysis(
 
         for trial in range(n_trials):
             torch.manual_seed(seed + trial)
-            operands = [
-                torch.randn(8, dtype=torch.float64) * 0.5 for _ in range(n_operands)
-            ]
+            operands = [torch.randn(8, dtype=torch.float64) * 0.5 for _ in range(n_operands)]
 
             result = compute_gradient_difference(operands, tree)
             diffs.append(result["total_diff_norm"])
             rel_errors.append(result["total_relative_error"])
 
             # Average cosine similarity across operands
-            avg_cos = sum(
-                op["cosine_similarity"] for op in result["per_operand"]
-            ) / len(result["per_operand"])
+            avg_cos = sum(op["cosine_similarity"] for op in result["per_operand"]) / len(
+                result["per_operand"]
+            )
             cos_sims.append(avg_cos)
 
         # Compute statistics
@@ -172,9 +167,7 @@ def run_depth_scaling(depths: list[int], n_trials: int = 100, seed: int = 42) ->
         diffs: list[float] = []
         for trial in range(n_trials):
             torch.manual_seed(seed + trial)
-            operands = [
-                torch.randn(8, dtype=torch.float64) * 0.5 for _ in range(depth)
-            ]
+            operands = [torch.randn(8, dtype=torch.float64) * 0.5 for _ in range(depth)]
             result = compute_gradient_difference(operands, right_tree)
             diffs.append(result["total_diff_norm"])
 
@@ -212,10 +205,7 @@ def main() -> None:
     stats_3 = run_statistical_analysis(3, n_trials=1000)
     for r in stats_3["per_tree"]:
         print(f"  Tree: {r['tree']}")
-        print(
-            f"    Mean diff: {r['mean_diff_norm']:.6f} "
-            f"+/- {r['ci_95']:.6f} (95% CI)"
-        )
+        print(f"    Mean diff: {r['mean_diff_norm']:.6f} +/- {r['ci_95']:.6f} (95% CI)")
         print(f"    Mean relative error: {r['mean_relative_error']:.6f}")
         print(f"    Mean cosine similarity: {r['mean_cosine_similarity']:.6f}")
 

@@ -9,9 +9,12 @@ All sweeps run on 10K subsets per D-22 reduced-first approach.
 Fixed seed=42 per D-31.
 
 Usage:
-    python scripts/sweep/run_global_sweep.py --phase 1 --features-dir results/T2/features --db results/T2/sweep.db --workers 24
-    python scripts/sweep/run_global_sweep.py --phase 2 --features-dir results/T2/features --db results/T2/sweep.db --workers 24
-    python scripts/sweep/run_global_sweep.py --phase 3 --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_global_sweep.py --phase 1 \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_global_sweep.py --phase 2 \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_global_sweep.py --phase 3 \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
     python scripts/sweep/run_global_sweep.py --phase all  # runs 1, 2, 3 sequentially
 """
 
@@ -107,11 +110,16 @@ def run_phase1(
     n_noise = len(NOISE_VALUES)
     n_benchmarks = len(benchmarks)
 
-    logger.info(f"  Assoc thresholds: {n_assoc} values [{ASSOC_THRESHOLDS[0]:.4f} ... {ASSOC_THRESHOLDS[-1]:.4f}]")
+    logger.info(
+        f"  Assoc thresholds: {n_assoc} values "
+        f"[{ASSOC_THRESHOLDS[0]:.4f} ... {ASSOC_THRESHOLDS[-1]:.4f}]"
+    )
     logger.info(f"  Sim thresholds: {n_sim} values {SIM_THRESHOLDS}")
     logger.info(f"  Noise values: {n_noise} values {NOISE_VALUES}")
     logger.info(f"  Benchmarks: {n_benchmarks} ({', '.join(benchmarks)})")
-    logger.info(f"  Total configs: {len(configs)} ({n_assoc} x {n_sim} x {n_noise} x {n_benchmarks})")
+    logger.info(
+        f"  Total configs: {len(configs)} ({n_assoc} x {n_sim} x {n_noise} x {n_benchmarks})"
+    )
     logger.info("  Fixed: epochs=3, consolidation=(0.05, 3)")
 
     t0 = time.time()
@@ -246,7 +254,10 @@ def run_phase2(
                 config_id += 1
 
     logger.info(f"  Consolidation configs: {len(CONSOLIDATION_CONFIGS)}")
-    logger.info(f"  Total configs: {len(configs)} ({len(top_pairs)} pairs x {len(CONSOLIDATION_CONFIGS)} consol x {len(benchmarks)} benchmarks)")
+    logger.info(
+        f"  Total configs: {len(configs)} ({len(top_pairs)} pairs "
+        f"x {len(CONSOLIDATION_CONFIGS)} consol x {len(benchmarks)} benchmarks)"
+    )
 
     t0 = time.time()
     results = runner.run(configs, features_dir)
@@ -260,9 +271,7 @@ def run_phase2(
     return results
 
 
-def _get_top_pairs(
-    db_path: str, n: int = 5
-) -> list[tuple[float, float]]:
+def _get_top_pairs(db_path: str, n: int = 5) -> list[tuple[float, float]]:
     """Query top-N (assoc_threshold, sim_threshold) pairs by mean accuracy.
 
     Uses Phase 1 results (noise=0.0 baseline) grouped by (assoc, sim).
@@ -393,7 +402,10 @@ def run_phase3(
                 config_id += 1
 
     logger.info(f"  Epoch values: {EPOCH_VALUES}")
-    logger.info(f"  Total configs: {len(configs)} ({len(top_configs)} configs x {len(EPOCH_VALUES)} epochs x {len(benchmarks)} benchmarks)")
+    logger.info(
+        f"  Total configs: {len(configs)} ({len(top_configs)} configs "
+        f"x {len(EPOCH_VALUES)} epochs x {len(benchmarks)} benchmarks)"
+    )
 
     t0 = time.time()
     results = runner.run(configs, features_dir)
@@ -407,9 +419,7 @@ def run_phase3(
     return results
 
 
-def _get_top_configs(
-    db_path: str, n: int = 10
-) -> list[tuple[float, float, float, int]]:
+def _get_top_configs(db_path: str, n: int = 10) -> list[tuple[float, float, float, int]]:
     """Query top-N overall configs by mean accuracy across benchmarks.
 
     Considers all phases (no config_id filter).
@@ -519,7 +529,8 @@ Examples:
   python scripts/sweep/run_global_sweep.py --phase all --features-dir results/T2/features
 
   # Custom workers and database:
-  python scripts/sweep/run_global_sweep.py --phase 1 --workers 8 --db custom.db --features-dir features/
+  python scripts/sweep/run_global_sweep.py --phase 1 --workers 8 \\
+      --db custom.db --features-dir features/
         """,
     )
     parser.add_argument(
@@ -527,7 +538,8 @@ Examples:
         type=str,
         default="all",
         choices=["1", "2", "3", "all"],
-        help="Sweep phase to run: 1 (core 3D), 2 (consolidation), 3 (epochs), or all (default: all)",
+        help="Sweep phase to run: 1 (core 3D), 2 (consolidation), 3 (epochs), "
+        "or all (default: all)",
     )
     parser.add_argument(
         "--features-dir",
@@ -580,9 +592,7 @@ Examples:
 
     t_total = time.time()
 
-    phases_to_run = (
-        ["1", "2", "3"] if args.phase == "all" else [args.phase]
-    )
+    phases_to_run = ["1", "2", "3"] if args.phase == "all" else [args.phase]
 
     for phase in phases_to_run:
         if phase == "1":
@@ -600,9 +610,7 @@ Examples:
     # Final summary: count total results in DB
     conn = sqlite3.connect(args.db)
     try:
-        total_rows = conn.execute(
-            "SELECT COUNT(*) FROM sweep_results"
-        ).fetchone()[0]
+        total_rows = conn.execute("SELECT COUNT(*) FROM sweep_results").fetchone()[0]
         unique_configs = conn.execute(
             "SELECT COUNT(DISTINCT config_id) FROM sweep_results"
         ).fetchone()[0]

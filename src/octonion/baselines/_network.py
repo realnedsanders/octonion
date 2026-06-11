@@ -52,7 +52,9 @@ from octonion.baselines._normalization import (
 
 
 def _apply_conv_bn(
-    h: torch.Tensor, bn: nn.Module, algebra_dim: int,
+    h: torch.Tensor,
+    bn: nn.Module,
+    algebra_dim: int,
 ) -> torch.Tensor:
     """Apply batch normalization to conv feature maps with correct reshaping.
 
@@ -110,13 +112,21 @@ class _ResidualBlock(nn.Module):
 
         # Two conv layers: conv1 (potentially strided), conv2
         self.conv1 = network._get_conv2d(
-            in_channels, out_channels, kernel=3, padding=1, stride=stride,
+            in_channels,
+            out_channels,
+            kernel=3,
+            padding=1,
+            stride=stride,
         )
         self.bn1 = network._get_bn(out_channels) if network.config.use_batchnorm else None
         self.act1 = network._get_activation()
 
         self.conv2 = network._get_conv2d(
-            out_channels, out_channels, kernel=3, padding=1, stride=1,
+            out_channels,
+            out_channels,
+            kernel=3,
+            padding=1,
+            stride=1,
         )
         self.bn2 = network._get_bn(out_channels) if network.config.use_batchnorm else None
         self.act2 = network._get_activation()
@@ -126,7 +136,11 @@ class _ResidualBlock(nn.Module):
         self.shortcut_bn: nn.Module | None = None
         if stride != 1 or in_channels != out_channels:
             self.shortcut = network._get_conv2d(
-                in_channels, out_channels, kernel=1, padding=0, stride=stride,
+                in_channels,
+                out_channels,
+                kernel=1,
+                padding=0,
+                stride=stride,
             )
             if network.config.use_batchnorm:
                 self.shortcut_bn = network._get_bn(out_channels)
@@ -215,14 +229,20 @@ class AlgebraNetwork(nn.Module):
             return OctonionDenseLinear(in_f, out_f)
         elif algebra == AlgebraType.PHM8:
             from octonion.baselines._phm_linear import PHM8Linear
+
             return PHM8Linear(in_f, out_f, bias=True, dtype=self.dtype)
         elif algebra == AlgebraType.R8_DENSE:
             from octonion.baselines._dense_mixing import DenseMixingLinear
+
             return DenseMixingLinear(in_f, out_f, bias=True, dtype=self.dtype)
         raise ValueError(f"Unknown algebra: {algebra}")
 
     def _get_conv2d(
-        self, in_ch: int, out_ch: int, kernel: int, padding: int = 0,
+        self,
+        in_ch: int,
+        out_ch: int,
+        kernel: int,
+        padding: int = 0,
         stride: int = 1,
     ) -> nn.Module:
         """Return algebra-specific 2D conv layer."""
@@ -257,7 +277,7 @@ class AlgebraNetwork(nn.Module):
         """Return activation module based on config."""
         act = self.config.activation
         if act.startswith("split_"):
-            fn_name = act[len("split_"):]
+            fn_name = act[len("split_") :]
             return SplitActivation(fn_name)
         elif act == "norm_preserving":
             return NormPreservingActivation("relu")
@@ -327,7 +347,10 @@ class AlgebraNetwork(nn.Module):
 
         # Initial conv: map input channels to base_filters
         self.input_conv = self._get_conv2d(
-            config.input_dim, base_filters, kernel=3, padding=1,
+            config.input_dim,
+            base_filters,
+            kernel=3,
+            padding=1,
         )
         self.input_bn = self._get_bn(base_filters) if config.use_batchnorm else None
         self.input_act = self._get_activation()
@@ -339,27 +362,21 @@ class AlgebraNetwork(nn.Module):
         self.stage1 = nn.ModuleList()
         for _i in range(blocks_per_stage[0]):
             stride = 1
-            self.stage1.append(
-                _ResidualBlock(self, in_ch, stage_filters[0], stride=stride)
-            )
+            self.stage1.append(_ResidualBlock(self, in_ch, stage_filters[0], stride=stride))
             in_ch = stage_filters[0]
 
         # Stage 2: stride=2 on first block
         self.stage2 = nn.ModuleList()
         for i in range(blocks_per_stage[1]):
             stride = 2 if i == 0 else 1
-            self.stage2.append(
-                _ResidualBlock(self, in_ch, stage_filters[1], stride=stride)
-            )
+            self.stage2.append(_ResidualBlock(self, in_ch, stage_filters[1], stride=stride))
             in_ch = stage_filters[1]
 
         # Stage 3: stride=2 on first block
         self.stage3 = nn.ModuleList()
         for i in range(blocks_per_stage[2]):
             stride = 2 if i == 0 else 1
-            self.stage3.append(
-                _ResidualBlock(self, in_ch, stage_filters[2], stride=stride)
-            )
+            self.stage3.append(_ResidualBlock(self, in_ch, stage_filters[2], stride=stride))
             in_ch = stage_filters[2]
 
         # Final fc layers after GAP
@@ -525,13 +542,9 @@ class AlgebraNetwork(nn.Module):
         for block in self.stage3:
             h = block(h)
 
-        # Global average pooling over spatial dims
-        if dim == 1:
-            # [B, ch, H, W] -> [B, ch]
-            h = h.mean(dim=[2, 3])
-        else:
-            # [B, ch, dim, H, W] -> [B, ch, dim]
-            h = h.mean(dim=[3, 4])
+        # Global average pooling over spatial dims:
+        # [B, ch, H, W] -> [B, ch] or [B, ch, dim, H, W] -> [B, ch, dim]
+        h = h.mean(dim=[2, 3]) if dim == 1 else h.mean(dim=[3, 4])
 
         # FC hidden layer
         h = self.fc_hidden(h)
@@ -557,15 +570,21 @@ class AlgebraNetwork(nn.Module):
                 c0 = torch.zeros(B, self.hidden, device=x.device, dtype=x.dtype)
                 states.append((h0, c0))
             elif isinstance(cell, ComplexGRUCell):
-                states.append(
-                    torch.zeros(B, self.hidden, dim, device=x.device, dtype=x.dtype)
-                )
+                states.append(torch.zeros(B, self.hidden, dim, device=x.device, dtype=x.dtype))
             elif isinstance(cell, (QuaternionLSTMCell, OctonionLSTMCell)):
                 h0 = torch.zeros(
-                    B, self.hidden, dim, device=x.device, dtype=x.dtype,
+                    B,
+                    self.hidden,
+                    dim,
+                    device=x.device,
+                    dtype=x.dtype,
                 )
                 c0 = torch.zeros(
-                    B, self.hidden, dim, device=x.device, dtype=x.dtype,
+                    B,
+                    self.hidden,
+                    dim,
+                    device=x.device,
+                    dtype=x.dtype,
                 )
                 states.append((h0, c0))
 
@@ -594,10 +613,8 @@ class AlgebraNetwork(nn.Module):
 
         # Take final hidden state from last layer
         final_state = states[-1]
-        if isinstance(final_state, tuple):
-            final_h = final_state[0]  # h from (h, c)
-        else:
-            final_h = final_state  # h from GRU
+        # h from (h, c) for LSTM, or the bare state for GRU
+        final_h = final_state[0] if isinstance(final_state, tuple) else final_state
 
         # Output projection
         return self._apply_output_projection(final_h)
@@ -615,10 +632,12 @@ class AlgebraNetwork(nn.Module):
         entries = []
         for name, param in self.named_parameters():
             numel = param.numel()
-            entries.append({
-                "name": name,
-                "shape": list(param.shape),
-                "real_params": numel,
-                "pct": numel / total * 100.0,
-            })
+            entries.append(
+                {
+                    "name": name,
+                    "shape": list(param.shape),
+                    "real_params": numel,
+                    "pct": numel / total * 100.0,
+                }
+            )
         return entries

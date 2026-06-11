@@ -29,18 +29,14 @@ class TestZeroOctonion:
         zero = Octonion(torch.zeros(8, dtype=torch.float64))
         a = Octonion(torch.randn(8, dtype=torch.float64))
         result = a * zero
-        assert torch.allclose(
-            result.components, torch.zeros(8, dtype=torch.float64), atol=1e-12
-        )
+        assert torch.allclose(result.components, torch.zeros(8, dtype=torch.float64), atol=1e-12)
 
     def test_zero_mul_a(self) -> None:
         """zero * a = zero for any a."""
         zero = Octonion(torch.zeros(8, dtype=torch.float64))
         a = Octonion(torch.randn(8, dtype=torch.float64))
         result = zero * a
-        assert torch.allclose(
-            result.components, torch.zeros(8, dtype=torch.float64), atol=1e-12
-        )
+        assert torch.allclose(result.components, torch.zeros(8, dtype=torch.float64), atol=1e-12)
 
     def test_inverse_raises(self) -> None:
         """Inverse of zero raises ValueError."""

@@ -98,9 +98,7 @@ class TestTrieNode:
     """Tests for TrieNode dataclass."""
 
     def test_dominant_category_empty(self) -> None:
-        node = TrieNode(
-            routing_key=torch.zeros(8), content=torch.zeros(8)
-        )
+        node = TrieNode(routing_key=torch.zeros(8), content=torch.zeros(8))
         assert node.dominant_category is None
 
     def test_dominant_category(self) -> None:
@@ -178,9 +176,9 @@ class TestOctonionTrie:
         # Routing keys should be unchanged
         for sub_idx, key_before in keys_before.items():
             if sub_idx in trie.root.children:
-                assert torch.allclose(
-                    trie.root.children[sub_idx].routing_key, key_before
-                ), f"Routing key at S{sub_idx} changed after insertion"
+                assert torch.allclose(trie.root.children[sub_idx].routing_key, key_before), (
+                    f"Routing key at S{sub_idx} changed after insertion"
+                )
 
     def test_max_children_per_node_is_7(self) -> None:
         """No node should have more than 7 children (Fano plane limit)."""
@@ -331,9 +329,7 @@ class TestRumination:
 
     def test_rejects_orthogonal_input(self) -> None:
         """Rumination should reject input orthogonal to buffer contents."""
-        trie = OctonionTrie(
-            associator_threshold=0.5, similarity_threshold=0.3, seed=42
-        )
+        trie = OctonionTrie(associator_threshold=0.5, similarity_threshold=0.3, seed=42)
 
         # Build a cluster in one direction
         base = torch.zeros(8, dtype=torch.float64)
@@ -374,9 +370,7 @@ class TestDepthLimit:
     def test_max_depth_respected(self) -> None:
         """No node should exceed max_depth."""
         max_depth = 2
-        trie = OctonionTrie(
-            associator_threshold=0.1, max_depth=max_depth, seed=42
-        )
+        trie = OctonionTrie(associator_threshold=0.1, max_depth=max_depth, seed=42)
 
         # Insert many diverse samples to force deep branching attempts
         gen = torch.Generator().manual_seed(42)

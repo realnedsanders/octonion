@@ -170,12 +170,10 @@ class TestSkeletonIdentity:
         ref_blocks = block_sets["R"]
         for name in ["C", "H", "O"]:
             assert block_sets[name] == ref_blocks, (
-                f"{name} has different structural blocks: "
-                f"{block_sets[name]} vs R: {ref_blocks}"
+                f"{name} has different structural blocks: {block_sets[name]} vs R: {ref_blocks}"
             )
             assert hidden_counts[name] == hidden_counts["R"], (
-                f"{name} has {hidden_counts[name]} hidden blocks, "
-                f"R has {hidden_counts['R']}"
+                f"{name} has {hidden_counts[name]} hidden blocks, R has {hidden_counts['R']}"
             )
 
     def test_skeleton_identity_conv2d(self):
@@ -185,7 +183,11 @@ class TestSkeletonIdentity:
         models = {}
         for algebra in ALL_ALGEBRAS:
             config = _make_config(
-                algebra, topology="conv2d", input_dim=3, depth=2, base_hidden=8,
+                algebra,
+                topology="conv2d",
+                input_dim=3,
+                depth=2,
+                base_hidden=8,
             )
             models[algebra.short_name] = AlgebraNetwork(config)
 
@@ -198,12 +200,10 @@ class TestSkeletonIdentity:
         ref_blocks = block_sets["R"]
         for name in ["C", "H", "O"]:
             assert block_sets[name] == ref_blocks, (
-                f"{name} has different structural blocks: "
-                f"{block_sets[name]} vs R: {ref_blocks}"
+                f"{name} has different structural blocks: {block_sets[name]} vs R: {ref_blocks}"
             )
             assert hidden_counts[name] == hidden_counts["R"], (
-                f"{name} has {hidden_counts[name]} conv blocks, "
-                f"R has {hidden_counts['R']}"
+                f"{name} has {hidden_counts[name]} conv blocks, R has {hidden_counts['R']}"
             )
 
 
@@ -234,7 +234,12 @@ class TestParamMatching:
         return sum(p.numel() for p in model.parameters())
 
     def _find_matched_base_hidden(
-        self, target_params, algebra, depth, input_dim, output_dim,
+        self,
+        target_params,
+        algebra,
+        depth,
+        input_dim,
+        output_dim,
     ):
         """Binary search for base_hidden matching target param count."""
         lo, hi = 1, 512
@@ -242,7 +247,12 @@ class TestParamMatching:
         while lo <= hi:
             mid = (lo + hi) // 2
             count = self._count_params(
-                algebra, "mlp", mid, depth, input_dim, output_dim,
+                algebra,
+                "mlp",
+                mid,
+                depth,
+                input_dim,
+                output_dim,
             )
             diff = abs(count - target_params) / target_params
             if diff < best_diff:
@@ -271,9 +281,13 @@ class TestParamMatching:
 
         # Build reference O model with target params
         from octonion.baselines._param_matching import _build_simple_mlp
+
         o_model = _build_simple_mlp(
-            AlgebraType.OCTONION, hidden=64, depth=depth,
-            input_dim=input_dim, output_dim=output_dim,
+            AlgebraType.OCTONION,
+            hidden=64,
+            depth=depth,
+            input_dim=input_dim,
+            output_dim=output_dim,
         )
         o_params = sum(p.numel() for p in o_model.parameters())
         assert o_params > 10000, f"O model too small: {o_params}"
@@ -290,8 +304,11 @@ class TestParamMatching:
                 output_dim=output_dim,
             )
             model = _build_simple_mlp(
-                algebra, hidden=matched_width, depth=depth,
-                input_dim=input_dim, output_dim=output_dim,
+                algebra,
+                hidden=matched_width,
+                depth=depth,
+                input_dim=input_dim,
+                output_dim=output_dim,
             )
             actual = sum(p.numel() for p in model.parameters())
             error = abs(actual - o_params) / o_params
@@ -321,9 +338,7 @@ class TestParamMatching:
                 output_dim=output_dim,
             )
             model = AlgebraNetwork(config)
-            param_counts[algebra.short_name] = sum(
-                p.numel() for p in model.parameters()
-            )
+            param_counts[algebra.short_name] = sum(p.numel() for p in model.parameters())
 
         # Verify relative ratios are approximately correct:
         # R has ~8x params of O, C has ~4x, H has ~2x (for same base_hidden)
@@ -341,7 +356,8 @@ class TestOutputProjections:
     """All 4 output projection strategies produce correct shapes."""
 
     @pytest.mark.parametrize(
-        "projection", ["real", "flatten", "norm", "learned"],
+        "projection",
+        ["real", "flatten", "norm", "learned"],
     )
     def test_all_output_projections(self, projection):
         from octonion.baselines._network import AlgebraNetwork
@@ -355,12 +371,12 @@ class TestOutputProjections:
         x = torch.randn(B, config.input_dim)
         out = model(x)
         assert out.shape == (B, config.output_dim), (
-            f"Projection {projection!r}: expected ({B}, {config.output_dim}), "
-            f"got {out.shape}"
+            f"Projection {projection!r}: expected ({B}, {config.output_dim}), got {out.shape}"
         )
 
     @pytest.mark.parametrize(
-        "projection", ["real", "flatten", "norm", "learned"],
+        "projection",
+        ["real", "flatten", "norm", "learned"],
     )
     def test_output_projections_all_algebras(self, projection):
         """Every algebra + every projection should work."""
@@ -410,12 +426,8 @@ class TestResNetConv2D:
         with torch.no_grad():
             out = model(x)
 
-        assert out.shape == (B, 10), (
-            f"{algebra.short_name}: expected ({B}, 10), got {out.shape}"
-        )
-        assert torch.isfinite(out).all(), (
-            f"{algebra.short_name}: output contains NaN or Inf"
-        )
+        assert out.shape == (B, 10), f"{algebra.short_name}: expected ({B}, 10), got {out.shape}"
+        assert torch.isfinite(out).all(), f"{algebra.short_name}: output contains NaN or Inf"
 
     def test_depth28_block_distribution(self):
         """depth=28 distributes blocks across 3 stages."""
@@ -438,9 +450,7 @@ class TestResNetConv2D:
         assert hasattr(model, "stage3"), "Missing stage3"
 
         total_blocks = len(model.stage1) + len(model.stage2) + len(model.stage3)
-        assert total_blocks == 28, (
-            f"Expected 28 total blocks, got {total_blocks}"
-        )
+        assert total_blocks == 28, f"Expected 28 total blocks, got {total_blocks}"
 
     def test_spatial_downsampling_at_stage_boundaries_only(self):
         """Spatial dimensions reduce only at stage boundaries, not at every block.
@@ -500,9 +510,7 @@ class TestResNetConv2D:
 
         # Get first residual block from stage1
         block = model.stage1[0]
-        assert isinstance(block, _ResidualBlock), (
-            f"Expected _ResidualBlock, got {type(block)}"
-        )
+        assert isinstance(block, _ResidualBlock), f"Expected _ResidualBlock, got {type(block)}"
 
         # Verify it has a shortcut path (identity or 1x1 conv)
         assert hasattr(block, "shortcut"), "Missing shortcut attribute in _ResidualBlock"
@@ -527,9 +535,7 @@ class TestResNetConv2D:
         with torch.no_grad():
             out = model(x)
 
-        assert out.shape == (B, 10), (
-            f"depth=3: expected ({B}, 10), got {out.shape}"
-        )
+        assert out.shape == (B, 10), f"depth=3: expected ({B}, 10), got {out.shape}"
 
         # Should have 1 block per stage
         assert len(model.stage1) == 1
@@ -553,7 +559,11 @@ class TestResNetConv2D:
         from octonion.baselines._network import AlgebraNetwork
 
         config = _make_config(
-            algebra, topology="recurrent", input_dim=32, depth=2, base_hidden=16,
+            algebra,
+            topology="recurrent",
+            input_dim=32,
+            depth=2,
+            base_hidden=16,
         )
         model = AlgebraNetwork(config)
         x = torch.randn(B, 5, config.input_dim)
@@ -588,6 +598,4 @@ class TestParamReport:
 
         # Percentages should sum to ~100%
         total_pct = sum(e["pct"] for e in report)
-        assert abs(total_pct - 100.0) < 0.1, (
-            f"Percentages sum to {total_pct}, expected ~100"
-        )
+        assert abs(total_pct - 100.0) < 0.1, f"Percentages sum to {total_pct}, expected ~100"

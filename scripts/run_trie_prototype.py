@@ -3,7 +3,8 @@
 Usage:
     docker compose run --rm dev uv run python scripts/run_trie_prototype.py
     docker compose run --rm dev uv run python scripts/run_trie_prototype.py --sweep
-    docker compose run --rm dev uv run python scripts/run_trie_prototype.py --epochs 10 --train-per-cat 200
+    docker compose run --rm dev uv run python scripts/run_trie_prototype.py \\
+        --epochs 10 --train-per-cat 200
 """
 
 from __future__ import annotations
@@ -44,8 +45,8 @@ def oct_inner(a: torch.Tensor, b: torch.Tensor) -> float:
 
 @dataclass
 class TrieNode:
-    routing_key: torch.Tensor   # Fixed at creation, determines routing
-    content: torch.Tensor       # Accumulated via composition
+    routing_key: torch.Tensor  # Fixed at creation, determines routing
+    content: torch.Tensor  # Accumulated via composition
     children: dict[int, TrieNode] = field(default_factory=dict)
     subalgebra_idx: int | None = None
     insert_count: int = 0
@@ -65,7 +66,6 @@ class TrieNode:
 
 
 class OctonionTrie:
-
     def __init__(
         self,
         associator_threshold: float = 0.3,
@@ -92,7 +92,9 @@ class OctonionTrie:
 
     # ── Routing ──────────────────────────────────────────────────────
 
-    def _find_best_child(self, node: TrieNode, x: torch.Tensor) -> tuple[int, TrieNode | None, float]:
+    def _find_best_child(
+        self, node: TrieNode, x: torch.Tensor
+    ) -> tuple[int, TrieNode | None, float]:
         """Find the best child for input x at this node.
 
         Returns (subalgebra_idx, child_or_None, associator_norm).
@@ -122,17 +124,16 @@ class OctonionTrie:
             assoc = associator(x_oct, child_oct, node_oct)
             assoc_norm = assoc.components.norm().item()
 
-            if assoc_norm < self.assoc_threshold:
-                if best_compatible is None or sim > best_compatible[3]:
-                    best_compatible = (sub_idx, child, assoc_norm, sim)
+            if assoc_norm < self.assoc_threshold and (
+                best_compatible is None or sim > best_compatible[3]
+            ):
+                best_compatible = (sub_idx, child, assoc_norm, sim)
 
         if best_compatible is not None:
             return best_compatible[0], best_compatible[1], best_compatible[2]
 
         # No compatible child: find best unoccupied subalgebra for a new one
-        product = octonion_mul(
-            node.routing_key.unsqueeze(0), x.unsqueeze(0)
-        ).squeeze(0)
+        product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
         activations = subalgebra_activation(product)
         ranked = activations.argsort(descending=True)
 
@@ -210,9 +211,7 @@ class OctonionTrie:
                     node = child
                     node.insert_count += 1
                     if category is not None:
-                        node.category_counts[category] = (
-                            node.category_counts.get(category, 0) + 1
-                        )
+                        node.category_counts[category] = node.category_counts.get(category, 0) + 1
                     self._compose(node, x)
                     node.buffer.append((x.clone(), category))
                     continue
@@ -220,9 +219,7 @@ class OctonionTrie:
                     # Rumination rejected: this input doesn't belong here
                     self.rumination_rejections += 1
                     # Try to find a different home
-                    product = octonion_mul(
-                        node.routing_key.unsqueeze(0), x.unsqueeze(0)
-                    ).squeeze(0)
+                    product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
                     activations = subalgebra_activation(product)
                     ranked = activations.argsort(descending=True)
 
@@ -241,15 +238,11 @@ class OctonionTrie:
                     node = child  # Fall through to next depth
                     node.insert_count += 1
                     if category is not None:
-                        node.category_counts[category] = (
-                            node.category_counts.get(category, 0) + 1
-                        )
+                        node.category_counts[category] = node.category_counts.get(category, 0) + 1
                     continue
             else:
                 # Associator says incompatible: find unoccupied subalgebra
-                product = octonion_mul(
-                    node.routing_key.unsqueeze(0), x.unsqueeze(0)
-                ).squeeze(0)
+                product = octonion_mul(node.routing_key.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
                 activations = subalgebra_activation(product)
                 ranked = activations.argsort(descending=True)
 
@@ -264,9 +257,7 @@ class OctonionTrie:
                 node = child
                 node.insert_count += 1
                 if category is not None:
-                    node.category_counts[category] = (
-                        node.category_counts.get(category, 0) + 1
-                    )
+                    node.category_counts[category] = node.category_counts.get(category, 0) + 1
                 continue
 
         # Max depth: compose into current node
@@ -302,8 +293,9 @@ class OctonionTrie:
 
     # ── Helpers ───────────────────────────────────────────────────────
 
-    def _make_child(self, x: torch.Tensor, sub_idx: int, depth: int,
-                    category: int | None) -> TrieNode:
+    def _make_child(
+        self, x: torch.Tensor, sub_idx: int, depth: int, category: int | None
+    ) -> TrieNode:
         child = TrieNode(
             routing_key=x.clone(),
             content=x.clone(),
@@ -320,15 +312,14 @@ class OctonionTrie:
 
     def _compose(self, node: TrieNode, x: torch.Tensor) -> None:
         """Compose input into node's content. Routing key is never modified."""
-        node.content = octonion_mul(
-            node.content.unsqueeze(0), x.unsqueeze(0)
-        ).squeeze(0)
+        node.content = octonion_mul(node.content.unsqueeze(0), x.unsqueeze(0)).squeeze(0)
         norm = node.content.norm()
         if norm > 0:
             node.content = node.content / norm
 
     def _consolidate(self) -> None:
         """Merge underused nodes into siblings."""
+
         def _walk(node: TrieNode) -> None:
             if not node.children:
                 return
@@ -363,6 +354,7 @@ class OctonionTrie:
 
     def stats(self) -> dict:
         nodes, leaves, max_depth = [], [], 0
+
         def _walk(n: TrieNode) -> None:
             nonlocal max_depth
             nodes.append(n)
@@ -371,9 +363,11 @@ class OctonionTrie:
                 leaves.append(n)
             for c in n.children.values():
                 _walk(c)
+
         _walk(self.root)
         return {
-            "n_nodes": len(nodes), "n_leaves": len(leaves),
+            "n_nodes": len(nodes),
+            "n_leaves": len(leaves),
             "max_depth": max_depth,
             "rumination_rejections": self.rumination_rejections,
             "consolidation_merges": self.consolidation_merges,
@@ -394,6 +388,7 @@ class OctonionTrie:
             for i, c in enumerate(kids):
                 np = prefix + ("   " if last else "|  ")
                 _p(c, np, i == len(kids) - 1)
+
         _p(self.root)
 
 
@@ -432,8 +427,15 @@ def accuracy(trie, samples, labels, cats):
 
 
 def run_test(
-    n_p1=5, n_p2=5, n_train=100, n_test=50, noise=0.05, epochs=5,
-    assoc_thresh=0.3, sim_thresh=0.5, seed=42,
+    n_p1=5,
+    n_p2=5,
+    n_train=100,
+    n_test=50,
+    noise=0.05,
+    epochs=5,
+    assoc_thresh=0.3,
+    sim_thresh=0.5,
+    seed=42,
 ):
     total = n_p1 + n_p2
     logger.info(f"  cats={total} ({n_p1}+{n_p2}), train={n_train}/cat, epochs={epochs}")
@@ -462,7 +464,10 @@ def run_test(
 
     st1 = trie.stats()
     acc1_before, pc1_before = accuracy(trie, test_s, test_l, p1)
-    logger.info(f"  P1 baseline: {acc1_before:.3f} ({st1['n_nodes']}n, {st1['n_leaves']}l, d={st1['max_depth']}, rum={st1['rumination_rejections']})")
+    logger.info(
+        f"  P1 baseline: {acc1_before:.3f} ({st1['n_nodes']}n, {st1['n_leaves']}l, "
+        f"d={st1['max_depth']}, rum={st1['rumination_rejections']})"
+    )
     for c in sorted(pc1_before):
         r = pc1_before[c]
         logger.info(f"    cat{c}: {r['c']}/{r['t']}")
@@ -490,15 +495,30 @@ def run_test(
         r = pc2[c]
         logger.info(f"    cat{c}: {r['c']}/{r['t']}")
 
-    fl = "NONE" if forget <= 0.01 else "MILD" if forget < 0.05 else "SOME" if forget < 0.1 else "SEVERE"
-    logger.info(f"  RESULT: stab={acc1_after:.3f} plast={acc2:.3f} overall={acc_all:.3f} forget={forget:+.3f}({fl}) nodes={st2['n_nodes']} rum={st2['rumination_rejections']} merges={st2['consolidation_merges']}")
+    fl = (
+        "NONE"
+        if forget <= 0.01
+        else "MILD"
+        if forget < 0.05
+        else "SOME"
+        if forget < 0.1
+        else "SEVERE"
+    )
+    logger.info(
+        f"  RESULT: stab={acc1_after:.3f} plast={acc2:.3f} overall={acc_all:.3f} "
+        f"forget={forget:+.3f}({fl}) nodes={st2['n_nodes']} "
+        f"rum={st2['rumination_rejections']} merges={st2['consolidation_merges']}"
+    )
 
     trie.print_tree(max_depth=2)
 
     return {
-        "stability": acc1_after, "stability_before": acc1_before,
-        "plasticity": acc2, "overall": acc_all,
-        "forgetting": forget, "stats": st2,
+        "stability": acc1_after,
+        "stability_before": acc1_before,
+        "plasticity": acc2,
+        "overall": acc_all,
+        "forgetting": forget,
+        "stats": st2,
     }
 
 
@@ -515,11 +535,13 @@ def run_sweep(**kw):
     results = {}
     for cfg in configs:
         label = f"a{cfg['assoc_thresh']}_s{cfg['sim_thresh']}"
-        logger.info(f"\n{'~'*50}\n{label}\n{'~'*50}")
+        logger.info(f"\n{'~' * 50}\n{label}\n{'~' * 50}")
         r = run_test(**{**kw, **cfg})
         results[label] = {
-            "stability": r["stability"], "plasticity": r["plasticity"],
-            "forgetting": r["forgetting"], "overall": r["overall"],
+            "stability": r["stability"],
+            "plasticity": r["plasticity"],
+            "forgetting": r["forgetting"],
+            "overall": r["overall"],
             "n_nodes": r["stats"]["n_nodes"],
             "rumination": r["stats"]["rumination_rejections"],
         }
@@ -527,12 +549,16 @@ def run_sweep(**kw):
     logger.info("\n" + "=" * 70)
     logger.info("Sweep Summary")
     logger.info("=" * 70)
-    logger.info(f"  {'Config':>14} | {'Stab':>6} | {'Plast':>6} | {'Forget':>7} | {'All':>6} | {'Nodes':>5} | {'Rum':>5}")
+    logger.info(
+        f"  {'Config':>14} | {'Stab':>6} | {'Plast':>6} | {'Forget':>7} "
+        f"| {'All':>6} | {'Nodes':>5} | {'Rum':>5}"
+    )
     logger.info(f"  {'':->14}-+-{'':->6}-+-{'':->6}-+-{'':->7}-+-{'':->6}-+-{'':->5}-+-{'':->5}")
     for label, r in results.items():
         logger.info(
             f"  {label:>14} | {r['stability']:>6.3f} | {r['plasticity']:>6.3f} | "
-            f"{r['forgetting']:>+7.3f} | {r['overall']:>6.3f} | {r['n_nodes']:>5} | {r['rumination']:>5}"
+            f"{r['forgetting']:>+7.3f} | {r['overall']:>6.3f} | {r['n_nodes']:>5} "
+            f"| {r['rumination']:>5}"
         )
     return results
 
@@ -554,8 +580,14 @@ def main():
     n_p1 = args.categories // 2
     n_p2 = args.categories - n_p1
 
-    kw = dict(n_p1=n_p1, n_p2=n_p2, n_train=args.train_per_cat,
-              n_test=args.test_per_cat, noise=args.noise, epochs=args.epochs)
+    kw = dict(
+        n_p1=n_p1,
+        n_p2=n_p2,
+        n_train=args.train_per_cat,
+        n_test=args.test_per_cat,
+        noise=args.noise,
+        epochs=args.epochs,
+    )
 
     if args.sweep:
         r = run_sweep(**kw)

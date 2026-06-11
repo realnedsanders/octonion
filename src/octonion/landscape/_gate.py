@@ -20,9 +20,9 @@ import numpy as np
 class GateVerdict(Enum):
     """Tiered go/no-go gate verdict."""
 
-    GREEN = "GREEN"    # Proceed: O within 2x on ALL tasks
+    GREEN = "GREEN"  # Proceed: O within 2x on ALL tasks
     YELLOW = "YELLOW"  # Proceed with caution
-    RED = "RED"        # Pivot: worse than 3x on majority
+    RED = "RED"  # Pivot: worse than 3x on majority
 
 
 def evaluate_gate(

@@ -25,9 +25,7 @@ import torch
 from octonion._multiplication import STRUCTURE_CONSTANTS
 
 
-def jacobian_mul(
-    a: torch.Tensor, b: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
+def jacobian_mul(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic 8x8 Jacobians for octonion_mul(a, b).
 
     For f(a, b) = a * b with structure constants C[i,j,k]:
@@ -88,25 +86,25 @@ def jacobian_exp(o: torch.Tensor) -> torch.Tensor:
     Returns:
         Jacobian tensor [..., 8, 8].
     """
-    a = o[..., 0:1]   # [..., 1]
-    v = o[..., 1:]     # [..., 7]
+    a = o[..., 0:1]  # [..., 1]
+    v = o[..., 1:]  # [..., 7]
 
-    r_sq = torch.sum(v ** 2, dim=-1, keepdim=True)  # [..., 1]
+    r_sq = torch.sum(v**2, dim=-1, keepdim=True)  # [..., 1]
     r = torch.sqrt(r_sq)  # [..., 1]
 
     ea = torch.exp(a)  # [..., 1]
 
     # Threshold for near-zero handling
     eps = 1e-12
-    near_zero = (r < eps)
+    near_zero = r < eps
 
     # Safe denominators
     safe_r = torch.where(near_zero, torch.ones_like(r), r)
-    safe_r ** 2
-    safe_r_cu = safe_r ** 3
+    safe_r**2
+    safe_r_cu = safe_r**3
 
-    cos_r = torch.cos(r)   # [..., 1]
-    sin_r = torch.sin(r)   # [..., 1]
+    cos_r = torch.cos(r)  # [..., 1]
+    sin_r = torch.sin(r)  # [..., 1]
 
     # sinc = sin(r)/r, handling r -> 0 via sinc(0) = 1
     sinc = torch.where(near_zero, torch.ones_like(r), sin_r / safe_r)
@@ -130,7 +128,7 @@ def jacobian_exp(o: torch.Tensor) -> torch.Tensor:
     # d(ea*cos(r)) / dv_i = -ea * sin(r) * v_i / r = -ea * sinc * v_i
     # Shapes: ea: [..., 1], sinc: [..., 1], v: [..., 7]
     # Product broadcasts to [..., 7], which matches J[..., 0, 1:] target.
-    row0_imag = (-ea * sinc * v)  # [..., 7]
+    row0_imag = -ea * sinc * v  # [..., 7]
     J[..., 0, 1:] = row0_imag
 
     # --- Rows 1..7: imaginary output components ---
@@ -210,22 +208,22 @@ def jacobian_log(o: torch.Tensor) -> torch.Tensor:
     Returns:
         Jacobian tensor [..., 8, 8].
     """
-    a = o[..., 0:1]   # [..., 1]
-    v = o[..., 1:]     # [..., 7]
+    a = o[..., 0:1]  # [..., 1]
+    v = o[..., 1:]  # [..., 7]
 
-    r_sq = torch.sum(v ** 2, dim=-1, keepdim=True)  # [..., 1]
+    r_sq = torch.sum(v**2, dim=-1, keepdim=True)  # [..., 1]
     r = torch.sqrt(r_sq)  # [..., 1]
-    q_sq = a ** 2 + r_sq   # [..., 1]
-    q = torch.sqrt(q_sq)   # [..., 1]
+    q_sq = a**2 + r_sq  # [..., 1]
+    q = torch.sqrt(q_sq)  # [..., 1]
 
     eps = 1e-12
-    near_zero_r = (r < eps)
-    near_zero_q = (q < eps)
+    near_zero_r = r < eps
+    near_zero_q = q < eps
 
     safe_r = torch.where(near_zero_r, torch.ones_like(r), r)
     safe_q = torch.where(near_zero_q, torch.ones_like(q), q)
-    safe_q_sq = safe_q ** 2
-    safe_r_sq = safe_r ** 2
+    safe_q_sq = safe_q**2
+    safe_r_sq = safe_r**2
 
     # theta = arccos(a/q), clamped for numerical safety
     ratio = torch.clamp(a / safe_q, min=-1.0, max=1.0)
@@ -346,8 +344,8 @@ def jacobian_inverse(o: torch.Tensor) -> torch.Tensor:
     Returns:
         Jacobian tensor [..., 8, 8].
     """
-    n2 = torch.sum(o ** 2, dim=-1, keepdim=True)  # [..., 1]
-    n4 = n2 ** 2  # [..., 1]
+    n2 = torch.sum(o**2, dim=-1, keepdim=True)  # [..., 1]
+    n4 = n2**2  # [..., 1]
 
     # conj(o): negate imaginary, keep real
     conj = o.clone()
@@ -372,9 +370,7 @@ def jacobian_inverse(o: torch.Tensor) -> torch.Tensor:
     return J
 
 
-def jacobian_inner_product(
-    a: torch.Tensor, b: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
+def jacobian_inner_product(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic Jacobians for inner_product(a, b) = sum_i a_i * b_i.
 
     This is a scalar-valued function of two octonion arguments.
@@ -394,9 +390,7 @@ def jacobian_inner_product(
     return J_a, J_b
 
 
-def jacobian_cross_product(
-    a: torch.Tensor, b: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
+def jacobian_cross_product(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Analytic 8x8 Jacobians for cross_product(a, b).
 
     The cross product is defined as:

@@ -183,9 +183,7 @@ def build_algebra_native_multi(
                 out_blocks = []
                 for i in range(8):
                     block_x = blocks[:, i, :]
-                    y_block = _algebra_native_transform(
-                        block_x, a_param[i], b_param[i], 8
-                    )
+                    y_block = _algebra_native_transform(block_x, a_param[i], b_param[i], 8)
                     out_blocks.append(y_block)
                 y = torch.stack(out_blocks, dim=1).reshape(-1, 64)
             else:

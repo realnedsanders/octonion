@@ -49,24 +49,38 @@ class LandscapeConfig:
     seeds, model sizes, and analysis settings.
     """
 
-    tasks: list[str] = field(default_factory=lambda: [
-        "algebra_native_single",
-        "algebra_native_multi",
-        "cross_product_3d",             # Positive control: quaternions should win
-        "cross_product_7d_noise0",       # Clean signal: octonionic 7D cross product
-        "cross_product_7d_noise5",       # Low noise (5%)
-        "cross_product_7d_noise15",      # Medium noise (15%)
-        "cross_product_7d_noise30",      # High noise (30%)
-        "sinusoidal",
-        "classification",
-    ])
-    algebras: list[AlgebraType] = field(default_factory=lambda: [
-        AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION,
-        AlgebraType.OCTONION, AlgebraType.PHM8, AlgebraType.R8_DENSE,
-    ])
-    optimizers: list[str] = field(default_factory=lambda: [
-        "sgd", "adam", "riemannian_adam", "lbfgs", "shampoo",
-    ])
+    tasks: list[str] = field(
+        default_factory=lambda: [
+            "algebra_native_single",
+            "algebra_native_multi",
+            "cross_product_3d",  # Positive control: quaternions should win
+            "cross_product_7d_noise0",  # Clean signal: octonionic 7D cross product
+            "cross_product_7d_noise5",  # Low noise (5%)
+            "cross_product_7d_noise15",  # Medium noise (15%)
+            "cross_product_7d_noise30",  # High noise (30%)
+            "sinusoidal",
+            "classification",
+        ]
+    )
+    algebras: list[AlgebraType] = field(
+        default_factory=lambda: [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+            AlgebraType.PHM8,
+            AlgebraType.R8_DENSE,
+        ]
+    )
+    optimizers: list[str] = field(
+        default_factory=lambda: [
+            "sgd",
+            "adam",
+            "riemannian_adam",
+            "lbfgs",
+            "shampoo",
+        ]
+    )
     seeds: list[int] = field(default_factory=lambda: list(range(20)))
     base_hidden: int = 16  # Octonionic units (small for tractability)
     depth: int = 1
@@ -74,9 +88,7 @@ class LandscapeConfig:
     batch_size: int = 128
     lbfgs_batch_size: int = 512  # Larger for LBFGS stability
     output_dir: str = "results/landscape"
-    hessian_checkpoints: list[float] = field(
-        default_factory=lambda: [0.0, 0.25, 0.5, 0.75, 1.0]
-    )
+    hessian_checkpoints: list[float] = field(default_factory=lambda: [0.0, 0.25, 0.5, 0.75, 1.0])
     hessian_seeds: list[int] = field(
         default_factory=lambda: [0, 4, 9, 14, 19]  # 5 representative
     )
@@ -92,13 +104,13 @@ class LandscapeConfig:
 
 # Task-specific I/O dimensions.  Defaults are input_dim=8, output_dim=8.
 _TASK_DIMS: dict[str, dict[str, int]] = {
-    "cross_product_3d":         {"input_dim": 3, "output_dim": 3},
-    "cross_product_7d_noise0":  {"input_dim": 7, "output_dim": 7},
-    "cross_product_7d_noise5":  {"input_dim": 7, "output_dim": 7},
+    "cross_product_3d": {"input_dim": 3, "output_dim": 3},
+    "cross_product_7d_noise0": {"input_dim": 7, "output_dim": 7},
+    "cross_product_7d_noise5": {"input_dim": 7, "output_dim": 7},
     "cross_product_7d_noise15": {"input_dim": 7, "output_dim": 7},
     "cross_product_7d_noise30": {"input_dim": 7, "output_dim": 7},
-    "sinusoidal":               {"input_dim": 8, "output_dim": 3},  # n_components=3
-    "classification":           {"input_dim": 8, "output_dim": 5},  # n_classes=5
+    "sinusoidal": {"input_dim": 8, "output_dim": 3},  # n_components=3
+    "classification": {"input_dim": 8, "output_dim": 5},  # n_classes=5
 }
 
 
@@ -153,7 +165,8 @@ def _optimizer_train_config(
         )
     elif optimizer_name == "lbfgs":
         tc = TrainConfig(
-            **{**base, "batch_size": config.n_train},  # Full-batch: L-BFGS requires deterministic gradients
+            # Full-batch: L-BFGS requires deterministic gradients
+            **{**base, "batch_size": config.n_train},
             optimizer="lbfgs",
             lr=1.0,
             scheduler="none",  # L-BFGS uses internal strong Wolfe line search
@@ -235,45 +248,72 @@ def _build_task_data(
 
     if task_name == "algebra_native_single":
         train_ds, test_ds = build_algebra_native_single(
-            n_train=config.n_train, n_test=config.n_test, dim=8, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            dim=8,
+            seed=seed,
         )
     elif task_name == "algebra_native_multi":
         train_ds, test_ds = build_algebra_native_multi(
-            n_train=config.n_train, n_test=config.n_test, dim=8,
-            depth=config.depth, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            dim=8,
+            depth=config.depth,
+            seed=seed,
         )
     elif task_name == "cross_product_3d":
         train_ds, test_ds = build_cross_product_recovery(
-            n_train=config.n_train, n_test=config.n_test,
-            cross_dim=3, noise_level=0.0, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            cross_dim=3,
+            noise_level=0.0,
+            seed=seed,
         )
     elif task_name == "cross_product_7d_noise0":
         train_ds, test_ds = build_cross_product_recovery(
-            n_train=config.n_train, n_test=config.n_test,
-            cross_dim=7, noise_level=0.0, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            cross_dim=7,
+            noise_level=0.0,
+            seed=seed,
         )
     elif task_name == "cross_product_7d_noise5":
         train_ds, test_ds = build_cross_product_recovery(
-            n_train=config.n_train, n_test=config.n_test,
-            cross_dim=7, noise_level=0.05, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            cross_dim=7,
+            noise_level=0.05,
+            seed=seed,
         )
     elif task_name == "cross_product_7d_noise15":
         train_ds, test_ds = build_cross_product_recovery(
-            n_train=config.n_train, n_test=config.n_test,
-            cross_dim=7, noise_level=0.15, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            cross_dim=7,
+            noise_level=0.15,
+            seed=seed,
         )
     elif task_name == "cross_product_7d_noise30":
         train_ds, test_ds = build_cross_product_recovery(
-            n_train=config.n_train, n_test=config.n_test,
-            cross_dim=7, noise_level=0.30, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            cross_dim=7,
+            noise_level=0.30,
+            seed=seed,
         )
     elif task_name == "sinusoidal":
         train_ds, test_ds = build_sinusoidal_regression(
-            n_train=config.n_train, n_test=config.n_test, dim=8, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            dim=8,
+            seed=seed,
         )
     elif task_name == "classification":
         train_ds, test_ds, cls_meta = build_classification(
-            n_train=config.n_train, n_test=config.n_test, dim=8, seed=seed,
+            n_train=config.n_train,
+            n_test=config.n_test,
+            dim=8,
+            seed=seed,
         )
         metadata["bayes_optimal_accuracy"] = cls_meta["bayes_optimal_accuracy"]
     else:
@@ -350,8 +390,7 @@ def _build_model(
         # Fallback: use base_hidden * multiplier ratio
         width = max(1, config.base_hidden * AlgebraType.OCTONION.multiplier // algebra.multiplier)
         logger.warning(
-            f"Could not match params for {algebra.short_name}; "
-            f"falling back to width={width}"
+            f"Could not match params for {algebra.short_name}; falling back to width={width}"
         )
 
     return _SimpleAlgebraMLP(
@@ -368,9 +407,7 @@ def _build_model(
 # ---------------------------------------------------------------------------
 
 
-def _result_path(
-    output_dir: str, task: str, optimizer: str, algebra: str, seed: int
-) -> Path:
+def _result_path(output_dir: str, task: str, optimizer: str, algebra: str, seed: int) -> Path:
     """Construct the path for a single run's result JSON.
 
     Args:
@@ -386,9 +423,7 @@ def _result_path(
     return Path(output_dir) / task / optimizer / algebra / f"seed_{seed}" / "result.json"
 
 
-def _result_exists(
-    output_dir: str, task: str, optimizer: str, algebra: str, seed: int
-) -> bool:
+def _result_exists(output_dir: str, task: str, optimizer: str, algebra: str, seed: int) -> bool:
     """Check if a result already exists (for resume support).
 
     Args:
@@ -470,10 +505,7 @@ def _hessian_checkpoint_dir(
     output_dir: str, task: str, optimizer: str, algebra: str, seed: int
 ) -> Path:
     """Directory for Hessian model checkpoints."""
-    return (
-        Path(output_dir) / task / optimizer / algebra
-        / f"seed_{seed}" / "hessian_checkpoints"
-    )
+    return Path(output_dir) / task / optimizer / algebra / f"seed_{seed}" / "hessian_checkpoints"
 
 
 def _save_hessian_checkpoint(
@@ -531,10 +563,7 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
     """
     results: dict[str, Any] = {}
     total_runs = (
-        len(config.tasks)
-        * len(config.optimizers)
-        * len(config.algebras)
-        * len(config.seeds)
+        len(config.tasks) * len(config.optimizers) * len(config.algebras) * len(config.seeds)
     )
     completed = 0
     skipped = 0
@@ -582,8 +611,11 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                             skipped += 1
                             # Load existing result
                             existing = _load_result(
-                                config.output_dir, task_name, display_name,
-                                alg_name, seed,
+                                config.output_dir,
+                                task_name,
+                                display_name,
+                                alg_name,
+                                seed,
                             )
                             results[task_name][display_name][alg_name][seed] = existing
                             continue
@@ -602,33 +634,49 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                         # Wrap parameters for Riemannian optimization
                         if actual_opt == "riemannian_adam":
                             from octonion.baselines._trainer import _wrap_manifold_params
+
                             model = _wrap_manifold_params(model, algebra, manifold_type)
 
                         # Save initial model state for Hessian checkpoint at 0.0
                         is_hessian_seed = seed in config.hessian_seeds
                         if is_hessian_seed and 0.0 in config.hessian_checkpoints:
                             _save_hessian_checkpoint(
-                                config.output_dir, task_name, display_name,
-                                alg_name, seed, 0.0, model,
+                                config.output_dir,
+                                task_name,
+                                display_name,
+                                alg_name,
+                                seed,
+                                0.0,
+                                model,
                             )
 
                         # Build data loaders
                         train_config = _optimizer_train_config(
-                            actual_opt, config, manifold_type=manifold_type,
+                            actual_opt,
+                            config,
+                            manifold_type=manifold_type,
                             is_hessian_seed=is_hessian_seed,
                         )
                         bs = min(train_config.batch_size, len(train_ds))
                         train_loader = DataLoader(
-                            train_ds, batch_size=bs, shuffle=True, drop_last=True,
+                            train_ds,
+                            batch_size=bs,
+                            shuffle=True,
+                            drop_last=True,
                         )
                         test_loader = DataLoader(
-                            test_ds, batch_size=min(bs, len(test_ds)), shuffle=False,
+                            test_ds,
+                            batch_size=min(bs, len(test_ds)),
+                            shuffle=False,
                         )
 
                         # Create output directory for this run
                         run_dir = (
-                            Path(config.output_dir) / task_name / display_name
-                            / alg_name / f"seed_{seed}"
+                            Path(config.output_dir)
+                            / task_name
+                            / display_name
+                            / alg_name
+                            / f"seed_{seed}"
                         )
                         run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -665,26 +713,42 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                                 if frac == 1.0:
                                     # Save converged model directly
                                     _save_hessian_checkpoint(
-                                        config.output_dir, task_name, display_name,
-                                        alg_name, seed, 1.0, model,
+                                        config.output_dir,
+                                        task_name,
+                                        display_name,
+                                        alg_name,
+                                        seed,
+                                        1.0,
+                                        model,
                                     )
                                 else:
-                                    # Extract intermediate checkpoint from trainer's saved checkpoints
+                                    # Extract intermediate checkpoint from trainer's
+                                    # saved checkpoints
                                     target_epoch = max(1, int(frac * config.epochs))
                                     trainer_ckpt = run_dir / f"checkpoint_epoch{target_epoch}.pt"
                                     if trainer_ckpt.exists():
-                                        full_ckpt = torch.load(str(trainer_ckpt), weights_only=False)
+                                        full_ckpt = torch.load(
+                                            str(trainer_ckpt), weights_only=False
+                                        )
                                         ckpt_dir = _hessian_checkpoint_dir(
-                                            config.output_dir, task_name, display_name, alg_name, seed
+                                            config.output_dir,
+                                            task_name,
+                                            display_name,
+                                            alg_name,
+                                            seed,
                                         )
                                         ckpt_dir.mkdir(parents=True, exist_ok=True)
                                         hessian_path = ckpt_dir / f"checkpoint_{frac:.2f}.pt"
                                         torch.save(full_ckpt["model_state_dict"], hessian_path)
-                                        logger.info(f"Saved Hessian checkpoint at frac={frac:.2f} from epoch {target_epoch}")
+                                        logger.info(
+                                            f"Saved Hessian checkpoint at frac={frac:.2f} "
+                                            f"from epoch {target_epoch}"
+                                        )
                                     else:
                                         logger.warning(
-                                            f"Trainer checkpoint at epoch {target_epoch} not found for "
-                                            f"frac={frac:.2f}; expected {trainer_ckpt}"
+                                            f"Trainer checkpoint at epoch {target_epoch} "
+                                            f"not found for frac={frac:.2f}; "
+                                            f"expected {trainer_ckpt}"
                                         )
 
                         # Save result immediately (crash resilience)
@@ -704,16 +768,17 @@ def run_landscape_experiment(config: LandscapeConfig) -> dict[str, Any]:
                             run_result["error"] = metrics["error"]
 
                         _save_result(
-                            config.output_dir, task_name, display_name,
-                            alg_name, seed, run_result,
+                            config.output_dir,
+                            task_name,
+                            display_name,
+                            alg_name,
+                            seed,
+                            run_result,
                         )
                         results[task_name][display_name][alg_name][seed] = run_result
 
     elapsed = time.time() - start_time
-    logger.info(
-        f"Training complete: {completed} runs ({skipped} skipped) "
-        f"in {elapsed:.1f}s"
-    )
+    logger.info(f"Training complete: {completed} runs ({skipped} skipped) in {elapsed:.1f}s")
 
     # Post-training analysis is deferred for the full run (plan 05-06).
     # Here we just provide the training results for gate evaluation.

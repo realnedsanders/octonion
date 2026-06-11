@@ -13,13 +13,16 @@ Reads experiment results from results/landscape/ and produces:
 
 Usage:
     # Analyze existing results (default: analyze-only mode)
-    docker compose run --rm dev uv run python scripts/analyze_landscape.py --results-dir results/landscape
+    docker compose run --rm dev uv run python scripts/analyze_landscape.py \\
+        --results-dir results/landscape
 
     # Run experiments first, then analyze
-    docker compose run --rm dev uv run python scripts/analyze_landscape.py --results-dir results/landscape --run
+    docker compose run --rm dev uv run python scripts/analyze_landscape.py \\
+        --results-dir results/landscape --run
 
     # Smoke test with minimal configuration
-    docker compose run --rm dev uv run python scripts/analyze_landscape.py --results-dir results/landscape --run --smoke
+    docker compose run --rm dev uv run python scripts/analyze_landscape.py \\
+        --results-dir results/landscape --run --smoke
 """
 
 from __future__ import annotations
@@ -64,12 +67,12 @@ logger = logging.getLogger(__name__)
 
 # Consistent colors for each algebra across all plots
 ALGEBRA_COLORS: dict[str, str] = {
-    "R": "#2196F3",       # Blue
-    "C": "#4CAF50",       # Green
-    "H": "#FF9800",       # Orange
-    "O": "#F44336",       # Red
-    "PHM8": "#9C27B0",    # Purple
-    "R8D": "#795548",     # Brown
+    "R": "#2196F3",  # Blue
+    "C": "#4CAF50",  # Green
+    "H": "#FF9800",  # Orange
+    "O": "#F44336",  # Red
+    "PHM8": "#9C27B0",  # Purple
+    "R8D": "#795548",  # Brown
 }
 
 # Full names for legends
@@ -144,9 +147,7 @@ def load_results(results_dir: str) -> dict[str, dict[str, dict[str, dict[int, di
                             results[task_name][opt_name][alg_name][seed_num] = data
                             total_found += 1
                         except (json.JSONDecodeError, ValueError) as e:
-                            logger.warning(
-                                f"Failed to load {result_file}: {e}"
-                            )
+                            logger.warning(f"Failed to load {result_file}: {e}")
 
     logger.info(f"Loaded {total_found} result files from {results_dir}")
 
@@ -275,7 +276,8 @@ def plot_convergence_profiles(results: dict, output_dir: str) -> list[str]:
         n_rows = math.ceil(n_opts / n_cols)
 
         fig, axes = plt.subplots(
-            n_rows, n_cols,
+            n_rows,
+            n_cols,
             figsize=(6 * n_cols, 4 * n_rows),
             squeeze=False,
         )
@@ -316,7 +318,11 @@ def plot_convergence_profiles(results: dict, output_dir: str) -> list[str]:
                 label = ALGEBRA_NAMES.get(alg_name, alg_name)
                 ax.plot(epochs, median, color=color, label=label, linewidth=1.5)
                 ax.fill_between(
-                    epochs, q25, q75, alpha=0.15, color=color,
+                    epochs,
+                    q25,
+                    q75,
+                    alpha=0.15,
+                    color=color,
                 )
 
             ax.set_title(f"{opt_name}", fontsize=11)
@@ -333,7 +339,8 @@ def plot_convergence_profiles(results: dict, output_dir: str) -> list[str]:
 
         fig.suptitle(
             f"Convergence Profiles: {task_name}",
-            fontsize=14, y=1.02,
+            fontsize=14,
+            y=1.02,
         )
         fig.tight_layout()
 
@@ -413,22 +420,34 @@ def plot_hessian_evolution(results: dict, output_dir: str) -> list[str]:
                 all_eigs.extend(eig_list)
 
             if not all_eigs:
-                ax.text(0.5, 0.5, "No data", ha="center", va="center",
-                        transform=ax.transAxes)
+                ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
                 continue
 
             all_eigs_arr = np.array(all_eigs)
             neg_ratio = float(np.mean(all_eigs_arr < 0))
 
-            ax.hist(all_eigs_arr, bins=50, color=ALGEBRA_COLORS.get(alg_name, "#888"),
-                    alpha=0.7, edgecolor="black", linewidth=0.3)
+            ax.hist(
+                all_eigs_arr,
+                bins=50,
+                color=ALGEBRA_COLORS.get(alg_name, "#888"),
+                alpha=0.7,
+                edgecolor="black",
+                linewidth=0.3,
+            )
             ax.axvline(0, color="red", linestyle="--", linewidth=1, alpha=0.7)
             ax.set_title(f"t={frac:.0%}", fontsize=10)
             ax.set_xlabel("Eigenvalue")
             ax.set_ylabel("Count")
-            ax.text(0.95, 0.95, f"neg: {neg_ratio:.1%}",
-                    transform=ax.transAxes, ha="right", va="top",
-                    fontsize=9, bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5))
+            ax.text(
+                0.95,
+                0.95,
+                f"neg: {neg_ratio:.1%}",
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                fontsize=9,
+                bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+            )
 
         full_name = ALGEBRA_NAMES.get(alg_name, alg_name)
         fig.suptitle(f"Hessian Eigenspectrum: {full_name}", fontsize=13)
@@ -462,8 +481,9 @@ def plot_hessian_evolution(results: dict, output_dir: str) -> list[str]:
 
             color = ALGEBRA_COLORS.get(alg_name, "#888")
             label = ALGEBRA_NAMES.get(alg_name, alg_name)
-            ax.plot(fracs_sorted, neg_ratios, "o-", color=color, label=label,
-                    linewidth=2, markersize=6)
+            ax.plot(
+                fracs_sorted, neg_ratios, "o-", color=color, label=label, linewidth=2, markersize=6
+            )
 
         ax.set_xlabel("Training Progress", fontsize=12)
         ax.set_ylabel("Negative Eigenvalue Ratio", fontsize=12)
@@ -546,8 +566,17 @@ def plot_curvature_comparison(results: dict, output_dir: str) -> str | None:
         color = ALGEBRA_COLORS.get(alg_name, "#888")
         label = ALGEBRA_NAMES.get(alg_name, alg_name)
         offset = (i - n_algs / 2 + 0.5) * bar_width
-        ax.bar(x + offset, means, bar_width, yerr=stds, capsize=3,
-               color=color, label=label, edgecolor="black", linewidth=0.3)
+        ax.bar(
+            x + offset,
+            means,
+            bar_width,
+            yerr=stds,
+            capsize=3,
+            color=color,
+            label=label,
+            edgecolor="black",
+            linewidth=0.3,
+        )
 
     ax.set_xlabel("Task", fontsize=12)
     ax.set_ylabel("Mean Curvature", fontsize=12)
@@ -637,8 +666,9 @@ def plot_gradient_variance(results: dict, output_dir: str) -> list[str]:
             colors.append(ALGEBRA_COLORS.get(alg_name, "#888"))
             labels.append(ALGEBRA_NAMES.get(alg_name, alg_name))
 
-        bars = ax.bar(x, means, yerr=stds, capsize=5, color=colors,
-                       edgecolor="black", linewidth=0.5)
+        bars = ax.bar(
+            x, means, yerr=stds, capsize=5, color=colors, edgecolor="black", linewidth=0.5
+        )
 
         ax.set_xlabel("Algebra", fontsize=12)
         ax.set_ylabel(ylabel, fontsize=12)
@@ -653,7 +683,9 @@ def plot_gradient_variance(results: dict, output_dir: str) -> list[str]:
                 bar.get_x() + bar.get_width() / 2.0,
                 bar.get_height() + std + 0.01 * max(max(means), 1e-10),
                 f"{mean:.4f}",
-                ha="center", va="bottom", fontsize=8,
+                ha="center",
+                va="bottom",
+                fontsize=8,
             )
 
         fig.tight_layout()
@@ -714,7 +746,7 @@ def compute_pairwise_stats(
             # Pairwise comparisons
             alg_names = sorted(alg_losses.keys())
             for i, alg_a in enumerate(alg_names):
-                for alg_b in alg_names[i + 1:]:
+                for alg_b in alg_names[i + 1 :]:
                     losses_a = alg_losses[alg_a]
                     losses_b = alg_losses[alg_b]
 
@@ -723,9 +755,7 @@ def compute_pairwise_stats(
                     if min_len < 2:
                         continue
 
-                    stats_result = paired_comparison(
-                        losses_a[:min_len], losses_b[:min_len]
-                    )
+                    stats_result = paired_comparison(losses_a[:min_len], losses_b[:min_len])
 
                     comparison = {
                         "algebra_a": alg_a,
@@ -886,11 +916,15 @@ def build_full_report(
                     "n_errors": n_errors,
                     "best_val_loss_mean": float(np.mean(all_best_losses)),
                     "best_val_loss_median": float(np.median(all_best_losses)),
-                    "best_val_loss_std": float(np.std(all_best_losses, ddof=1)) if len(all_best_losses) > 1 else 0.0,
+                    "best_val_loss_std": float(np.std(all_best_losses, ddof=1))
+                    if len(all_best_losses) > 1
+                    else 0.0,
                     "best_val_loss_min": float(np.min(all_best_losses)),
                     "best_val_loss_max": float(np.max(all_best_losses)),
                     "best_val_loss_ci_95": [ci_lo, ci_hi],
-                    "final_val_loss_mean": float(np.mean(all_final_losses)) if all_final_losses else None,
+                    "final_val_loss_mean": float(np.mean(all_final_losses))
+                    if all_final_losses
+                    else None,
                     "mean_epochs": float(np.mean(all_epochs)) if all_epochs else None,
                 }
             else:
@@ -955,9 +989,7 @@ def _serialize_pairwise(pairwise_stats: dict) -> dict:
     return serialized
 
 
-def _build_literature_comparison(
-    results: dict, algebras: list[str]
-) -> dict[str, Any]:
+def _build_literature_comparison(results: dict, algebras: list[str]) -> dict[str, Any]:
     """Compare results against published literature baselines.
 
     Bill & Cox (2024): Quaternion curvature comparison.
@@ -988,7 +1020,8 @@ def _build_literature_comparison(
         bill_cox = {
             "reference": "Bill & Cox (2024) - Quaternion loss surface curvature",
             "our_results": {},
-            "note": "Bill & Cox found smoother loss surfaces for quaternion networks; we extend to octonions",
+            "note": "Bill & Cox found smoother loss surfaces for quaternion networks; "
+            "we extend to octonions",
         }
         for alg in algebras:
             vals = curvature_by_algebra.get(alg, [])
@@ -1027,7 +1060,8 @@ def _build_literature_comparison(
         wu_et_al = {
             "reference": "Wu et al. (2020) - Deep Octonion Networks convergence patterns",
             "our_convergence_speed": {},
-            "note": "Epochs to reach 90% of best improvement; Wu et al. observed slower convergence for higher-dim algebras",
+            "note": "Epochs to reach 90% of best improvement; Wu et al. observed "
+            "slower convergence for higher-dim algebras",
         }
         for alg in algebras:
             speeds = convergence_speed.get(alg, [])
@@ -1076,9 +1110,7 @@ def generate_pivot_plan(
     tasks_within_2x = [t for t, d in per_task.items() if d.get("within_2x", False)]
     [t for t, d in per_task.items() if d.get("within_3x", False)]
     tasks_beyond_3x = [t for t, d in per_task.items() if not d.get("within_3x", True)]
-    tasks_diverged = [
-        t for t, d in per_task.items() if d.get("divergence_rate", 0) > 0.5
-    ]
+    tasks_diverged = [t for t, d in per_task.items() if d.get("divergence_rate", 0) > 0.5]
 
     # Compute some stats for the report
     full_report.get("convergence_profiles", {})
@@ -1120,7 +1152,7 @@ The following research claims hold independently of optimization landscape succe
 
     if tasks_within_2x:
         content += f"""### 1.5 Partial Optimization Success
-- Tasks within 2x of baseline: {', '.join(tasks_within_2x)}
+- Tasks within 2x of baseline: {", ".join(tasks_within_2x)}
 - These tasks demonstrate that octonionic optimization CAN work in limited settings
 - **Status: PARTIAL SURVIVAL** -- limited but genuine positive result
 """
@@ -1175,7 +1207,7 @@ is not supported. Phase 9 would be replaced by negative result publication.
     if tasks_diverged:
         content += f"""
 ### 3.5 Task-Specific Investigation
-- **Diverged tasks:** {', '.join(tasks_diverged)}
+- **Diverged tasks:** {", ".join(tasks_diverged)}
 - **Rationale:** Some tasks may be inherently incompatible with octonionic optimization
 - **Action:** Analyze what makes diverged tasks different from any that succeeded
 """
@@ -1294,12 +1326,12 @@ def main() -> None:
     args = parser.parse_args()
     results_dir = args.results_dir
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  Phase 5: Optimization Landscape Analysis")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Results dir: {results_dir}")
     print(f"  Mode:        {'run + analyze' if args.run else 'analyze only'}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # ── Step 0: Optionally run experiments ──────────────────────────────
 
@@ -1339,7 +1371,10 @@ def main() -> None:
 
     if not results:
         print("\nNo results found. Run experiments first with --run flag.")
-        print("Example: python scripts/analyze_landscape.py --results-dir results/landscape --run --smoke")
+        print(
+            "Example: python scripts/analyze_landscape.py "
+            "--results-dir results/landscape --run --smoke"
+        )
         # Still produce gate_verdict.json with YELLOW fallback
         gate_result = compute_gate_verdict(results)
         gate_output = {
@@ -1394,9 +1429,7 @@ def main() -> None:
 
     print("Computing pairwise statistical comparisons...")
     pairwise_stats = compute_pairwise_stats(results)
-    n_comparisons = sum(
-        len(comps) for task in pairwise_stats.values() for comps in task.values()
-    )
+    n_comparisons = sum(len(comps) for task in pairwise_stats.values() for comps in task.values())
     print(f"  Computed {n_comparisons} pairwise comparisons with Holm-Bonferroni correction")
 
     # ── Step 8: Gate verdict ───────────────────────────────────────────
@@ -1405,17 +1438,19 @@ def main() -> None:
     gate_result = compute_gate_verdict(results)
     verdict_str = gate_result["verdict_str"]
 
-    print(f"\n  {'='*50}")
+    print(f"\n  {'=' * 50}")
     print(f"  GATE VERDICT: {verdict_str}")
-    print(f"  {'='*50}")
+    print(f"  {'=' * 50}")
     print(f"  {gate_result['summary']}")
 
     if gate_result.get("per_task"):
         print("\n  Per-task ratios (O/R8D):")
         for task_name, task_metrics in gate_result["per_task"].items():
             ratio = task_metrics.get("gate_ratio", float("nan"))
-            status = "PASS" if task_metrics.get("within_2x") else (
-                "WARN" if task_metrics.get("within_3x") else "FAIL"
+            status = (
+                "PASS"
+                if task_metrics.get("within_2x")
+                else ("WARN" if task_metrics.get("within_3x") else "FAIL")
             )
             print(f"    {task_name}: {ratio:.2f}x [{status}]")
 
@@ -1452,16 +1487,16 @@ def main() -> None:
     if curv_path:
         all_plots.append(curv_path)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  ANALYSIS COMPLETE")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Gate verdict:    {verdict_str}")
     print(f"  Plots generated: {len(all_plots)}")
     print(f"  Report:          {report_path}")
     print(f"  Gate verdict:    {gate_path}")
     if gate_result.get("verdict") == GateVerdict.RED:
         print(f"  Pivot plan:      {os.path.join(results_dir, 'pivot_plan.md')}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

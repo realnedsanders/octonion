@@ -184,9 +184,7 @@ def main() -> None:
 
     # Load data
     logger.info("\nLoading MNIST and projecting to octonionic space...")
-    train_x, train_y, test_x, test_y = load_mnist_pca8(
-        n_train=args.n_train, n_test=args.n_test
-    )
+    train_x, train_y, test_x, test_y = load_mnist_pca8(n_train=args.n_train, n_test=args.n_test)
     logger.info(f"  Train: {train_x.shape}, Test: {test_x.shape}")
 
     # kNN baseline
@@ -203,13 +201,22 @@ def main() -> None:
     # Trie
     logger.info(f"\nRunning octonionic trie ({args.epochs} epochs)...")
     result = trie_classify(
-        train_x, train_y, test_x, test_y,
+        train_x,
+        train_y,
+        test_x,
+        test_y,
         epochs=args.epochs,
         assoc_threshold=args.assoc_threshold,
     )
 
-    logger.info(f"  Trie accuracy: {result['accuracy']:.3f} ({result['train_time']:.1f}s train, {result['test_time']:.1f}s test)")
-    logger.info(f"  Nodes: {result['stats']['n_nodes']}, Leaves: {result['stats']['n_leaves']}, Depth: {result['stats']['max_depth']}")
+    logger.info(
+        f"  Trie accuracy: {result['accuracy']:.3f} "
+        f"({result['train_time']:.1f}s train, {result['test_time']:.1f}s test)"
+    )
+    logger.info(
+        f"  Nodes: {result['stats']['n_nodes']}, Leaves: {result['stats']['n_leaves']}, "
+        f"Depth: {result['stats']['max_depth']}"
+    )
     logger.info(f"  Rumination rejections: {result['stats']['rumination_rejections']}")
 
     logger.info("\n  Per-digit accuracy:")
@@ -231,9 +238,7 @@ def main() -> None:
         "knn_k5": knn_acc,
         "knn_k1": knn1_acc,
         "trie": result["accuracy"],
-        "trie_per_digit": {
-            str(d): result["per_digit"][d] for d in range(10)
-        },
+        "trie_per_digit": {str(d): result["per_digit"][d] for d in range(10)},
         "trie_stats": result["stats"],
         "config": {
             "n_train": args.n_train,

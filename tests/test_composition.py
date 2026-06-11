@@ -245,9 +245,10 @@ class TestChainRule:
                 return evaluate_tree(tree, ops_copy)
 
             J_numeric = numeric_jacobian(f, ops[idx])
-            assert torch.allclose(
-                jacobians[idx], J_numeric, atol=1e-6
-            ), f"Jacobian w.r.t. {name} differs: max err={torch.abs(jacobians[idx] - J_numeric).max().item()}"
+            assert torch.allclose(jacobians[idx], J_numeric, atol=1e-6), (
+                f"Jacobian w.r.t. {name} differs: "
+                f"max err={torch.abs(jacobians[idx] - J_numeric).max().item()}"
+            )
 
 
 class TestNaiveVsCorrect:
@@ -376,8 +377,7 @@ class TestParenthesizationExhaustive:
             # Generate 5 random float64 octonion tensors with small norm
             # Multiply BEFORE setting requires_grad to keep them as leaf tensors
             operands = [
-                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
-                for _ in range(5)
+                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True) for _ in range(5)
             ]
 
             # Evaluate the tree
@@ -426,8 +426,7 @@ class TestParenthesizationExhaustive:
             )
 
             assert max_error < 1e-5, (
-                f"Pattern {tree_idx} ({tree_str}) failed: "
-                f"max_rel_error={max_error:.2e}"
+                f"Pattern {tree_idx} ({tree_str}) failed: max_rel_error={max_error:.2e}"
             )
 
         # Compute max gradient difference between patterns
@@ -435,8 +434,7 @@ class TestParenthesizationExhaustive:
         for tree in trees:
             torch.manual_seed(42)  # Same operands for all patterns
             operands = [
-                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
-                for _ in range(5)
+                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True) for _ in range(5)
             ]
             result = evaluate_tree(tree, operands)
             result.sum().backward()
@@ -469,10 +467,7 @@ class TestParenthesizationExhaustive:
         # Print summary
         print("\n=== SC-2 Parenthesization Report ===")
         print(f"Patterns tested: {len(report)}")
-        print(
-            f"Max rel error across all: "
-            f"{max(r['max_rel_error'] for r in report):.2e}"
-        )
+        print(f"Max rel error across all: {max(r['max_rel_error'] for r in report):.2e}")
         print(f"Max gradient diff between patterns: {max_diff:.4f}")
         print(f"All passed: {full_report['all_passed']}")
 
@@ -483,20 +478,14 @@ class TestParenthesizationExhaustive:
 
         for tree_idx, tree in enumerate(trees):
             operands = tuple(
-                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
-                for _ in range(5)
+                (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True) for _ in range(5)
             )
 
             def f(*ops: torch.Tensor, t=tree) -> torch.Tensor:
                 return evaluate_tree(t, list(ops))
 
-            passed = torch.autograd.gradcheck(
-                f, operands, eps=1e-6, atol=1e-5, rtol=1e-3
-            )
-            assert passed, (
-                f"gradcheck failed for pattern {tree_idx}: "
-                f"{tree_to_string(tree)}"
-            )
+            passed = torch.autograd.gradcheck(f, operands, eps=1e-6, atol=1e-5, rtol=1e-3)
+            assert passed, f"gradcheck failed for pattern {tree_idx}: {tree_to_string(tree)}"
 
 
 # ============================================================================
@@ -526,10 +515,7 @@ class TestNaiveVsCorrectDemonstration:
             naive_jacs = naive_chain_rule_jacobian(operands)
 
             # Compute gradient difference
-            total_diff = sum(
-                torch.norm(correct_jacs[i] - naive_jacs[i]).item()
-                for i in range(3)
-            )
+            total_diff = sum(torch.norm(correct_jacs[i] - naive_jacs[i]).item() for i in range(3))
             differences.append(total_diff)
 
         # The differences should be consistently non-zero
@@ -563,17 +549,12 @@ class TestNaiveVsCorrectDemonstration:
             correct_jacs = compose_jacobians(tree, operands)
             naive_jacs = naive_chain_rule_jacobian(operands)
 
-            total_diff = sum(
-                torch.norm(correct_jacs[i] - naive_jacs[i]).item()
-                for i in range(5)
-            )
+            total_diff = sum(torch.norm(correct_jacs[i] - naive_jacs[i]).item() for i in range(5))
             differences_by_tree.append((tree_to_string(tree), total_diff))
 
         # At least some should show substantial differences
         max_diff = max(d for _, d in differences_by_tree)
-        assert max_diff > 1e-2, (
-            f"Max gradient difference across trees too small: {max_diff:.2e}"
-        )
+        assert max_diff > 1e-2, f"Max gradient difference across trees too small: {max_diff:.2e}"
 
 
 # ============================================================================
@@ -596,9 +577,7 @@ class TestMixedOperations:
         def f(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
             return evaluate_tree(tree, [x, y])
 
-        passed = torch.autograd.gradcheck(
-            f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3
-        )
+        passed = torch.autograd.gradcheck(f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3)
         assert passed
 
     def test_mixed_op_log_exp_product(self) -> None:
@@ -618,9 +597,7 @@ class TestMixedOperations:
         def f(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
             return evaluate_tree(tree, [x, y])
 
-        passed = torch.autograd.gradcheck(
-            f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3
-        )
+        passed = torch.autograd.gradcheck(f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3)
         assert passed
 
     def test_mixed_op_conjugate_product(self) -> None:
@@ -635,9 +612,7 @@ class TestMixedOperations:
         def f(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
             return evaluate_tree(tree, [x, y])
 
-        passed = torch.autograd.gradcheck(
-            f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3
-        )
+        passed = torch.autograd.gradcheck(f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3)
         assert passed
 
     def test_mixed_op_inverse_product(self) -> None:
@@ -653,9 +628,7 @@ class TestMixedOperations:
         def f(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
             return evaluate_tree(tree, [x, y])
 
-        passed = torch.autograd.gradcheck(
-            f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3
-        )
+        passed = torch.autograd.gradcheck(f, (a, b), eps=1e-6, atol=1e-5, rtol=1e-3)
         assert passed
 
     def test_mixed_op_nested_chain(self) -> None:
@@ -675,9 +648,7 @@ class TestMixedOperations:
         def f(x: torch.Tensor, y: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
             return evaluate_tree(tree, [x, y, z])
 
-        passed = torch.autograd.gradcheck(
-            f, (a, b, c), eps=1e-6, atol=1e-5, rtol=1e-3
-        )
+        passed = torch.autograd.gradcheck(f, (a, b, c), eps=1e-6, atol=1e-5, rtol=1e-3)
         assert passed
 
 

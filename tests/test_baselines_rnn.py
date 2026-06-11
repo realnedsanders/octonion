@@ -19,24 +19,28 @@ HIDDEN_SIZE = 32
 @pytest.fixture
 def real_cell():
     from octonion.baselines._algebra_rnn import RealLSTMCell
+
     return RealLSTMCell(INPUT_SIZE, HIDDEN_SIZE)
 
 
 @pytest.fixture
 def complex_cell():
     from octonion.baselines._algebra_rnn import ComplexGRUCell
+
     return ComplexGRUCell(INPUT_SIZE, HIDDEN_SIZE)
 
 
 @pytest.fixture
 def quaternion_cell():
     from octonion.baselines._algebra_rnn import QuaternionLSTMCell
+
     return QuaternionLSTMCell(INPUT_SIZE, HIDDEN_SIZE)
 
 
 @pytest.fixture
 def octonion_cell():
     from octonion.baselines._algebra_rnn import OctonionLSTMCell
+
     return OctonionLSTMCell(INPUT_SIZE, HIDDEN_SIZE)
 
 

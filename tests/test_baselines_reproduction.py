@@ -80,13 +80,9 @@ class TestCIFAR10ParamMatching:
         """
         for alg_name, count in self.param_counts.items():
             # All models should have at least 1000 params
-            assert count > 1000, (
-                f"{alg_name} param count {count} is suspiciously low"
-            )
+            assert count > 1000, f"{alg_name} param count {count} is suspiciously low"
             # And less than 100M (sanity check)
-            assert count < 100_000_000, (
-                f"{alg_name} param count {count} is suspiciously high"
-            )
+            assert count < 100_000_000, f"{alg_name} param count {count} is suspiciously high"
 
     def test_output_dim_is_10(self) -> None:
         """All CIFAR-10 models should have output_dim=10."""
@@ -172,9 +168,7 @@ class TestCIFAR10ForwardPass:
         with torch.no_grad():
             output = model(x)
 
-        assert torch.isfinite(output).all(), (
-            f"{algebra.short_name}: output contains NaN or Inf"
-        )
+        assert torch.isfinite(output).all(), f"{algebra.short_name}: output contains NaN or Inf"
 
 
 class TestCIFAR100ForwardPass:
@@ -252,8 +246,12 @@ class TestCIFARTrainConfig:
         # Build a tiny model just for optimizer/scheduler
         model = torch.nn.Linear(10, 10)
         tc_copy = TrainConfig(
-            epochs=tc.epochs, lr=tc.lr, optimizer="sgd", scheduler="step_cifar",
-            weight_decay=tc.weight_decay, nesterov=tc.nesterov,
+            epochs=tc.epochs,
+            lr=tc.lr,
+            optimizer="sgd",
+            scheduler="step_cifar",
+            weight_decay=tc.weight_decay,
+            nesterov=tc.nesterov,
             warmup_epochs=tc.warmup_epochs,
         )
         opt = _build_optimizer(model, tc_copy)
@@ -362,6 +360,7 @@ class TestReproductionReport:
     def test_report_creates_files(self, tmp_path: str) -> None:
         """Report should create JSON and Markdown files."""
         import os
+
         pub = {"R": {"error_pct": 6.37, "std_pct": 0.17, "source": "Gaudet", "notes": ""}}
         ours = {"R": {"error_pct": 6.40, "std_pct": 0.15, "param_count": 100000, "seeds": 3}}
         reproduction_report(pub, ours, str(tmp_path / "test_report"))

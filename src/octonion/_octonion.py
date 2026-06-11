@@ -133,7 +133,7 @@ class Octonion(NormedDivisionAlgebra):
             return NotImplemented
         return bool(torch.equal(self._data, other._data))
 
-    # --- NO __truediv__ or __pow__ (user decision: division ambiguity, parenthesization matters) ---
+    # --- NO __truediv__ or __pow__ (user decision: division ambiguity, parenthesization) ---
 
     # --- Algebraic methods ---
 
@@ -145,9 +145,7 @@ class Octonion(NormedDivisionAlgebra):
 
         Property: x * conj(x) = |x|^2 * e0 (pure real)
         """
-        return Octonion(
-            torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1)
-        )
+        return Octonion(torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1))
 
     def norm(self) -> torch.Tensor:
         """Return the norm: sqrt(sum of squared components).
@@ -267,8 +265,7 @@ class UnitOctonion(Octonion):
         n = torch.sqrt(torch.sum(data**2, dim=-1, keepdim=True))
         if torch.any(n == 0):
             raise ValueError(
-                "Cannot create UnitOctonion from zero vector: "
-                "normalization requires non-zero norm."
+                "Cannot create UnitOctonion from zero vector: normalization requires non-zero norm."
             )
         normalized = data / n
         super().__init__(normalized)

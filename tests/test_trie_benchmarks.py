@@ -95,9 +95,7 @@ class TestRunTrieClassifier:
         test_xt = torch.from_numpy(test_x).to(torch.float64)
         test_yt = torch.from_numpy(test_y.astype(np.int64))
 
-        result = run_trie_classifier(
-            train_xt, train_yt, test_xt, test_yt, epochs=1, seed=42
-        )
+        result = run_trie_classifier(train_xt, train_yt, test_xt, test_yt, epochs=1, seed=42)
 
         # accuracy is a float in [0, 1]
         assert isinstance(result["accuracy"], float)
@@ -199,7 +197,9 @@ class TestPlotConfusionMatrix:
 
         save_path = tmp_path / "plots" / "confusion.png"
         plot_confusion_matrix(
-            y_true, y_pred, class_names,
+            y_true,
+            y_pred,
+            class_names,
             title="Test Confusion Matrix",
             save_path=save_path,
         )

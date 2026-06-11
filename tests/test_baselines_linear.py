@@ -240,12 +240,14 @@ class TestCrossValidation:
         layer = QuaternionLinear(1, 1, bias=False)
 
         # Extract weight as a quaternion
-        w_data = torch.tensor([
-            layer.W_r.data[0, 0].item(),
-            layer.W_i.data[0, 0].item(),
-            layer.W_j.data[0, 0].item(),
-            layer.W_k.data[0, 0].item(),
-        ])
+        w_data = torch.tensor(
+            [
+                layer.W_r.data[0, 0].item(),
+                layer.W_i.data[0, 0].item(),
+                layer.W_j.data[0, 0].item(),
+                layer.W_k.data[0, 0].item(),
+            ]
+        )
         w_quat = Quaternion(w_data)
 
         # Random input
@@ -267,9 +269,7 @@ class TestCrossValidation:
         layer = OctonionDenseLinear(1, 1, bias=False)
 
         # Extract weight as an octonion (8 components from 8 weight matrices)
-        w_data = torch.tensor([
-            layer.weights[c].data[0, 0].item() for c in range(8)
-        ])
+        w_data = torch.tensor([layer.weights[c].data[0, 0].item() for c in range(8)])
 
         # Random input
         x_data = torch.randn(8)
@@ -407,7 +407,7 @@ class TestFindMatchedWidth:
             pct_error = abs(count - target) / target
             assert pct_error <= 0.01, (
                 f"{algebra.short_name}: width={width}, params={count}, "
-                f"target={target}, error={pct_error*100:.2f}%"
+                f"target={target}, error={pct_error * 100:.2f}%"
             )
 
 

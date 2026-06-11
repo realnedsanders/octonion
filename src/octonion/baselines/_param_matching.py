@@ -222,22 +222,32 @@ def find_matched_width(
     """
     if topology == "mlp":
         lo, hi = 1, 4096  # generous upper bound
+
         def build_fn(w: int) -> nn.Module:
             return _build_simple_mlp(
-                    algebra=algebra, hidden=w, depth=depth,
-                    input_dim=input_dim, output_dim=output_dim,
-                )
+                algebra=algebra,
+                hidden=w,
+                depth=depth,
+                input_dim=input_dim,
+                output_dim=output_dim,
+            )
     elif topology == "conv2d":
         # Start with a tight upper bound. Conv2d params grow quadratically
         # with base_hidden * multiplier, so bh=64 gives 512 base filters
         # for real (multiplier=8), which is already huge. Start at 64 and
         # expand only if needed.
         lo, hi = 1, 64
+
         def build_fn(w: int) -> nn.Module:
             return _build_conv_model(
-                    algebra=algebra, base_hidden=w, depth=depth,
-                    input_dim=input_dim, output_dim=output_dim, **kwargs,
-                )
+                algebra=algebra,
+                base_hidden=w,
+                depth=depth,
+                input_dim=input_dim,
+                output_dim=output_dim,
+                **kwargs,
+            )
+
         # Quick check: if hi is too small, expand
         hi_model = build_fn(hi)
         hi_params = sum(p.numel() for p in hi_model.parameters() if p.requires_grad)
@@ -247,8 +257,7 @@ def find_matched_width(
             hi_params = sum(p.numel() for p in hi_model.parameters() if p.requires_grad)
     else:
         raise NotImplementedError(
-            f"Topology {topology!r} not supported for param matching. "
-            f"Supported: 'mlp', 'conv2d'."
+            f"Topology {topology!r} not supported for param matching. Supported: 'mlp', 'conv2d'."
         )
 
     best_width, best_diff = lo, float("inf")
@@ -295,12 +304,14 @@ def param_report(model: nn.Module) -> list[dict[str, Any]]:
     entries = []
     for name, param in model.named_parameters():
         numel = param.numel()
-        entries.append({
-            "name": name,
-            "shape": list(param.shape),
-            "real_params": numel,
-            "pct": numel / total * 100.0,
-        })
+        entries.append(
+            {
+                "name": name,
+                "shape": list(param.shape),
+                "real_params": numel,
+                "pct": numel / total * 100.0,
+            }
+        )
 
     return entries
 
@@ -337,10 +348,12 @@ def flop_report(
     per_layer = []
     for layer_info in summary.summary_list:
         if layer_info.is_leaf_layer:
-            per_layer.append({
-                "name": layer_info.var_name or str(layer_info.class_name),
-                "mult_adds": layer_info.macs or 0,
-            })
+            per_layer.append(
+                {
+                    "name": layer_info.var_name or str(layer_info.class_name),
+                    "mult_adds": layer_info.macs or 0,
+                }
+            )
 
     return {
         "total_mult_adds": summary.total_mult_adds or 0,

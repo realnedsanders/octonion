@@ -39,10 +39,8 @@ def test_stabilizing_norm(algebra_dim: int) -> None:
     from octonion.baselines._stabilization import StabilizingNorm
 
     m = StabilizingNorm(algebra_dim)
-    if algebra_dim == 1:
-        x = torch.randn(4, 16)  # [batch, features]
-    else:
-        x = torch.randn(4, 16, algebra_dim)  # [batch, features, dim]
+    # [batch, features] when algebra_dim == 1, else [batch, features, dim]
+    x = torch.randn(4, 16) if algebra_dim == 1 else torch.randn(4, 16, algebra_dim)
     out = m(x)
     assert out.shape == x.shape
     assert torch.isfinite(out).all()
@@ -79,17 +77,11 @@ def test_depth_sweep_smoke() -> None:
     hidden = 4
     # Build at float64
     layers_f64 = nn.ModuleList(
-        [
-            OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64)
-            for _ in range(depth)
-        ]
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64) for _ in range(depth)]
     )
     # Clone to float32
     layers_f32 = nn.ModuleList(
-        [
-            OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float32)
-            for _ in range(depth)
-        ]
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float32) for _ in range(depth)]
     )
     with torch.no_grad():
         for l64, l32 in zip(layers_f64, layers_f32, strict=False):
@@ -121,8 +113,10 @@ def test_condition_number_smoke() -> None:
     from octonion.calculus._numeric import numeric_jacobian
 
     a = torch.randn(8, dtype=torch.float64)
+
     def fn(x):
         return octonion_mul(a, x)
+
     J = numeric_jacobian(fn, torch.randn(8, dtype=torch.float64))
     sv = torch.linalg.svdvals(J)
     cond = (sv[0] / sv[-1].clamp(min=1e-30)).item()
@@ -199,7 +193,9 @@ def test_full_network_float64_all_algebras(algebra, layer_cls) -> None:
         out = model(x)
 
     assert out.shape[0] == 2
-    assert torch.isfinite(out).all(), f"{algebra.short_name} float64 output contains non-finite values"
+    assert torch.isfinite(out).all(), (
+        f"{algebra.short_name} float64 output contains non-finite values"
+    )
 
 
 def test_stripped_chain_depth500_no_nan() -> None:
@@ -210,8 +206,7 @@ def test_stripped_chain_depth500_no_nan() -> None:
     n_samples = 10
 
     layers_f64 = nn.ModuleList(
-        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64)
-         for _ in range(depth)]
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64) for _ in range(depth)]
     )
     layers_f32 = copy.deepcopy(layers_f64).float()
     layers_f64.eval()
@@ -230,7 +225,11 @@ def test_stripped_chain_depth500_no_nan() -> None:
                 h32 = l32(h32)
 
             # Apply the same guard logic as the analysis script
-            if not torch.isfinite(h32).all() or not torch.isfinite(h64).all() or h64.norm().item() <= 1e-30:
+            if (
+                not torch.isfinite(h32).all()
+                or not torch.isfinite(h64).all()
+                or h64.norm().item() <= 1e-30
+            ):
                 errors.append(float("inf"))
             else:
                 rel_err = (h32.double() - h64).norm() / h64.norm()
@@ -247,6 +246,7 @@ def test_json_serialization_no_nan_infinity() -> None:
     # Import from the script by adding its directory to sys.path
     import os
     import sys
+
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
     from analyze_stability import _sanitize_for_json
 
@@ -278,8 +278,7 @@ def test_condition_number_composition_octonion() -> None:
 
     hidden = 4
     layers = nn.ModuleList(
-        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64)
-         for _ in range(2)]
+        [OctonionDenseLinear(hidden, hidden, bias=False, dtype=torch.float64) for _ in range(2)]
     )
     layers.eval()
 

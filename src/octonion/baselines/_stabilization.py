@@ -32,9 +32,7 @@ class StabilizingNorm(nn.Module):
     def __init__(self, algebra_dim: int, eps: float = 1e-8) -> None:
         super().__init__()
         if algebra_dim not in (1, 2, 4, 8):
-            raise ValueError(
-                f"algebra_dim must be 1, 2, 4, or 8, got {algebra_dim}"
-            )
+            raise ValueError(f"algebra_dim must be 1, 2, 4, or 8, got {algebra_dim}")
         self.algebra_dim = algebra_dim
         self.eps = eps
 

@@ -111,21 +111,23 @@ class TestSeedDeterminism:
         out_dir2 = str(tmp_path / "run2")
         result2 = train_model(model2, train_loader, val_loader, config, out_dir2, device="cpu")
 
-        assert result1["train_losses"][-1] == pytest.approx(
-            result2["train_losses"][-1], abs=1e-6
-        )
+        assert result1["train_losses"][-1] == pytest.approx(result2["train_losses"][-1], abs=1e-6)
 
 
 class TestTrainReturnsMetrics:
     """train_model returns dict with all expected keys."""
 
-    def test_train_returns_metrics(self, tiny_data: tuple, tiny_config: TrainConfig, tmp_path: Path) -> None:
+    def test_train_returns_metrics(
+        self, tiny_data: tuple, tiny_config: TrainConfig, tmp_path: Path
+    ) -> None:
         from octonion.baselines._trainer import seed_everything, train_model
 
         train_loader, val_loader = tiny_data
         seed_everything(tiny_config.seed)
         model = TinyMLP()
-        result = train_model(model, train_loader, val_loader, tiny_config, str(tmp_path), device="cpu")
+        result = train_model(
+            model, train_loader, val_loader, tiny_config, str(tmp_path), device="cpu"
+        )
 
         expected_keys = {
             "train_losses",
@@ -176,7 +178,9 @@ class TestEarlyStopping:
 class TestCheckpointing:
     """Checkpoint save and load restores exact training state."""
 
-    def test_checkpoint_save_load(self, tiny_data: tuple, tiny_config: TrainConfig, tmp_path: Path) -> None:
+    def test_checkpoint_save_load(
+        self, tiny_data: tuple, tiny_config: TrainConfig, tmp_path: Path
+    ) -> None:
         from octonion.baselines._trainer import (
             load_checkpoint,
             save_checkpoint,
@@ -422,9 +426,7 @@ class TestConfidenceInterval:
         lower, upper = confidence_interval(data, confidence=0.95)
         mean = sum(data) / len(data)
 
-        assert lower < mean < upper, (
-            f"CI [{lower}, {upper}] does not contain mean {mean}"
-        )
+        assert lower < mean < upper, f"CI [{lower}, {upper}] does not contain mean {mean}"
         # CI should be non-degenerate
         assert lower < upper
 

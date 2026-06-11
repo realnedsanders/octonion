@@ -17,7 +17,8 @@ Phase 3 -- Full-scale validation (per D-22, D-40):
     Compare full-scale accuracy vs 10K subset accuracy (generalization gap per D-40).
 
 Usage:
-    python scripts/sweep/run_hybrid_validation.py --phase 1 --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_hybrid_validation.py --phase 1 \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
     python scripts/sweep/run_hybrid_validation.py --phase 2  # multi-seed
     python scripts/sweep/run_hybrid_validation.py --phase 3  # full-scale
     python scripts/sweep/run_hybrid_validation.py --phase all
@@ -107,9 +108,7 @@ def _query_top_strategies(db_path: str, top_n: int = 2) -> list[str]:
     return fallback
 
 
-def _query_top_configs(
-    db_path: str, strategy: str, top_n: int = 5
-) -> list[dict[str, Any]]:
+def _query_top_configs(db_path: str, strategy: str, top_n: int = 5) -> list[dict[str, Any]]:
     """Query top-N configs for a given strategy by mean accuracy across benchmarks.
 
     Returns list of dicts with assoc_threshold, sim_threshold, policy_params,
@@ -147,9 +146,7 @@ def _query_top_configs(
         conn.close()
 
 
-def _query_top_overall_configs(
-    db_path: str, top_n: int = 10
-) -> list[dict[str, Any]]:
+def _query_top_overall_configs(db_path: str, top_n: int = 10) -> list[dict[str, Any]]:
     """Query top-N configs OVERALL across all strategies.
 
     Returns list of dicts with policy_type, assoc_threshold, sim_threshold,
@@ -221,15 +218,27 @@ def generate_hybrid_sweep_configs(
     # Fallback to default configs if DB is empty
     if not configs_a:
         configs_a = [
-            {"assoc_threshold": 0.3, "sim_threshold": 0.1,
-             "policy_params": "{}", "min_share": 0.05, "min_count": 3,
-             "noise": 0.0, "epochs": 3}
+            {
+                "assoc_threshold": 0.3,
+                "sim_threshold": 0.1,
+                "policy_params": "{}",
+                "min_share": 0.05,
+                "min_count": 3,
+                "noise": 0.0,
+                "epochs": 3,
+            }
         ]
     if not configs_b:
         configs_b = [
-            {"assoc_threshold": 0.5, "sim_threshold": 0.1,
-             "policy_params": "{}", "min_share": 0.05, "min_count": 3,
-             "noise": 0.0, "epochs": 3}
+            {
+                "assoc_threshold": 0.5,
+                "sim_threshold": 0.1,
+                "policy_params": "{}",
+                "min_share": 0.05,
+                "min_count": 3,
+                "noise": 0.0,
+                "epochs": 3,
+            }
         ]
 
     sweep_configs: list[SweepConfig] = []
@@ -652,8 +661,11 @@ def _print_generalization_gap(db_path: str) -> None:
               )
             ORDER BY fs.policy_type, fs.benchmark
             """,
-            (FULLSCALE_CONFIG_ID_OFFSET, FULLSCALE_CONFIG_ID_OFFSET,
-             FULLSCALE_CONFIG_ID_OFFSET + 1000000),
+            (
+                FULLSCALE_CONFIG_ID_OFFSET,
+                FULLSCALE_CONFIG_ID_OFFSET,
+                FULLSCALE_CONFIG_ID_OFFSET + 1000000,
+            ),
         )
         rows = cursor.fetchall()
         if not rows:
@@ -742,9 +754,9 @@ Examples:
     total_start = time.time()
 
     for phase in phases:
-        logger.info(f"\n{'='*60}")
+        logger.info(f"\n{'=' * 60}")
         logger.info(f"Phase {phase}")
-        logger.info(f"{'='*60}")
+        logger.info(f"{'=' * 60}")
 
         if phase == "1":
             run_hybrid_sweep(

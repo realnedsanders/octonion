@@ -370,22 +370,14 @@ def _pairwise_comparison(
 
     # Bonferroni correction (D-38)
     if result.get("wilcoxon_p") is not None:
-        result["bonferroni_wilcoxon_p"] = min(
-            1.0, result["wilcoxon_p"] * N_PAIRWISE_COMPARISONS
-        )
+        result["bonferroni_wilcoxon_p"] = min(1.0, result["wilcoxon_p"] * N_PAIRWISE_COMPARISONS)
         result["significant_raw_wilcoxon"] = result["wilcoxon_p"] < ALPHA
-        result["significant_corrected_wilcoxon"] = (
-            result["bonferroni_wilcoxon_p"] < ALPHA
-        )
+        result["significant_corrected_wilcoxon"] = result["bonferroni_wilcoxon_p"] < ALPHA
 
     if result.get("ttest_p") is not None:
-        result["bonferroni_ttest_p"] = min(
-            1.0, result["ttest_p"] * N_PAIRWISE_COMPARISONS
-        )
+        result["bonferroni_ttest_p"] = min(1.0, result["ttest_p"] * N_PAIRWISE_COMPARISONS)
         result["significant_raw_ttest"] = result["ttest_p"] < ALPHA
-        result["significant_corrected_ttest"] = (
-            result["bonferroni_ttest_p"] < ALPHA
-        )
+        result["significant_corrected_ttest"] = result["bonferroni_ttest_p"] < ALPHA
 
     return result
 
@@ -475,9 +467,7 @@ def run_friedman_test(
         valid_benchmarks.append(benchmark)
         for strategy in all_strategies:
             if strategy in best_per_strategy:
-                strategy_accuracies[strategy].append(
-                    best_per_strategy[strategy]["accuracy"]
-                )
+                strategy_accuracies[strategy].append(best_per_strategy[strategy]["accuracy"])
             else:
                 strategy_accuracies[strategy].append(0.0)
 
@@ -502,12 +492,8 @@ def run_friedman_test(
         # Negate so higher accuracy gets rank 1
         rank_matrix[i, :] = scipy_stats.rankdata(-accuracy_matrix[i, :])
 
-    mean_ranks = {
-        s: float(rank_matrix[:, j].mean()) for j, s in enumerate(all_strategies)
-    }
-    median_ranks = {
-        s: float(np.median(rank_matrix[:, j])) for j, s in enumerate(all_strategies)
-    }
+    mean_ranks = {s: float(rank_matrix[:, j].mean()) for j, s in enumerate(all_strategies)}
+    median_ranks = {s: float(np.median(rank_matrix[:, j])) for j, s in enumerate(all_strategies)}
 
     # Friedman test
     try:
@@ -541,10 +527,7 @@ def run_friedman_test(
             for i, bm in enumerate(valid_benchmarks)
         },
         "accuracy_matrix": {
-            bm: {
-                s: float(accuracy_matrix[i, j])
-                for j, s in enumerate(all_strategies)
-            }
+            bm: {s: float(accuracy_matrix[i, j]) for j, s in enumerate(all_strategies)}
             for i, bm in enumerate(valid_benchmarks)
         },
         "valid_benchmarks": valid_benchmarks,
@@ -914,7 +897,8 @@ def compute_auto_recommendation(
 
     # Build justification
     justification_parts = [
-        f"Mean accuracy {best_score['mean_accuracy']:.4f} across {best_score['n_benchmarks']} benchmarks.",
+        f"Mean accuracy {best_score['mean_accuracy']:.4f} "
+        f"across {best_score['n_benchmarks']} benchmarks.",
     ]
     if best_score["friedman_rank"] > 0:
         justification_parts.append(
@@ -925,9 +909,7 @@ def compute_auto_recommendation(
             f"Mean Pareto rank {best_score['mean_pareto_rank']:.1f} (accuracy vs node count)."
         )
     if best_score["mean_gen_gap"] > 0:
-        justification_parts.append(
-            f"Mean generalization gap {best_score['mean_gen_gap']:.4f}."
-        )
+        justification_parts.append(f"Mean generalization gap {best_score['mean_gen_gap']:.4f}.")
 
     return {
         "policy_type": best_strategy,
@@ -1200,9 +1182,7 @@ def plot_per_benchmark_comparison(
             linewidth=0.3,
         )
 
-    display_names = [
-        BENCHMARK_DISPLAY_NAMES.get(bm, bm) for bm in valid_benchmarks
-    ]
+    display_names = [BENCHMARK_DISPLAY_NAMES.get(bm, bm) for bm in valid_benchmarks]
     ax.set_xticks(x)
     ax.set_xticklabels(display_names, fontsize=11)
     ax.set_ylabel("Accuracy", fontsize=12)
@@ -1314,9 +1294,7 @@ def _print_pairwise_table(pairwise: dict[str, dict[str, Any]]) -> None:
             d_str = f"{d:.4f}" if d is not None else "N/A"
             ci_str = f"[{ci[0]:.4f}, {ci[1]:.4f}]" if ci is not None else "N/A"
             sig_raw_str = "YES" if sig_raw else ("no" if sig_raw is not None else "N/A")
-            sig_corr_str = (
-                "YES" if sig_corr else ("no" if sig_corr is not None else "N/A")
-            )
+            sig_corr_str = "YES" if sig_corr else ("no" if sig_corr is not None else "N/A")
 
             print(
                 f"global vs {name:<15} {w_str:>12} {t_str:>12} "
@@ -1393,9 +1371,7 @@ def run_full_analysis(
 
     try:
         # Detect available benchmarks
-        benchmark_rows = conn.execute(
-            "SELECT DISTINCT benchmark FROM sweep_results"
-        ).fetchall()
+        benchmark_rows = conn.execute("SELECT DISTINCT benchmark FROM sweep_results").fetchall()
         benchmarks = [row[0] for row in benchmark_rows]
 
         if not benchmarks:
@@ -1425,9 +1401,7 @@ def run_full_analysis(
 
         # 5. Auto-recommendation (D-30)
         logger.info("5. Computing auto-recommendation...")
-        recommendation = compute_auto_recommendation(
-            conn, benchmarks, friedman, gen_gap
-        )
+        recommendation = compute_auto_recommendation(conn, benchmarks, friedman, gen_gap)
 
         # 6. Regime characterization (D-45)
         logger.info("6. Characterizing regimes...")

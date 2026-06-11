@@ -45,7 +45,14 @@ def _build_synthetic_data(batch_size: int = 16):
         y = torch.randint(0, output_dim, (n,))
         return DataLoader(TensorDataset(x, y), batch_size=batch_size, shuffle=False)
 
-    return _make_loader(n_train), _make_loader(n_val), _make_loader(n_test), input_dim, output_dim, 1
+    return (
+        _make_loader(n_train),
+        _make_loader(n_val),
+        _make_loader(n_test),
+        input_dim,
+        output_dim,
+        1,
+    )
 
 
 def _make_train_config() -> TrainConfig:
@@ -108,7 +115,9 @@ def _run(config: ComparisonConfig, task_name: str = "test_task"):
 class TestRunComparisonDirectories:
     """Verify experiment directory structure."""
 
-    def test_run_comparison_creates_directories(self, tiny_comparison_1seed: ComparisonConfig) -> None:
+    def test_run_comparison_creates_directories(
+        self, tiny_comparison_1seed: ComparisonConfig
+    ) -> None:
         """Run with 2 algebras x 1 seed, verify directory structure."""
         config = tiny_comparison_1seed
         _run(config)
@@ -268,7 +277,8 @@ class TestConv2dParamMatching:
     _CONV2D_TOLERANCE = 0.10  # 10% tolerance for conv2d granularity
 
     def test_conv2d_matching_returns_valid_width_all_algebras(self) -> None:
-        """find_matched_width with topology='conv2d' returns valid base_hidden for all 4 algebras."""
+        """find_matched_width with topology='conv2d' returns valid base_hidden
+        for all 4 algebras."""
         from octonion.baselines._config import AlgebraType, NetworkConfig
         from octonion.baselines._network import AlgebraNetwork
         from octonion.baselines._param_matching import find_matched_width
@@ -290,7 +300,12 @@ class TestConv2dParamMatching:
         target_params = sum(p.numel() for p in ref_model.parameters())
 
         # Only iterate original 4 algebras that AlgebraNetwork supports
-        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        _NETWORK_ALGEBRAS = [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+        ]
         for algebra in _NETWORK_ALGEBRAS:
             width = find_matched_width(
                 target_params=target_params,
@@ -325,7 +340,12 @@ class TestConv2dParamMatching:
         target_params = sum(p.numel() for p in ref_model.parameters())
 
         # Only iterate original 4 algebras that AlgebraNetwork supports
-        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        _NETWORK_ALGEBRAS = [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+        ]
         for algebra in _NETWORK_ALGEBRAS:
             width = find_matched_width(
                 target_params=target_params,
@@ -405,7 +425,8 @@ class TestConv2dComparison:
     def _build_conv2d_data(self, batch_size: int = 8):
         """Build tiny CIFAR-like synthetic dataset: [B, 3, 8, 8] images.
 
-        Returns (train_loader, val_loader, test_loader, input_dim=3, output_dim=2, input_channels=3).
+        Returns (train_loader, val_loader, test_loader, input_dim=3,
+        output_dim=2, input_channels=3).
         """
         torch.manual_seed(0)
         n_train, n_val, n_test = 32, 16, 16
@@ -512,7 +533,12 @@ class TestConv2dComparison:
         from octonion.baselines._param_matching import _build_conv_model
 
         # Only iterate original 4 algebras that AlgebraNetwork/conv2d supports
-        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        _NETWORK_ALGEBRAS = [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+        ]
         for algebra in _NETWORK_ALGEBRAS:
             model = _build_conv_model(
                 algebra=algebra,
@@ -576,7 +602,12 @@ class TestSameWidthMode:
     def test_same_width_real_representational_width(self) -> None:
         """Original 4 algebras get the same real representational width."""
         ref_hidden = 8
-        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        _NETWORK_ALGEBRAS = [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+        ]
         for algebra in _NETWORK_ALGEBRAS:
             # base_filters = base_hidden * multiplier
             # real_width = base_filters * dim (for non-real) or base_filters (for real)
@@ -595,7 +626,12 @@ class TestSameWidthMode:
 
         ref_hidden = 8
         param_counts = {}
-        _NETWORK_ALGEBRAS = [AlgebraType.REAL, AlgebraType.COMPLEX, AlgebraType.QUATERNION, AlgebraType.OCTONION]
+        _NETWORK_ALGEBRAS = [
+            AlgebraType.REAL,
+            AlgebraType.COMPLEX,
+            AlgebraType.QUATERNION,
+            AlgebraType.OCTONION,
+        ]
         for algebra in _NETWORK_ALGEBRAS:
             config = NetworkConfig(
                 algebra=algebra,
@@ -606,9 +642,7 @@ class TestSameWidthMode:
                 output_dim=10,
             )
             model = AlgebraNetwork(config)
-            param_counts[algebra.short_name] = sum(
-                p.numel() for p in model.parameters()
-            )
+            param_counts[algebra.short_name] = sum(p.numel() for p in model.parameters())
 
         # Real has most params, octonion fewest (algebraic weight sharing)
         assert param_counts["R"] > param_counts["H"]

@@ -91,9 +91,7 @@ def _collect_associator_norms_by_depth(
                 # Add synthetic samples around the mean to represent the distribution
                 std = math.sqrt(max(var, 0.0))
                 if std > 0 and count > 1:
-                    norms_by_depth[depth].extend(
-                        [mean - std, mean + std]
-                    )
+                    norms_by_depth[depth].extend([mean - std, mean + std])
         elif "welford_mean" in state:
             count = state.get("welford_count", 0)
             mean = state["welford_mean"]
@@ -102,9 +100,7 @@ def _collect_associator_norms_by_depth(
                 norms_by_depth[depth].append(mean)
                 std = math.sqrt(max(M2 / count, 0.0)) if count > 1 else 0.0
                 if std > 0:
-                    norms_by_depth[depth].extend(
-                        [mean - std, mean + std]
-                    )
+                    norms_by_depth[depth].extend([mean - std, mean + std])
         else:
             # Compute norms from buffer entries directly
             if hasattr(node, "buffer") and len(node.buffer) >= 2:
@@ -160,8 +156,20 @@ def plot_per_node_assoc_distributions(
         # Filter out non-finite and negative norms
         norms = [n for n in norms if np.isfinite(n) and n >= 0]
         if norms:
-            ax.hist(norms, bins=min(30, max(5, len(norms) // 3)), color="steelblue", edgecolor="white", alpha=0.8)
-            ax.axvline(np.mean(norms), color="red", linestyle="--", linewidth=1.2, label=f"mean={np.mean(norms):.3f}")
+            ax.hist(
+                norms,
+                bins=min(30, max(5, len(norms) // 3)),
+                color="steelblue",
+                edgecolor="white",
+                alpha=0.8,
+            )
+            ax.axvline(
+                np.mean(norms),
+                color="red",
+                linestyle="--",
+                linewidth=1.2,
+                label=f"mean={np.mean(norms):.3f}",
+            )
             ax.legend(fontsize=7)
         else:
             ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
@@ -305,9 +313,15 @@ def plot_routing_statistics(
         mean_purities = [np.mean(depth_purities[d]) for d in depths]
         std_purities = [np.std(depth_purities[d]) for d in depths]
         ax2.errorbar(
-            depths, mean_purities, yerr=std_purities,
-            fmt="o-", color="forestgreen", linewidth=2, markersize=5,
-            capsize=3, ecolor="gray"
+            depths,
+            mean_purities,
+            yerr=std_purities,
+            fmt="o-",
+            color="forestgreen",
+            linewidth=2,
+            markersize=5,
+            capsize=3,
+            ecolor="gray",
         )
         ax2.set_ylim(0, 1.05)
         ax2.set_xlabel("Depth")
@@ -319,10 +333,20 @@ def plot_routing_statistics(
 
     # Panel 3: Buffer occupancy
     if buffer_sizes:
-        ax3.hist(buffer_sizes, bins=min(30, max(5, len(buffer_sizes) // 3)),
-                 color="coral", edgecolor="white", alpha=0.8)
-        ax3.axvline(np.mean(buffer_sizes), color="red", linestyle="--",
-                    linewidth=1.2, label=f"mean={np.mean(buffer_sizes):.1f}")
+        ax3.hist(
+            buffer_sizes,
+            bins=min(30, max(5, len(buffer_sizes) // 3)),
+            color="coral",
+            edgecolor="white",
+            alpha=0.8,
+        )
+        ax3.axvline(
+            np.mean(buffer_sizes),
+            color="red",
+            linestyle="--",
+            linewidth=1.2,
+            label=f"mean={np.mean(buffer_sizes):.1f}",
+        )
         ax3.legend(fontsize=8)
     else:
         ax3.text(0.5, 0.5, "No buffer data", ha="center", va="center", transform=ax3.transAxes)
@@ -707,22 +731,26 @@ def _make_policy_from_config(config: dict[str, Any]) -> Any:
         # Hybrid needs sub-policies -- use defaults if not specified
         sub_a_type = policy_params.get("policy_a_type", "global")
         sub_b_type = policy_params.get("policy_b_type", "ema")
-        sub_a = _make_policy_from_config({
-            "policy_type": sub_a_type,
-            "assoc_threshold": assoc,
-            "sim_threshold": sim,
-            "min_share": min_share,
-            "min_count": min_count,
-            "policy_params": policy_params.get("policy_a_params", "{}"),
-        })
-        sub_b = _make_policy_from_config({
-            "policy_type": sub_b_type,
-            "assoc_threshold": assoc,
-            "sim_threshold": sim,
-            "min_share": min_share,
-            "min_count": min_count,
-            "policy_params": policy_params.get("policy_b_params", "{}"),
-        })
+        sub_a = _make_policy_from_config(
+            {
+                "policy_type": sub_a_type,
+                "assoc_threshold": assoc,
+                "sim_threshold": sim,
+                "min_share": min_share,
+                "min_count": min_count,
+                "policy_params": policy_params.get("policy_a_params", "{}"),
+            }
+        )
+        sub_b = _make_policy_from_config(
+            {
+                "policy_type": sub_b_type,
+                "assoc_threshold": assoc,
+                "sim_threshold": sim,
+                "min_share": min_share,
+                "min_count": min_count,
+                "policy_params": policy_params.get("policy_b_params", "{}"),
+            }
+        )
         return HybridPolicy(
             policy_a=sub_a,
             policy_b=sub_b,
@@ -756,7 +784,8 @@ def _json_default(obj: Any) -> Any:
 def main() -> None:
     """CLI entry point for diagnostic generation."""
     parser = argparse.ArgumentParser(
-        description="Generate diagnostic visualizations for octonionic trie threshold analysis (D-54)."
+        description="Generate diagnostic visualizations for octonionic trie "
+        "threshold analysis (D-54)."
     )
     parser.add_argument(
         "--features-dir",
@@ -777,7 +806,8 @@ def main() -> None:
         help="Directory to save diagnostic PNGs.",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose logging.",
     )

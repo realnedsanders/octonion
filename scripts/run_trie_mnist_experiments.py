@@ -51,8 +51,10 @@ def load_mnist_raw(
     test_idx = torch.randperm(len(test_all), generator=gen)[:n_test]
 
     return (
-        train_all[train_idx], train_ds.targets[train_idx],
-        test_all[test_idx], test_ds.targets[test_idx],
+        train_all[train_idx],
+        train_ds.targets[train_idx],
+        test_all[test_idx],
+        test_ds.targets[test_idx],
     )
 
 
@@ -101,10 +103,15 @@ def encode_cnn_features(
         def __init__(self):
             super().__init__()
             self.features = nn.Sequential(
-                nn.Conv2d(1, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
-                nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+                nn.Conv2d(1, 16, 3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                nn.Conv2d(16, 32, 3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
                 nn.Flatten(),
-                nn.Linear(32 * 7 * 7, 128), nn.ReLU(),
+                nn.Linear(32 * 7 * 7, 128),
+                nn.ReLU(),
             )
             self.classifier = nn.Linear(128, 10)
 
@@ -125,9 +132,7 @@ def encode_cnn_features(
     cnn = SmallCNN()
     opt = torch.optim.Adam(cnn.parameters(), lr=1e-3)
     loss_fn = nn.CrossEntropyLoss()
-    loader = DataLoader(
-        TensorDataset(full_data, full_labels), batch_size=256, shuffle=True
-    )
+    loader = DataLoader(TensorDataset(full_data, full_labels), batch_size=256, shuffle=True)
 
     cnn.train()
     for epoch in range(3):
@@ -139,7 +144,7 @@ def encode_cnn_features(
             loss.backward()
             opt.step()
             total_loss += loss.item()
-        logger.info(f"      Epoch {epoch+1}: loss={total_loss/len(loader):.4f}")
+        logger.info(f"      Epoch {epoch + 1}: loss={total_loss / len(loader):.4f}")
 
     # Extract features for our subset
     cnn.eval()
@@ -150,12 +155,12 @@ def encode_cnn_features(
         # Batch extraction to avoid OOM
         train_feats = []
         for i in range(0, len(train_images), 1000):
-            train_feats.append(cnn.extract(train_images[i:i+1000]))
+            train_feats.append(cnn.extract(train_images[i : i + 1000]))
         train_feats = torch.cat(train_feats).to(torch.float64)
 
         test_feats = []
         for i in range(0, len(test_images), 1000):
-            test_feats.append(cnn.extract(test_images[i:i+1000]))
+            test_feats.append(cnn.extract(test_images[i : i + 1000]))
         test_feats = torch.cat(test_feats).to(torch.float64)
 
     logger.info(f"    CNN features: {train_feats.shape[1]}D")
@@ -184,9 +189,13 @@ def encode_cnn_features(
 
 
 def evaluate_trie_on(
-    train_proj: torch.Tensor, train_y: torch.Tensor,
-    test_proj: torch.Tensor, test_y: torch.Tensor,
-    n_octs: int, epochs: int = 3, assoc_threshold: float = 0.3,
+    train_proj: torch.Tensor,
+    train_y: torch.Tensor,
+    test_proj: torch.Tensor,
+    test_y: torch.Tensor,
+    n_octs: int,
+    epochs: int = 3,
+    assoc_threshold: float = 0.3,
 ) -> dict:
     """Run the octonionic trie on O^n encoded data.
 
@@ -196,7 +205,9 @@ def evaluate_trie_on(
     if n_octs == 1:
         return _eval_single_oct(train_proj, train_y, test_proj, test_y, epochs, assoc_threshold)
     else:
-        return _eval_multi_oct(train_proj, train_y, test_proj, test_y, n_octs, epochs, assoc_threshold)
+        return _eval_multi_oct(
+            train_proj, train_y, test_proj, test_y, n_octs, epochs, assoc_threshold
+        )
 
 
 def _eval_single_oct(train_x, train_y, test_x, test_y, epochs, threshold):
@@ -244,8 +255,11 @@ def _eval_multi_oct(train_x, train_y, test_x, test_y, n_octs, epochs, threshold)
             correct += 1
 
     total_nodes = sum(t.stats()["n_nodes"] for t, _ in tries)
-    return {"accuracy": correct / len(test_y), "train_time": train_time,
-            "stats": {"n_nodes": total_nodes, "n_tries": n_octs}}
+    return {
+        "accuracy": correct / len(test_y),
+        "train_time": train_time,
+        "stats": {"n_nodes": total_nodes, "n_tries": n_octs},
+    }
 
 
 def knn_accuracy(train_x, train_y, test_x, test_y, k=5):
@@ -280,10 +294,14 @@ def experiment_A(train_raw, train_y, test_raw, test_y, output_dir):
 
         # Trie
         trie_result = evaluate_trie_on(train_proj, train_y, test_proj, test_y, n_octs)
-        logger.info(f"    Trie:     {trie_result['accuracy']:.3f} ({trie_result['train_time']:.1f}s, {trie_result['stats']['n_nodes']} nodes)")
+        logger.info(
+            f"    Trie:     {trie_result['accuracy']:.3f} "
+            f"({trie_result['train_time']:.1f}s, {trie_result['stats']['n_nodes']} nodes)"
+        )
 
         results[f"O{n_octs}"] = {
-            "n_dims": n_dims, "knn_k5": knn,
+            "n_dims": n_dims,
+            "knn_k5": knn,
             "trie": trie_result["accuracy"],
             "trie_nodes": trie_result["stats"]["n_nodes"],
             "train_time": trie_result["train_time"],
@@ -293,7 +311,9 @@ def experiment_A(train_raw, train_y, test_raw, test_y, output_dir):
     logger.info("\n" + "=" * 60)
     logger.info("Experiment A Summary")
     logger.info("=" * 60)
-    logger.info(f"  {'Repr':>6} | {'Dims':>4} | {'kNN':>6} | {'Trie':>6} | {'Nodes':>6} | {'Time':>6}")
+    logger.info(
+        f"  {'Repr':>6} | {'Dims':>4} | {'kNN':>6} | {'Trie':>6} | {'Nodes':>6} | {'Time':>6}"
+    )
     logger.info(f"  {'':->6}-+-{'':->4}-+-{'':->6}-+-{'':->6}-+-{'':->6}-+-{'':->6}")
     for label, r in results.items():
         logger.info(
@@ -352,7 +372,9 @@ def experiment_B(train_raw, train_y, test_raw, test_y, output_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", choices=["A", "B"], default=None, help="Run one experiment (default: both)")
+    parser.add_argument(
+        "--experiment", choices=["A", "B"], default=None, help="Run one experiment (default: both)"
+    )
     parser.add_argument("--n-train", type=int, default=10000)
     parser.add_argument("--n-test", type=int, default=2000)
     parser.add_argument("--output-dir", type=str, default="results/trie_validation")

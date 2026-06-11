@@ -22,6 +22,7 @@ import torch.nn.functional as F
 # Captured here BEFORE vectorization so the test is self-contained
 # and independent of the optimized implementation in _normalization.py.
 
+
 def _tril_to_symmetric_reference(tril_flat: torch.Tensor, dim: int) -> torch.Tensor:
     """Reference: convert flat lower-triangular entries to a symmetric matrix.
 
@@ -37,8 +38,11 @@ def _tril_to_symmetric_reference(tril_flat: torch.Tensor, dim: int) -> torch.Ten
     """
     batch_shape = tril_flat.shape[:-1]
     mat = torch.zeros(
-        *batch_shape, dim, dim,
-        device=tril_flat.device, dtype=tril_flat.dtype,
+        *batch_shape,
+        dim,
+        dim,
+        device=tril_flat.device,
+        dtype=tril_flat.dtype,
     )
     idx = 0
     for i in range(dim):
@@ -78,8 +82,7 @@ def _octonion_dense_forward_reference(
     batch_shape = x.shape[:-2]
     linear_cache: dict[tuple[int, int], torch.Tensor] = {}
     out_components = [
-        torch.zeros(*batch_shape, out_features, dtype=x.dtype, device=x.device)
-        for _ in range(8)
+        torch.zeros(*batch_shape, out_features, dtype=x.dtype, device=x.device) for _ in range(8)
     ]
     for i, j, k, coeff in nonzero_entries:
         key = (i, j)
@@ -112,6 +115,7 @@ try:
         QuaternionBatchNorm,
         _tril_to_symmetric,
     )
+
     _NORMALIZATION_AVAILABLE = True
 except ImportError:
     _tril_to_symmetric = None  # type: ignore[assignment]
@@ -121,6 +125,7 @@ except ImportError:
 
 try:
     from octonion.baselines._config import TrainConfig
+
     _CONFIG_AVAILABLE = True
 except ImportError:
     TrainConfig = None  # type: ignore[assignment, misc]
@@ -129,6 +134,7 @@ except ImportError:
 try:
     from octonion._multiplication import STRUCTURE_CONSTANTS
     from octonion.baselines._algebra_linear import OctonionDenseLinear
+
     _LINEAR_AVAILABLE = True
 except ImportError:
     OctonionDenseLinear = None  # type: ignore[assignment, misc]
@@ -137,6 +143,7 @@ except ImportError:
 
 try:
     from octonion.baselines._algebra_conv import OctonionConv2d, QuaternionConv2d
+
     _CONV_AVAILABLE = True
 except ImportError:
     OctonionConv2d = None  # type: ignore[assignment, misc]
@@ -146,6 +153,7 @@ except ImportError:
 
 # ── Helper ───────────────────────────────────────────────────────────
 
+
 def _random_tril_flat(batch_shape: tuple[int, ...], dim: int, dtype: torch.dtype) -> torch.Tensor:
     """Generate random flat lower-triangular entries."""
     tril_size = dim * (dim + 1) // 2
@@ -153,6 +161,7 @@ def _random_tril_flat(batch_shape: tuple[int, ...], dim: int, dtype: torch.dtype
 
 
 # ── Tier 1: dim=2 (complex, 3 entries) ───────────────────────────────
+
 
 @pytest.mark.skipif(
     not _NORMALIZATION_AVAILABLE,
@@ -183,6 +192,7 @@ class TestDim2:
 
 
 # ── Tier 1: dim=4 (quaternion, 10 entries) ────────────────────────────
+
 
 @pytest.mark.skipif(
     not _NORMALIZATION_AVAILABLE,
@@ -232,6 +242,7 @@ class TestDim4:
 
 
 # ── Tier 1: dim=8 (octonion, 36 entries) ─────────────────────────────
+
 
 @pytest.mark.skipif(
     not _NORMALIZATION_AVAILABLE,
@@ -290,6 +301,7 @@ class TestDim8:
 
 # ── Tier 2: OctonionDenseLinear fused forward equivalence ─────────────
 
+
 @pytest.mark.skipif(
     not _LINEAR_AVAILABLE,
     reason="OctonionDenseLinear not importable from octonion.baselines._algebra_linear",
@@ -311,11 +323,14 @@ class TestOctonionDenseLinearFusedForward:
         nonzero_entries = _build_nonzero_entries(STRUCTURE_CONSTANTS)
         return layer, weights, nonzero_entries
 
-    @pytest.mark.parametrize("batch_shape,in_f,out_f", [
-        ((4, 16), 16, 32),   # Standard batch
-        ((1, 16), 16, 32),   # Single sample
-        ((2, 3, 16), 16, 32),  # Higher-rank batch dims
-    ])
+    @pytest.mark.parametrize(
+        "batch_shape,in_f,out_f",
+        [
+            ((4, 16), 16, 32),  # Standard batch
+            ((1, 16), 16, 32),  # Single sample
+            ((2, 3, 16), 16, 32),  # Higher-rank batch dims
+        ],
+    )
     def test_fused_forward_matches_reference(
         self,
         batch_shape: tuple[int, ...],
@@ -336,7 +351,7 @@ class TestOctonionDenseLinearFusedForward:
             f"Shape mismatch: fused={fused_out.shape} ref={ref_out.shape}"
         )
         assert torch.allclose(fused_out, ref_out, atol=1e-5), (
-            f"Output mismatch: max_diff={( fused_out - ref_out).abs().max().item():.2e}"
+            f"Output mismatch: max_diff={(fused_out - ref_out).abs().max().item():.2e}"
         )
 
     def test_fused_backward_matches_reference(self) -> None:
@@ -359,7 +374,9 @@ class TestOctonionDenseLinearFusedForward:
 
         # Reference forward with same weights
         weights_ref = [w.detach() for w in layer_fused.weights]
-        out_ref = _octonion_dense_forward_reference(x_ref, weights_ref, nonzero_entries, out_f, None)
+        out_ref = _octonion_dense_forward_reference(
+            x_ref, weights_ref, nonzero_entries, out_f, None
+        )
         loss_ref = out_ref.sum()
         loss_ref.backward()
 
@@ -399,6 +416,7 @@ class TestOctonionDenseLinearFusedForward:
 
 
 # ── Tier 2: OctonionConv2d eval-mode fused weight caching ─────────────
+
 
 @pytest.mark.skipif(
     not _CONV_AVAILABLE,
@@ -456,9 +474,7 @@ class TestOctonionConv2dEvalCache:
         _ = layer(x)  # populate cache
 
         layer.train()
-        assert layer._fused_cache is None, (
-            "Cache should be None after calling .train()"
-        )
+        assert layer._fused_cache is None, "Cache should be None after calling .train()"
 
     def test_updated_weights_reflected_after_retrain_eval(self) -> None:
         """After modifying weights and re-entering eval, the cache reflects updated weights."""
@@ -493,9 +509,7 @@ class TestOctonionConv2dEvalCache:
     def test_cache_is_none_initially(self) -> None:
         """Cache starts as None (no pre-computation at init)."""
         layer = self._make_layer()
-        assert layer._fused_cache is None, (
-            "_fused_cache should be None at initialization"
-        )
+        assert layer._fused_cache is None, "_fused_cache should be None at initialization"
 
     def test_cache_populated_after_eval_forward(self) -> None:
         """Cache is populated after first eval forward call."""
@@ -505,12 +519,11 @@ class TestOctonionConv2dEvalCache:
         layer.eval()
         _ = layer(x)
 
-        assert layer._fused_cache is not None, (
-            "_fused_cache should be populated after eval forward"
-        )
+        assert layer._fused_cache is not None, "_fused_cache should be populated after eval forward"
 
 
 # ── Tier 2: QuaternionConv2d eval-mode fused weight caching ──────────
+
 
 @pytest.mark.skipif(
     not _CONV_AVAILABLE,
@@ -560,19 +573,16 @@ class TestQuaternionConv2dEvalCache:
         _ = layer(x)  # populate cache
 
         layer.train()
-        assert layer._fused_cache is None, (
-            "Cache should be None after calling .train()"
-        )
+        assert layer._fused_cache is None, "Cache should be None after calling .train()"
 
     def test_cache_is_none_initially(self) -> None:
         """Cache starts as None."""
         layer = self._make_layer()
-        assert layer._fused_cache is None, (
-            "_fused_cache should be None at initialization"
-        )
+        assert layer._fused_cache is None, "_fused_cache should be None at initialization"
 
 
 # ── Tier 3: AMP BN float32 protection and cholesky_ex ─────────────────
+
 
 @pytest.mark.skipif(
     not _NORMALIZATION_AVAILABLE,
@@ -620,9 +630,9 @@ class TestBNAMPProtection:
         assert out_amp.shape == (8, 16, 4), f"Unexpected shape: {out_amp.shape}"
         # atol=5e-3: float16 gamma/beta arithmetic introduces ~1e-3 rounding
         # vs the pure fp32 path; 5e-3 covers worst-case half precision error.
-        assert torch.allclose(
-            out_fp32, out_amp.float(), atol=5e-3
-        ), f"AMP BN diverged from fp32: max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+        assert torch.allclose(out_fp32, out_amp.float(), atol=5e-3), (
+            f"AMP BN diverged from fp32: max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+        )
 
     @pytest.mark.skipif(
         not torch.cuda.is_available(),
@@ -649,9 +659,10 @@ class TestBNAMPProtection:
         assert out_amp.shape == (64, 8, 8), f"Unexpected shape: {out_amp.shape}"
         # atol=5e-3: float16 gamma/beta arithmetic introduces ~1e-3 rounding
         # vs the pure fp32 path; 5e-3 covers worst-case half precision error.
-        assert torch.allclose(
-            out_fp32, out_amp.float(), atol=5e-3
-        ), f"AMP OctonionBN diverged from fp32: max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+        assert torch.allclose(out_fp32, out_amp.float(), atol=5e-3), (
+            f"AMP OctonionBN diverged from fp32: "
+            f"max_diff={(out_fp32 - out_amp.float()).abs().max():.4e}"
+        )
 
     def test_quaternion_bn_cpu_no_error(self) -> None:
         """QuaternionBatchNorm forward works on CPU (autocast disable is no-op)."""
@@ -707,6 +718,7 @@ class TestBNAMPProtection:
         We verify this by inspecting the source code.
         """
         import inspect
+
         source = inspect.getsource(QuaternionBatchNorm._whiten)
         # Must NOT contain try/except
         assert "try:" not in source, (
@@ -721,6 +733,7 @@ class TestBNAMPProtection:
     def test_no_try_except_in_whiten_octonion(self) -> None:
         """OctonionBatchNorm._whiten must not contain try/except around cholesky."""
         import inspect
+
         source = inspect.getsource(OctonionBatchNorm._whiten)
         assert "try:" not in source, (
             "OctonionBatchNorm._whiten contains try/except around cholesky "
@@ -732,6 +745,7 @@ class TestBNAMPProtection:
 
 
 # ── Tier 3: torch.compile config flag and CLI flags ────────────────────
+
 
 @pytest.mark.skipif(
     not _CONFIG_AVAILABLE,
@@ -771,18 +785,13 @@ class TestTrainConfigCompileFlag:
         """--use-amp and --compile CLI flags are recognized by run_cifar_reproduction.py."""
         import subprocess
         import sys
+
         result = subprocess.run(
             [sys.executable, "scripts/run_cifar_reproduction.py", "--help"],
             capture_output=True,
             text=True,
             cwd="/workspace",
         )
-        assert result.returncode == 0, (
-            f"run_cifar_reproduction.py --help failed:\n{result.stderr}"
-        )
-        assert "--use-amp" in result.stdout, (
-            "--use-amp flag not found in --help output"
-        )
-        assert "--compile" in result.stdout, (
-            "--compile flag not found in --help output"
-        )
+        assert result.returncode == 0, f"run_cifar_reproduction.py --help failed:\n{result.stderr}"
+        assert "--use-amp" in result.stdout, "--use-amp flag not found in --help output"
+        assert "--compile" in result.stdout, "--compile flag not found in --help output"

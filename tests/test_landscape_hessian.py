@@ -26,6 +26,7 @@ from octonion.landscape._hessian import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class ToyQuadratic(nn.Module):
     """f(x, y) = x^2 + 3*y^2.  Hessian eigenvalues are [2, 6]."""
 
@@ -100,9 +101,7 @@ class TestFullHessian:
         y = torch.randn(10, 1, dtype=torch.float64)
 
         # Save original params BEFORE any Hessian computation
-        orig_params = torch.cat(
-            [p.reshape(-1).detach().clone() for p in model.parameters()]
-        )
+        orig_params = torch.cat([p.reshape(-1).detach().clone() for p in model.parameters()])
 
         # Finite-difference Hessian (do this first so params are untouched)
         n = orig_params.numel()
@@ -113,7 +112,7 @@ class TestFullHessian:
             offset = 0
             for p in model.parameters():
                 numel = p.numel()
-                p.data.copy_(flat[offset:offset + numel].reshape(p.shape))
+                p.data.copy_(flat[offset : offset + numel].reshape(p.shape))
                 offset += numel
             with torch.no_grad():
                 out = model(x)
@@ -137,7 +136,7 @@ class TestFullHessian:
         offset = 0
         for p in model.parameters():
             numel = p.numel()
-            p.data.copy_(orig_params[offset:offset + numel].reshape(p.shape))
+            p.data.copy_(orig_params[offset : offset + numel].reshape(p.shape))
             offset += numel
 
         # Now compute full Hessian via autograd
@@ -197,7 +196,10 @@ class TestStochasticLanczos:
 
         full = compute_full_hessian(model, _mse_loss, x, y)
         lanczos = stochastic_lanczos(
-            model, _mse_loss, x, y,
+            model,
+            _mse_loss,
+            x,
+            y,
             n_iterations=50,
             n_samples=3,
         )
@@ -206,8 +208,7 @@ class TestStochasticLanczos:
         top_lanczos = np.max(np.abs(lanczos["ritz_values"]))
         # Within 20% of full
         assert abs(top_lanczos - top_full) / (top_full + 1e-10) < 0.20, (
-            f"Lanczos top eigenvalue {top_lanczos:.4f} not within 20% of "
-            f"full {top_full:.4f}"
+            f"Lanczos top eigenvalue {top_lanczos:.4f} not within 20% of full {top_full:.4f}"
         )
 
     def test_lanczos_result_fields(self) -> None:
@@ -218,7 +219,10 @@ class TestStochasticLanczos:
         y = torch.randn(10, 1)
 
         result = stochastic_lanczos(
-            model, _mse_loss, x, y,
+            model,
+            _mse_loss,
+            x,
+            y,
             n_iterations=20,
             n_samples=2,
         )
@@ -264,7 +268,10 @@ class TestAutoSelection:
         y = torch.randn(5, 100)
 
         result = compute_hessian_spectrum(
-            model, _mse_loss, x, y,
+            model,
+            _mse_loss,
+            x,
+            y,
             method="auto",
             max_full_params=2000,
         )
@@ -312,7 +319,10 @@ class TestCurvature:
             optimizer.step()
 
         result = measure_curvature(
-            model, _mse_loss, x, y,
+            model,
+            _mse_loss,
+            x,
+            y,
             n_directions=10,
             n_steps=21,
             seed=42,
@@ -331,17 +341,16 @@ class TestCurvature:
         y = torch.randn(10, 1)
 
         # Save original weights
-        orig_state = {
-            name: p.clone() for name, p in model.named_parameters()
-        }
+        orig_state = {name: p.clone() for name, p in model.named_parameters()}
 
         measure_curvature(model, _mse_loss, x, y, n_directions=5, n_steps=11)
 
         # Verify weights restored
         for name, p in model.named_parameters():
             torch.testing.assert_close(
-                p.data, orig_state[name],
-                msg=f"Parameter {name} was not restored after curvature measurement"
+                p.data,
+                orig_state[name],
+                msg=f"Parameter {name} was not restored after curvature measurement",
             )
 
     def test_curvature_result_structure(self) -> None:

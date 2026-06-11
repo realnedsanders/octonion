@@ -68,14 +68,16 @@ def collect_gradient_stats(
             max_val = float(grad.max().item())
             min_val = float(grad.min().item())
 
-            per_layer_stats.append({
-                "name": name,
-                "norm": norm_val,
-                "mean": mean_val,
-                "std": std_val,
-                "max": max_val,
-                "min": min_val,
-            })
+            per_layer_stats.append(
+                {
+                    "name": name,
+                    "norm": norm_val,
+                    "mean": mean_val,
+                    "std": std_val,
+                    "max": max_val,
+                    "min": min_val,
+                }
+            )
             all_norms.append(norm_val)
 
     if all_norms:
@@ -167,20 +169,17 @@ def collect_gradient_variance_across_seeds(
     mean_grad_norm_trajectory: list[float] = []
     for step in range(n_steps):
         step_norms = [per_seed_mean_norms[s][step] for s in range(len(seeds))]
-        mean_grad_norm_trajectory.append(
-            sum(step_norms) / len(step_norms) if step_norms else 0.0
-        )
+        mean_grad_norm_trajectory.append(sum(step_norms) / len(step_norms) if step_norms else 0.0)
 
     # Cross-seed variance: variance of the per-seed overall mean gradient norm
     per_seed_overall_means = [
-        sum(norms) / len(norms) if norms else 0.0
-        for norms in per_seed_mean_norms
+        sum(norms) / len(norms) if norms else 0.0 for norms in per_seed_mean_norms
     ]
     if len(per_seed_overall_means) > 1:
         overall_mean = sum(per_seed_overall_means) / len(per_seed_overall_means)
-        cross_seed_variance = sum(
-            (m - overall_mean) ** 2 for m in per_seed_overall_means
-        ) / (len(per_seed_overall_means) - 1)
+        cross_seed_variance = sum((m - overall_mean) ** 2 for m in per_seed_overall_means) / (
+            len(per_seed_overall_means) - 1
+        )
     else:
         cross_seed_variance = 0.0
 

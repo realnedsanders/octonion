@@ -88,7 +88,10 @@ def main() -> None:
         small = results[0]
         large = results[-1]
         speedup = (large["ops_per_sec"] / small["ops_per_sec"]) if small["ops_per_sec"] > 0 else 0
-        print(f"Batch scaling: {small['batch_size']:,} -> {large['batch_size']:,} = {speedup:.1f}x throughput improvement")
+        print(
+            f"Batch scaling: {small['batch_size']:,} -> {large['batch_size']:,} "
+            f"= {speedup:.1f}x throughput improvement"
+        )
 
 
 if __name__ == "__main__":

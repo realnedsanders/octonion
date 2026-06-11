@@ -13,7 +13,6 @@ All tests use Hypothesis property-based testing with detailed precision statisti
 reporting (max/mean/std of relative errors) per user decision.
 """
 
-
 import hypothesis.strategies as st
 import pytest
 import torch
@@ -198,9 +197,7 @@ class TestMoufangIdentities:
         rhs = a * (b * a)
         err = (lhs.components - rhs.components).abs()
         max_err = err.max().item()
-        assert max_err < ATOL_FLOAT64, (
-            f"Flexibility failed: (xy)x = x(yx), max_error={max_err:.2e}"
-        )
+        assert max_err < ATOL_FLOAT64, f"Flexibility failed: (xy)x = x(yx), max_error={max_err:.2e}"
 
 
 # =============================================================================
@@ -337,23 +334,17 @@ class TestAlternativity:
         # [a, a, b] = 0
         assoc_aab = associator(a, a, b)
         err_aab = assoc_aab.components.abs().max().item()
-        assert err_aab < ATOL_FLOAT64, (
-            f"[a,a,b] should be zero, max_error={err_aab:.2e}"
-        )
+        assert err_aab < ATOL_FLOAT64, f"[a,a,b] should be zero, max_error={err_aab:.2e}"
 
         # [a, b, a] = 0
         assoc_aba = associator(a, b, a)
         err_aba = assoc_aba.components.abs().max().item()
-        assert err_aba < ATOL_FLOAT64, (
-            f"[a,b,a] should be zero, max_error={err_aba:.2e}"
-        )
+        assert err_aba < ATOL_FLOAT64, f"[a,b,a] should be zero, max_error={err_aba:.2e}"
 
         # [a, b, b] = 0
         assoc_abb = associator(a, b, b)
         err_abb = assoc_abb.components.abs().max().item()
-        assert err_abb < ATOL_FLOAT64, (
-            f"[a,b,b] should be zero, max_error={err_abb:.2e}"
-        )
+        assert err_abb < ATOL_FLOAT64, f"[a,b,b] should be zero, max_error={err_abb:.2e}"
 
 
 class TestAssociatorNonzero:
@@ -405,9 +396,7 @@ class TestAssociatorAntisymmetry:
         c=octonions(min_value=-1.0, max_value=1.0),
     )
     @settings(max_examples=5000, deadline=None)
-    def test_associator_antisymmetry(
-        self, a: Octonion, b: Octonion, c: Octonion
-    ) -> None:
+    def test_associator_antisymmetry(self, a: Octonion, b: Octonion, c: Octonion) -> None:
         """[a,b,c] = -[b,a,c] and [a,b,c] = -[a,c,b]."""
         abc = associator(a, b, c)
         bac = associator(b, a, c)
@@ -488,9 +477,7 @@ class TestConjugationRule:
         lhs = (a * b).conjugate()
         rhs = b.conjugate() * a.conjugate()
         err = (lhs.components - rhs.components).abs().max().item()
-        assert err < ATOL_FLOAT64, (
-            f"Conjugation reversal failed: max_error={err:.2e}"
-        )
+        assert err < ATOL_FLOAT64, f"Conjugation reversal failed: max_error={err:.2e}"
 
 
 # =============================================================================
@@ -505,59 +492,44 @@ class TestAssociatorTrilinearity:
         a=octonions(min_value=-1.0, max_value=1.0),
         b=octonions(min_value=-1.0, max_value=1.0),
         c=octonions(min_value=-1.0, max_value=1.0),
-        s=st.floats(min_value=-2.0, max_value=2.0,
-                     allow_nan=False, allow_infinity=False),
+        s=st.floats(min_value=-2.0, max_value=2.0, allow_nan=False, allow_infinity=False),
     )
     @settings(max_examples=3000, deadline=None)
-    def test_scalar_first_slot(
-        self, a: Octonion, b: Octonion, c: Octonion, s: float
-    ) -> None:
+    def test_scalar_first_slot(self, a: Octonion, b: Octonion, c: Octonion, s: float) -> None:
         """[s*a, b, c] = s * [a, b, c]."""
         lhs = associator(a * s, b, c)
         rhs = associator(a, b, c) * s
         err = (lhs.components - rhs.components).abs().max().item()
         target(err, label="trilinearity_slot1_error")
-        assert err < ATOL_FLOAT64 * 10, (
-            f"Trilinearity (slot 1) failed: max_error={err:.2e}"
-        )
+        assert err < ATOL_FLOAT64 * 10, f"Trilinearity (slot 1) failed: max_error={err:.2e}"
 
     @given(
         a=octonions(min_value=-1.0, max_value=1.0),
         b=octonions(min_value=-1.0, max_value=1.0),
         c=octonions(min_value=-1.0, max_value=1.0),
-        s=st.floats(min_value=-2.0, max_value=2.0,
-                     allow_nan=False, allow_infinity=False),
+        s=st.floats(min_value=-2.0, max_value=2.0, allow_nan=False, allow_infinity=False),
     )
     @settings(max_examples=3000, deadline=None)
-    def test_scalar_second_slot(
-        self, a: Octonion, b: Octonion, c: Octonion, s: float
-    ) -> None:
+    def test_scalar_second_slot(self, a: Octonion, b: Octonion, c: Octonion, s: float) -> None:
         """[a, s*b, c] = s * [a, b, c]."""
         lhs = associator(a, b * s, c)
         rhs = associator(a, b, c) * s
         err = (lhs.components - rhs.components).abs().max().item()
-        assert err < ATOL_FLOAT64 * 10, (
-            f"Trilinearity (slot 2) failed: max_error={err:.2e}"
-        )
+        assert err < ATOL_FLOAT64 * 10, f"Trilinearity (slot 2) failed: max_error={err:.2e}"
 
     @given(
         a=octonions(min_value=-1.0, max_value=1.0),
         b=octonions(min_value=-1.0, max_value=1.0),
         c=octonions(min_value=-1.0, max_value=1.0),
-        s=st.floats(min_value=-2.0, max_value=2.0,
-                     allow_nan=False, allow_infinity=False),
+        s=st.floats(min_value=-2.0, max_value=2.0, allow_nan=False, allow_infinity=False),
     )
     @settings(max_examples=3000, deadline=None)
-    def test_scalar_third_slot(
-        self, a: Octonion, b: Octonion, c: Octonion, s: float
-    ) -> None:
+    def test_scalar_third_slot(self, a: Octonion, b: Octonion, c: Octonion, s: float) -> None:
         """[a, b, s*c] = s * [a, b, c]."""
         lhs = associator(a, b, c * s)
         rhs = associator(a, b, c) * s
         err = (lhs.components - rhs.components).abs().max().item()
-        assert err < ATOL_FLOAT64 * 10, (
-            f"Trilinearity (slot 3) failed: max_error={err:.2e}"
-        )
+        assert err < ATOL_FLOAT64 * 10, f"Trilinearity (slot 3) failed: max_error={err:.2e}"
 
 
 # =============================================================================
@@ -574,9 +546,7 @@ class TestAssociatorFullAntisymmetry:
         c=octonions(min_value=-1.0, max_value=1.0),
     )
     @settings(max_examples=5000, deadline=None)
-    def test_all_six_permutations(
-        self, a: Octonion, b: Octonion, c: Octonion
-    ) -> None:
+    def test_all_six_permutations(self, a: Octonion, b: Octonion, c: Octonion) -> None:
         """[a,b,c] = -[b,a,c] = -[a,c,b] = -[c,b,a] = [b,c,a] = [c,a,b]."""
         abc = associator(a, b, c).components
 
@@ -589,13 +559,15 @@ class TestAssociatorFullAntisymmetry:
         bca = associator(b, c, a).components
         cab = associator(c, a, b).components
 
-        for name, val in [("-[b,a,c]", -bac), ("-[a,c,b]", -acb),
-                          ("-[c,b,a]", -cba), ("[b,c,a]", bca),
-                          ("[c,a,b]", cab)]:
+        for name, val in [
+            ("-[b,a,c]", -bac),
+            ("-[a,c,b]", -acb),
+            ("-[c,b,a]", -cba),
+            ("[b,c,a]", bca),
+            ("[c,a,b]", cab),
+        ]:
             err = (abc - val).abs().max().item()
-            assert err < ATOL_FLOAT64, (
-                f"Full antisymmetry failed for {name}: max_error={err:.2e}"
-            )
+            assert err < ATOL_FLOAT64, f"Full antisymmetry failed for {name}: max_error={err:.2e}"
 
 
 # =============================================================================
@@ -606,11 +578,14 @@ class TestAssociatorFullAntisymmetry:
 class TestSubalgebraAssociativity:
     """Elements in the same quaternionic subalgebra must associate."""
 
-    @pytest.mark.parametrize("sub_idx", range(7), ids=[
-        f"S{i}({t})" for i, t in enumerate([
-            "1,2,4", "2,3,5", "3,4,6", "4,5,7", "5,6,1", "6,7,2", "7,1,3"
-        ])
-    ])
+    @pytest.mark.parametrize(
+        "sub_idx",
+        range(7),
+        ids=[
+            f"S{i}({t})"
+            for i, t in enumerate(["1,2,4", "2,3,5", "3,4,6", "4,5,7", "5,6,1", "6,7,2", "7,1,3"])
+        ],
+    )
     @given(data=st.data())
     @settings(max_examples=1000, deadline=None)
     def test_quaternionic_subalgebra_zero_associator(
@@ -642,9 +617,7 @@ class TestArtinsTheorem:
         b=octonions(min_value=-1.0, max_value=1.0),
     )
     @settings(max_examples=5000, deadline=None)
-    def test_two_element_products_associate(
-        self, a: Octonion, b: Octonion
-    ) -> None:
+    def test_two_element_products_associate(self, a: Octonion, b: Octonion) -> None:
         """Products of any two elements form an associative set.
 
         Tests representative triples from the subalgebra generated by a,b:
@@ -661,9 +634,7 @@ class TestArtinsTheorem:
         ]:
             assoc = associator(x, y, z)
             norm = assoc.components.norm().item()
-            assert norm < ATOL_FLOAT64 * 10, (
-                f"Artin's theorem failed for {name}: norm={norm:.2e}"
-            )
+            assert norm < ATOL_FLOAT64 * 10, f"Artin's theorem failed for {name}: norm={norm:.2e}"
 
 
 # =============================================================================
@@ -680,13 +651,15 @@ class TestAssociatorNormBound:
         c=octonions(min_value=-1.0, max_value=1.0),
     )
     @settings(max_examples=5000, deadline=None)
-    def test_general_bound(
-        self, a: Octonion, b: Octonion, c: Octonion
-    ) -> None:
+    def test_general_bound(self, a: Octonion, b: Octonion, c: Octonion) -> None:
         """Associator norm is bounded by 2 * product of input norms."""
         assoc_norm = associator(a, b, c).components.norm().item()
-        bound = 2.0 * a.components.norm().item() * b.components.norm().item() * c.components.norm().item()
+        bound = (
+            2.0
+            * a.components.norm().item()
+            * b.components.norm().item()
+            * c.components.norm().item()
+        )
         assert assoc_norm <= bound + ATOL_FLOAT64, (
-            f"Norm bound violated: ||[a,b,c]||={assoc_norm:.6f} > "
-            f"2*||a||*||b||*||c||={bound:.6f}"
+            f"Norm bound violated: ||[a,b,c]||={assoc_norm:.6f} > 2*||a||*||b||*||c||={bound:.6f}"
         )

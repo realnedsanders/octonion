@@ -6,8 +6,10 @@ conv2d topology matching benchmark configurations.
 
 Usage:
     docker compose run --rm dev uv run python scripts/profile_baseline.py
-    docker compose run --rm dev uv run python scripts/profile_baseline.py --algebras octonion quaternion
-    docker compose run --rm dev uv run python scripts/profile_baseline.py --device cpu --batch-size 32
+    docker compose run --rm dev uv run python scripts/profile_baseline.py \\
+        --algebras octonion quaternion
+    docker compose run --rm dev uv run python scripts/profile_baseline.py \\
+        --device cpu --batch-size 32
 
 Outputs:
     - Per-algebra profiler tables (top-20 ops by CUDA time)
@@ -80,8 +82,8 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=4,
         help="Base hidden width for all algebras (same-width protocol). "
-             "Default 4 matches the CIFAR reproduction run: "
-             "R=3.7M, C=1.87M, H=950K, O=495K params.",
+        "Default 4 matches the CIFAR reproduction run: "
+        "R=3.7M, C=1.87M, H=950K, O=495K params.",
     )
     return parser.parse_args()
 
@@ -90,8 +92,7 @@ def resolve_device(requested: str) -> torch.device:
     """Resolve device, falling back to CPU if CUDA is unavailable."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
         warnings.warn(
-            f"CUDA requested but not available. Falling back to CPU. "
-            f"(Requested: {requested!r})",
+            f"CUDA requested but not available. Falling back to CPU. (Requested: {requested!r})",
             UserWarning,
             stacklevel=2,
         )
@@ -202,9 +203,9 @@ def profile_algebra(
     Returns:
         Dict with timing and memory stats for this algebra.
     """
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Profiling: {algebra_name.upper()}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Build model
     model = build_profile_model(algebra_name, device, ref_hidden=ref_hidden)
@@ -236,9 +237,9 @@ def profile_algebra(
         record_shapes=True,
         profile_memory=True,
         with_stack=False,
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            str(output_dir / algebra_name)
-        ) if export_traces else None,
+        on_trace_ready=torch.profiler.tensorboard_trace_handler(str(output_dir / algebra_name))
+        if export_traces
+        else None,
     ) as prof:
         model.train()
         for step in range(n_iters):
@@ -274,12 +275,10 @@ def profile_algebra(
 
     key_avgs = prof.key_averages()
     total_cuda_time_us = sum(
-        item.cuda_time_total for item in key_avgs
-        if hasattr(item, "cuda_time_total")
+        item.cuda_time_total for item in key_avgs if hasattr(item, "cuda_time_total")
     )
     total_cpu_time_us = sum(
-        item.cpu_time_total for item in key_avgs
-        if hasattr(item, "cpu_time_total")
+        item.cpu_time_total for item in key_avgs if hasattr(item, "cpu_time_total")
     )
     stats["total_cuda_time_ms"] = total_cuda_time_us / 1000.0
     stats["total_cpu_time_ms"] = total_cpu_time_us / 1000.0
@@ -300,9 +299,9 @@ def print_summary_table(results: dict[str, dict[str, float]]) -> None:
     Args:
         results: Dict mapping algebra name to stats dict.
     """
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("PROFILING SUMMARY")
-    print("="*70)
+    print("=" * 70)
 
     headers = ["Algebra", "Params", "CUDA ms/iter", "CPU ms/iter", "Peak MB"]
     col_widths = [12, 12, 14, 14, 10]
@@ -316,16 +315,18 @@ def print_summary_table(results: dict[str, dict[str, float]]) -> None:
         cpu_ms = stats.get("per_iter_cpu_ms", 0.0)
         peak_mb = stats.get("peak_memory_mb", 0.0)
 
-        row = "  ".join([
-            algebra.upper().ljust(col_widths[0]),
-            f"{n_params:,.0f}".ljust(col_widths[1]),
-            f"{cuda_ms:.2f}".ljust(col_widths[2]),
-            f"{cpu_ms:.2f}".ljust(col_widths[3]),
-            f"{peak_mb:.1f}".ljust(col_widths[4]),
-        ])
+        row = "  ".join(
+            [
+                algebra.upper().ljust(col_widths[0]),
+                f"{n_params:,.0f}".ljust(col_widths[1]),
+                f"{cuda_ms:.2f}".ljust(col_widths[2]),
+                f"{cpu_ms:.2f}".ljust(col_widths[3]),
+                f"{peak_mb:.1f}".ljust(col_widths[4]),
+            ]
+        )
         print(row)
 
-    print("="*70)
+    print("=" * 70)
 
 
 def main() -> int:
@@ -374,6 +375,7 @@ def main() -> int:
         except Exception as exc:
             print(f"ERROR profiling {algebra_name}: {exc}", file=sys.stderr)
             import traceback
+
             traceback.print_exc()
             # Continue with remaining algebras
 

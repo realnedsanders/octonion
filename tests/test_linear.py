@@ -76,9 +76,7 @@ class TestOctonionLinear:
         # Forward pass after optimizer step
         y_after = layer(x).detach()
 
-        assert not torch.allclose(y_before, y_after), (
-            "Output should change after optimizer step"
-        )
+        assert not torch.allclose(y_before, y_after), "Output should change after optimizer step"
 
     def test_parameters_initialized_unit_norm(self) -> None:
         """Parameters a and b are initialized with approximately unit norm."""

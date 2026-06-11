@@ -41,8 +41,11 @@ def _tril_to_symmetric(
     """
     batch_shape = tril_flat.shape[:-1]
     mat = torch.zeros(
-        *batch_shape, dim, dim,
-        device=tril_flat.device, dtype=tril_flat.dtype,
+        *batch_shape,
+        dim,
+        dim,
+        device=tril_flat.device,
+        dtype=tril_flat.dtype,
     )
     mat[..., rows, cols] = tril_flat
     mat[..., cols, rows] = tril_flat
@@ -191,18 +194,10 @@ class ComplexBatchNorm(nn.Module):
                 vii = (x_i * x_i).mean(dim=0) + self.eps
 
                 with torch.no_grad():
-                    self.running_mean.mul_(1 - self.momentum).add_(
-                        self.momentum * mean
-                    )
-                    self.running_var_rr.mul_(1 - self.momentum).add_(
-                        self.momentum * vrr
-                    )
-                    self.running_var_ri.mul_(1 - self.momentum).add_(
-                        self.momentum * vri
-                    )
-                    self.running_var_ii.mul_(1 - self.momentum).add_(
-                        self.momentum * vii
-                    )
+                    self.running_mean.mul_(1 - self.momentum).add_(self.momentum * mean)
+                    self.running_var_rr.mul_(1 - self.momentum).add_(self.momentum * vrr)
+                    self.running_var_ri.mul_(1 - self.momentum).add_(self.momentum * vri)
+                    self.running_var_ii.mul_(1 - self.momentum).add_(self.momentum * vii)
                     self.num_batches_tracked += 1
             else:
                 mean = self.running_mean
@@ -284,15 +279,10 @@ class QuaternionBatchNorm(nn.Module):
         self.beta = nn.Parameter(torch.zeros(num_features, self.dim))
 
         # Running stats
-        self.register_buffer(
-            "running_mean", torch.zeros(num_features, self.dim)
-        )
+        self.register_buffer("running_mean", torch.zeros(num_features, self.dim))
         self.register_buffer(
             "running_cov",
-            torch.eye(self.dim)
-            .unsqueeze(0)
-            .expand(num_features, -1, -1)
-            .clone(),
+            torch.eye(self.dim).unsqueeze(0).expand(num_features, -1, -1).clone(),
         )
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         # Condition number monitoring (updated each forward pass during training)
@@ -303,9 +293,7 @@ class QuaternionBatchNorm(nn.Module):
         self.register_buffer("_tril_rows", _rows, persistent=False)
         self.register_buffer("_tril_cols", _cols, persistent=False)
 
-    def _whiten(
-        self, x_centered: torch.Tensor, cov: torch.Tensor
-    ) -> torch.Tensor:
+    def _whiten(self, x_centered: torch.Tensor, cov: torch.Tensor) -> torch.Tensor:
         """Whiten using Cholesky decomposition.
 
         Fully torch.compile-compatible: no Python conditionals on tensors,
@@ -352,17 +340,13 @@ class QuaternionBatchNorm(nn.Module):
             .unsqueeze(-1)
             .unsqueeze(-1)
         )
-        L = torch.where(
-            still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L
-        )
+        L = torch.where(still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L)
 
         if self.training:
             with torch.no_grad():
                 diag = L.diagonal(dim1=-2, dim2=-1)
                 diag_abs = diag.abs().clamp(min=1e-12)
-                per_feature_cond = (
-                    diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
-                )
+                per_feature_cond = diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                 self.last_cond.copy_(per_feature_cond.max())
 
         identity = eye.expand_as(L)
@@ -464,15 +448,10 @@ class OctonionBatchNorm(nn.Module):
         self.beta = nn.Parameter(torch.zeros(num_features, self.dim))
 
         # Running stats
-        self.register_buffer(
-            "running_mean", torch.zeros(num_features, self.dim)
-        )
+        self.register_buffer("running_mean", torch.zeros(num_features, self.dim))
         self.register_buffer(
             "running_cov",
-            torch.eye(self.dim)
-            .unsqueeze(0)
-            .expand(num_features, -1, -1)
-            .clone(),
+            torch.eye(self.dim).unsqueeze(0).expand(num_features, -1, -1).clone(),
         )
         self.register_buffer("num_batches_tracked", torch.tensor(0, dtype=torch.long))
         self.register_buffer("last_cond", torch.tensor(1.0))
@@ -480,9 +459,7 @@ class OctonionBatchNorm(nn.Module):
         self.register_buffer("_tril_rows", _rows, persistent=False)
         self.register_buffer("_tril_cols", _cols, persistent=False)
 
-    def _whiten(
-        self, x_centered: torch.Tensor, cov: torch.Tensor
-    ) -> torch.Tensor:
+    def _whiten(self, x_centered: torch.Tensor, cov: torch.Tensor) -> torch.Tensor:
         """Whiten using Cholesky decomposition.
 
         Fully torch.compile-compatible. See QuaternionBatchNorm._whiten
@@ -519,17 +496,13 @@ class OctonionBatchNorm(nn.Module):
             .unsqueeze(-1)
             .unsqueeze(-1)
         )
-        L = torch.where(
-            still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L
-        )
+        L = torch.where(still_failed.unsqueeze(-1).unsqueeze(-1), eye.squeeze(0) * scale, L)
 
         if self.training:
             with torch.no_grad():
                 diag = L.diagonal(dim1=-2, dim2=-1)
                 diag_abs = diag.abs().clamp(min=1e-12)
-                per_feature_cond = (
-                    diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
-                )
+                per_feature_cond = diag_abs.max(dim=-1).values / diag_abs.min(dim=-1).values
                 self.last_cond.copy_(per_feature_cond.max())
 
         identity = eye.expand_as(L)

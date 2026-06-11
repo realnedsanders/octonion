@@ -24,9 +24,7 @@ from octonion.calculus._composition import Leaf, Node, TreeNode, evaluate_tree
 from octonion.calculus._jacobians import jacobian_mul
 
 
-def compose_jacobians(
-    tree: TreeNode, operands: list[torch.Tensor]
-) -> list[torch.Tensor]:
+def compose_jacobians(tree: TreeNode, operands: list[torch.Tensor]) -> list[torch.Tensor]:
     """Compute the Jacobian of the full composition w.r.t. each operand.
 
     Traverses the tree bottom-up. At each internal node with operation "mul":

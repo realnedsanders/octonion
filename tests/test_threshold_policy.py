@@ -117,9 +117,7 @@ def test_global_policy_backward_compat():
     assert stats1["n_leaves"] == stats2["n_leaves"]
     assert stats1["max_depth"] == stats2["max_depth"]
     assert stats1["rumination_rejections"] == stats2["rumination_rejections"]
-    assert acc1 == pytest.approx(acc2, abs=1e-10), (
-        f"Accuracy mismatch: {acc1} vs {acc2}"
-    )
+    assert acc1 == pytest.approx(acc2, abs=1e-10), f"Accuracy mismatch: {acc1} vs {acc2}"
 
 
 # -- Test 3: PerNodeEMAPolicy fallback and adaptation -----------------------
@@ -148,9 +146,7 @@ def test_per_node_ema_adapts():
         policy.on_insert(node, x, 0.2)
     threshold = policy.get_assoc_threshold(node, 0)
     # Should be mean + k*std, not the base anymore
-    assert threshold != pytest.approx(0.3, abs=0.01), (
-        f"Expected adapted threshold, got {threshold}"
-    )
+    assert threshold != pytest.approx(0.3, abs=0.01), f"Expected adapted threshold, got {threshold}"
 
 
 # -- Test 4: PerNodeEMAPolicy on_insert updates state -----------------------
@@ -197,9 +193,7 @@ def test_per_node_mean_std_converges():
     expected = mean + k * std
 
     actual = policy.get_assoc_threshold(node, 0)
-    assert actual == pytest.approx(expected, rel=1e-6), (
-        f"Expected {expected:.6f}, got {actual:.6f}"
-    )
+    assert actual == pytest.approx(expected, rel=1e-6), f"Expected {expected:.6f}, got {actual:.6f}"
 
 
 # -- Test 6: DepthPolicy with decay < 1 ------------------------------------
@@ -226,7 +220,7 @@ def test_depth_policy_increasing():
 
     assert policy.get_assoc_threshold(node, 0) == pytest.approx(0.3)
     assert policy.get_assoc_threshold(node, 1) == pytest.approx(0.3 * 1.2)
-    assert policy.get_assoc_threshold(node, 3) == pytest.approx(0.3 * 1.2 ** 3)
+    assert policy.get_assoc_threshold(node, 3) == pytest.approx(0.3 * 1.2**3)
 
 
 # -- Test 8: AlgebraicPurityPolicy with empty/filled buffer ----------------
@@ -509,9 +503,7 @@ def test_adaptive_changes_structure():
     train_s, train_l = _generate_samples(centers, 30, noise=0.05, seed=99)
 
     # Global policy
-    trie_global = OctonionTrie(
-        policy=GlobalPolicy(assoc_threshold=0.3), seed=42
-    )
+    trie_global = OctonionTrie(policy=GlobalPolicy(assoc_threshold=0.3), seed=42)
     for _ep in range(3):
         for s, label in zip(train_s, train_l, strict=False):
             trie_global.insert(s, category=label)

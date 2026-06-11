@@ -11,7 +11,8 @@ accuracy on complex color images?
 Usage:
     docker compose run --rm dev uv run python scripts/run_trie_cifar10.py
     docker compose run --rm dev uv run python scripts/run_trie_cifar10.py --encoder 2layer
-    docker compose run --rm dev uv run python scripts/run_trie_cifar10.py --encoder all --n-train 10000
+    docker compose run --rm dev uv run python scripts/run_trie_cifar10.py \\
+        --encoder all --n-train 10000
 """
 
 from __future__ import annotations
@@ -439,9 +440,7 @@ def evaluate_encoder(
         Results dict for this encoder.
     """
     logger.info(f"\n  Extracting features with {encoder_name}...")
-    train_x, train_y, test_x, test_y = extract_features(
-        model, n_train, n_test, device, seed
-    )
+    train_x, train_y, test_x, test_y = extract_features(model, n_train, n_test, device, seed)
     logger.info(f"  Features: train={train_x.shape}, test={test_x.shape}")
 
     # Run sklearn baselines
@@ -485,7 +484,8 @@ def evaluate_encoder(
     logger.info("  Per-class trie accuracy:")
     for cls_name, stats in per_class.items():
         logger.info(
-            f"    {cls_name:>12s}: {stats['correct']:3d}/{stats['total']:3d} = {stats['accuracy']:.3f}"
+            f"    {cls_name:>12s}: {stats['correct']:3d}/{stats['total']:3d}"
+            f" = {stats['accuracy']:.3f}"
         )
 
     # Learning curves: trie accuracy at different training set sizes
@@ -506,9 +506,7 @@ def evaluate_encoder(
             epochs=trie_epochs,
             seed=seed,
         )
-        learning_curve_data["trie"].append(
-            {"n_train": n_sub, "accuracy": sub_trie["accuracy"]}
-        )
+        learning_curve_data["trie"].append({"n_train": n_sub, "accuracy": sub_trie["accuracy"]})
 
         # kNN k=5 at this fraction
         from sklearn.neighbors import KNeighborsClassifier
@@ -516,12 +514,8 @@ def evaluate_encoder(
         knn = KNeighborsClassifier(n_neighbors=5)
         knn.fit(sub_train_x, sub_train_y)
         knn_acc = float(np.mean(knn.predict(test_x) == test_y))
-        learning_curve_data["knn_k5"].append(
-            {"n_train": n_sub, "accuracy": knn_acc}
-        )
-        logger.info(
-            f"    n={n_sub}: trie={sub_trie['accuracy']:.4f}, knn={knn_acc:.4f}"
-        )
+        learning_curve_data["knn_k5"].append({"n_train": n_sub, "accuracy": knn_acc})
+        logger.info(f"    n={n_sub}: trie={sub_trie['accuracy']:.4f}, knn={knn_acc:.4f}")
 
     plot_learning_curves(
         learning_curve_data,
@@ -541,9 +535,7 @@ def evaluate_encoder(
     # Strip non-serializable predictions from baseline results
     baseline_serializable = {}
     for name, res in baseline_results.items():
-        baseline_serializable[name] = {
-            k: v for k, v in res.items() if k != "predictions"
-        }
+        baseline_serializable[name] = {k: v for k, v in res.items() if k != "predictions"}
 
     return {
         "cnn_head_accuracy": cnn_accuracy,

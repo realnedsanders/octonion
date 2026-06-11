@@ -92,9 +92,7 @@ def build_cross_product_recovery(
     # Add noise to training targets only
     if noise_level > 0.0:
         noise_std = noise_level * y_train_clean.std()
-        noise = torch.randn(
-            y_train_clean.shape, generator=g, dtype=y_train_clean.dtype
-        ) * noise_std
+        noise = torch.randn(y_train_clean.shape, generator=g, dtype=y_train_clean.dtype) * noise_std
         y_train = y_train_clean + noise
     else:
         y_train = y_train_clean

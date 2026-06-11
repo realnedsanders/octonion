@@ -26,8 +26,8 @@ class AlgebraType(Enum):
     COMPLEX = ("C", 2, 4)
     QUATERNION = ("H", 4, 2)
     OCTONION = ("O", 8, 1)
-    PHM8 = ("PHM8", 8, 1)      # 8D, multiplier 1 (param matching via binary search)
-    R8_DENSE = ("R8D", 8, 1)   # 8D, multiplier 1 (dense mixing, 64x params per pair)
+    PHM8 = ("PHM8", 8, 1)  # 8D, multiplier 1 (param matching via binary search)
+    R8_DENSE = ("R8D", 8, 1)  # 8D, multiplier 1 (dense mixing, 64x params per pair)
 
     @property
     def dim(self) -> int:

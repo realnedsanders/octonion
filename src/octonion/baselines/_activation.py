@@ -42,8 +42,7 @@ class SplitActivation(nn.Module):
         super().__init__()
         if activation not in _ACTIVATION_FNS:
             raise ValueError(
-                f"Unknown activation: {activation!r}. "
-                f"Supported: {list(_ACTIVATION_FNS.keys())}"
+                f"Unknown activation: {activation!r}. Supported: {list(_ACTIVATION_FNS.keys())}"
             )
         self.activation_name = activation
         self._fn = _ACTIVATION_FNS[activation]
@@ -82,14 +81,11 @@ class NormPreservingActivation(nn.Module):
         eps: Small value for numerical stability in division.
     """
 
-    def __init__(
-        self, activation: str = "relu", eps: float = 1e-8
-    ) -> None:
+    def __init__(self, activation: str = "relu", eps: float = 1e-8) -> None:
         super().__init__()
         if activation not in _ACTIVATION_FNS:
             raise ValueError(
-                f"Unknown activation: {activation!r}. "
-                f"Supported: {list(_ACTIVATION_FNS.keys())}"
+                f"Unknown activation: {activation!r}. Supported: {list(_ACTIVATION_FNS.keys())}"
             )
         self.activation_name = activation
         self._fn = _ACTIVATION_FNS[activation]

@@ -136,9 +136,7 @@ class Complex(NormedDivisionAlgebra):
 
     def conjugate(self) -> Complex:
         """Negate imaginary part: conj(a+bi) = a-bi."""
-        return Complex(
-            torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1)
-        )
+        return Complex(torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1))
 
     def norm(self) -> torch.Tensor:
         """Modulus: |a+bi| = sqrt(a^2 + b^2)."""
@@ -160,9 +158,7 @@ class Complex(NormedDivisionAlgebra):
         if isinstance(other, Complex):
             a, b = self._data[..., 0], self._data[..., 1]
             c, d = other._data[..., 0], other._data[..., 1]
-            return Complex(
-                torch.stack([a * c - b * d, a * d + b * c], dim=-1)
-            )
+            return Complex(torch.stack([a * c - b * d, a * d + b * c], dim=-1))
         if isinstance(other, (int, float)):
             return Complex(self._data * other)
         return NotImplemented
@@ -243,9 +239,7 @@ class Quaternion(NormedDivisionAlgebra):
 
     def conjugate(self) -> Quaternion:
         """Negate imaginary parts: conj(q0+q1i+q2j+q3k) = q0-q1i-q2j-q3k."""
-        return Quaternion(
-            torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1)
-        )
+        return Quaternion(torch.cat([self._data[..., :1], -self._data[..., 1:]], dim=-1))
 
     def norm(self) -> torch.Tensor:
         """Quaternion norm: sqrt(q0^2 + q1^2 + q2^2 + q3^2)."""

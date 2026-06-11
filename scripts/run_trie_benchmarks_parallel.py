@@ -30,7 +30,10 @@ def run_benchmark(name: str, cmd: list[str]) -> tuple[str, float, int]:
     """
     t0 = time.time()
     result = subprocess.run(
-        cmd, capture_output=True, text=True, timeout=3600,
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=3600,
     )
     elapsed = time.time() - t0
 
@@ -51,30 +54,46 @@ def main() -> None:
     parser.add_argument("--n-test", type=int, default=2000, help="Test samples per benchmark")
     parser.add_argument("--cnn-epochs", type=int, default=5, help="CNN encoder training epochs")
     parser.add_argument("--trie-epochs", type=int, default=3, help="Trie training epochs")
-    parser.add_argument("--cifar-encoder", type=str, default="all", help="CIFAR encoder (2layer/4layer/resnet8/all)")
+    parser.add_argument(
+        "--cifar-encoder", type=str, default="all", help="CIFAR encoder (2layer/4layer/resnet8/all)"
+    )
     args = parser.parse_args()
 
     python = sys.executable
     benchmarks = {
         "Fashion-MNIST": [
-            python, "scripts/run_trie_fashion_mnist.py",
-            "--n-train", str(args.n_train),
-            "--n-test", str(args.n_test),
-            "--cnn-epochs", str(args.cnn_epochs),
-            "--epochs", str(args.trie_epochs),
+            python,
+            "scripts/run_trie_fashion_mnist.py",
+            "--n-train",
+            str(args.n_train),
+            "--n-test",
+            str(args.n_test),
+            "--cnn-epochs",
+            str(args.cnn_epochs),
+            "--epochs",
+            str(args.trie_epochs),
         ],
         "CIFAR-10": [
-            python, "scripts/run_trie_cifar10.py",
-            "--encoder", args.cifar_encoder,
-            "--n-train", str(args.n_train),
-            "--n-test", str(args.n_test),
-            "--cnn-epochs", str(args.cnn_epochs * 2),  # CIFAR needs more CNN epochs
-            "--epochs", str(args.trie_epochs),
+            python,
+            "scripts/run_trie_cifar10.py",
+            "--encoder",
+            args.cifar_encoder,
+            "--n-train",
+            str(args.n_train),
+            "--n-test",
+            str(args.n_test),
+            "--cnn-epochs",
+            str(args.cnn_epochs * 2),  # CIFAR needs more CNN epochs
+            "--epochs",
+            str(args.trie_epochs),
         ],
         "Text": [
-            python, "scripts/run_trie_text.py",
-            "--mode", "both",
-            "--epochs", str(args.trie_epochs),
+            python,
+            "scripts/run_trie_text.py",
+            "--mode",
+            "both",
+            "--epochs",
+            str(args.trie_epochs),
         ],
     }
 
@@ -91,8 +110,7 @@ def main() -> None:
 
     with ProcessPoolExecutor(max_workers=args.workers) as executor:
         futures = {
-            executor.submit(run_benchmark, name, cmd): name
-            for name, cmd in benchmarks.items()
+            executor.submit(run_benchmark, name, cmd): name for name, cmd in benchmarks.items()
         }
 
         for future in as_completed(futures):

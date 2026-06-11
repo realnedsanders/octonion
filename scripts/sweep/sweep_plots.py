@@ -175,9 +175,13 @@ def plot_heatmap(
                     if not np.isnan(val):
                         text_color = "white" if val < np.nanmedian(grid) else "black"
                         ax.text(
-                            xi_idx, yi_idx, f"{val:.3f}",
-                            ha="center", va="center",
-                            fontsize=6, color=text_color,
+                            xi_idx,
+                            yi_idx,
+                            f"{val:.3f}",
+                            ha="center",
+                            va="center",
+                            fontsize=6,
+                            color=text_color,
                         )
 
         plt.tight_layout()
@@ -237,7 +241,8 @@ def plot_1d_sweep(
                    AVG({metric}) as mean_val,
                    CASE
                        WHEN COUNT({metric}) > 1
-                       THEN SQRT(SUM(({metric} - sub.overall_mean) * ({metric} - sub.overall_mean)) / (COUNT({metric}) - 1))
+                       THEN SQRT(SUM(({metric} - sub.overall_mean) * ({metric} - sub.overall_mean))
+                            / (COUNT({metric}) - 1))
                        ELSE 0.0
                    END as std_val,
                    COUNT({metric}) as n
@@ -383,17 +388,24 @@ def plot_pareto_frontier(
 
         # All points
         ax.scatter(
-            node_counts, accuracies,
-            alpha=0.3, s=15, color="tab:gray",
+            node_counts,
+            accuracies,
+            alpha=0.3,
+            s=15,
+            color="tab:gray",
             label="All configs",
         )
 
         # Pareto frontier
         ax.scatter(
-            pareto_nodes, pareto_acc,
-            s=60, color="tab:red", zorder=5,
+            pareto_nodes,
+            pareto_acc,
+            s=60,
+            color="tab:red",
+            zorder=5,
             label="Pareto frontier",
-            edgecolors="black", linewidths=0.5,
+            edgecolors="black",
+            linewidths=0.5,
         )
 
         # Connect Pareto points
@@ -495,8 +507,11 @@ def plot_noise_interaction(
                 x_vals = [row["assoc_threshold"] for row in rows]
                 y_vals = [row["mean_acc"] for row in rows]
                 ax.plot(
-                    x_vals, y_vals,
-                    "o-", linewidth=2, markersize=5,
+                    x_vals,
+                    y_vals,
+                    "o-",
+                    linewidth=2,
+                    markersize=5,
                     color=colors[i],
                     label=f"noise={noise:.2f}",
                 )
@@ -504,7 +519,8 @@ def plot_noise_interaction(
         ax.set_xlabel("Associator Threshold", fontsize=12)
         ax.set_ylabel("Accuracy", fontsize=12)
         ax.set_title(
-            f"{display_name}: Noise Interaction Effect\n(sim_threshold={best_sim:.2f} fixed at best)",
+            f"{display_name}: Noise Interaction Effect\n"
+            f"(sim_threshold={best_sim:.2f} fixed at best)",
             fontsize=13,
         )
         ax.legend(fontsize=10)
@@ -596,8 +612,11 @@ def plot_epoch_curves(
                 assoc = rows[0]["assoc_threshold"]
                 sim = rows[0]["sim_threshold"]
                 ax.plot(
-                    epochs, accs,
-                    "o-", linewidth=2, markersize=6,
+                    epochs,
+                    accs,
+                    "o-",
+                    linewidth=2,
+                    markersize=6,
                     color=colors[i],
                     label=f"id={cid} (a={assoc:.3f}, s={sim:.2f})",
                 )
@@ -642,9 +661,7 @@ def generate_all_plots(
     # Detect which benchmarks have data
     conn = sqlite3.connect(db_path)
     try:
-        benchmark_rows = conn.execute(
-            "SELECT DISTINCT benchmark FROM sweep_results"
-        ).fetchall()
+        benchmark_rows = conn.execute("SELECT DISTINCT benchmark FROM sweep_results").fetchall()
         benchmarks = [row[0] for row in benchmark_rows]
     finally:
         conn.close()
@@ -663,7 +680,8 @@ def generate_all_plots(
     for bm in benchmarks:
         # Default: noise=0.0
         plot_heatmap(
-            db_path, bm,
+            db_path,
+            bm,
             x_param="assoc_threshold",
             y_param="sim_threshold",
             metric="accuracy",
@@ -674,7 +692,8 @@ def generate_all_plots(
 
         # Node count heatmap
         plot_heatmap(
-            db_path, bm,
+            db_path,
+            bm,
             x_param="assoc_threshold",
             y_param="sim_threshold",
             metric="n_nodes",
@@ -691,7 +710,8 @@ def generate_all_plots(
     for bm in benchmarks:
         # Accuracy vs assoc_threshold
         plot_1d_sweep(
-            db_path, bm,
+            db_path,
+            bm,
             param="assoc_threshold",
             metric="accuracy",
             fixed_params={"noise": 0.0, "sim_threshold": 0.1},
@@ -701,7 +721,8 @@ def generate_all_plots(
 
         # Accuracy vs sim_threshold
         plot_1d_sweep(
-            db_path, bm,
+            db_path,
+            bm,
             param="sim_threshold",
             metric="accuracy",
             fixed_params={"noise": 0.0, "assoc_threshold": 0.3},
@@ -716,7 +737,8 @@ def generate_all_plots(
 
     for bm in benchmarks:
         plot_pareto_frontier(
-            db_path, bm,
+            db_path,
+            bm,
             save_path=pareto_dir / f"{bm}_pareto.png",
         )
         plt.close("all")
@@ -728,7 +750,8 @@ def generate_all_plots(
 
     for bm in benchmarks:
         plot_noise_interaction(
-            db_path, bm,
+            db_path,
+            bm,
             save_path=noise_dir / f"{bm}_noise_interaction.png",
         )
         plt.close("all")
@@ -740,7 +763,8 @@ def generate_all_plots(
 
     for bm in benchmarks:
         plot_epoch_curves(
-            db_path, bm,
+            db_path,
+            bm,
             save_path=epoch_dir / f"{bm}_epoch_curves.png",
         )
         plt.close("all")

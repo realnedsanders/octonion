@@ -50,11 +50,8 @@ def _autograd_jacobian(
 
     # Run forward to get output shape
     output = fn(*inputs)
-    if output.dim() == 0:
-        # Scalar output
-        m = 1
-    else:
-        m = output.shape[-1]
+    # Scalar output counts as a single component
+    m = 1 if output.dim() == 0 else output.shape[-1]
 
     J = torch.zeros(m, n, dtype=inp.dtype, device=inp.device)
 
@@ -188,33 +185,23 @@ def octonion_gradcheck(
         per_component_errors.append(comp_errors)
 
         # Check pass/fail using allclose logic
-        close = torch.abs(J_autograd - J_numeric) <= atol + rtol * torch.abs(
-            J_numeric
-        )
+        close = torch.abs(J_autograd - J_numeric) <= atol + rtol * torch.abs(J_numeric)
         if not close.all():
             all_passed = False
 
         # Wirtinger derivative validation (only for 8x8 Jacobians)
         m = J_autograd.shape[0]
         if m == 8 and n == 8:
-            w_auto_do, w_auto_dostar = wirtinger_from_jacobian(
-                J_autograd.unsqueeze(0)
-            )
-            w_num_do, w_num_dostar = wirtinger_from_jacobian(
-                J_numeric.unsqueeze(0)
-            )
+            w_auto_do, w_auto_dostar = wirtinger_from_jacobian(J_autograd.unsqueeze(0))
+            w_num_do, w_num_dostar = wirtinger_from_jacobian(J_numeric.unsqueeze(0))
 
             w_err_do = torch.abs(w_auto_do - w_num_do).max().item()
             w_err_dostar = torch.abs(w_auto_dostar - w_num_dostar).max().item()
             w_err = max(w_err_do, w_err_dostar)
             wirtinger_error = max(wirtinger_error, w_err)
 
-            w_close_do = torch.allclose(
-                w_auto_do, w_num_do, atol=atol, rtol=rtol
-            )
-            w_close_dostar = torch.allclose(
-                w_auto_dostar, w_num_dostar, atol=atol, rtol=rtol
-            )
+            w_close_do = torch.allclose(w_auto_do, w_num_do, atol=atol, rtol=rtol)
+            w_close_dostar = torch.allclose(w_auto_dostar, w_num_dostar, atol=atol, rtol=rtol)
             if not (w_close_do and w_close_dostar):
                 wirtinger_passed = False
 
@@ -257,9 +244,7 @@ def octonion_gradgradcheck(
         inputs = (inputs,)
 
     try:
-        passed = torch.autograd.gradgradcheck(
-            fn, inputs, eps=eps, atol=atol, rtol=rtol
-        )
+        passed = torch.autograd.gradgradcheck(fn, inputs, eps=eps, atol=atol, rtol=rtol)
         return {"passed": bool(passed)}
     except Exception:
         return {"passed": False}

@@ -10,7 +10,8 @@ text) and produces:
 
 Usage:
     docker compose run --rm dev uv run python scripts/run_trie_benchmark_summary.py
-    docker compose run --rm dev uv run python scripts/run_trie_benchmark_summary.py --results-dir results/trie_benchmarks
+    docker compose run --rm dev uv run python scripts/run_trie_benchmark_summary.py \\
+        --results-dir results/trie_benchmarks
 """
 
 from __future__ import annotations
@@ -126,21 +127,23 @@ def extract_cifar10(data: dict[str, Any]) -> list[dict[str, Any]]:
         for cls_name, info in trie_data.get("per_class", {}).items():
             per_class_acc[cls_name] = info.get("accuracy", 0.0)
 
-        results.append({
-            "name": f"CIFAR-10 ({enc_name})",
-            "encoder": enc_name,
-            "trie": trie_data.get("accuracy"),
-            "knn_k1": baselines.get("knn_k1", {}).get("accuracy"),
-            "knn_k5": baselines.get("knn_k5", {}).get("accuracy"),
-            "rf": baselines.get("rf", {}).get("accuracy"),
-            "svm_rbf": baselines.get("svm_rbf", {}).get("accuracy"),
-            "logreg": baselines.get("logreg", {}).get("accuracy"),
-            "upper_bound": enc_data.get("cnn_head_accuracy"),
-            "upper_bound_label": "CNN Head",
-            "per_class": per_class_acc,
-            "trie_stats": trie_data.get("trie_stats", {}),
-            "config": data.get("config", {}),
-        })
+        results.append(
+            {
+                "name": f"CIFAR-10 ({enc_name})",
+                "encoder": enc_name,
+                "trie": trie_data.get("accuracy"),
+                "knn_k1": baselines.get("knn_k1", {}).get("accuracy"),
+                "knn_k5": baselines.get("knn_k5", {}).get("accuracy"),
+                "rf": baselines.get("rf", {}).get("accuracy"),
+                "svm_rbf": baselines.get("svm_rbf", {}).get("accuracy"),
+                "logreg": baselines.get("logreg", {}).get("accuracy"),
+                "upper_bound": enc_data.get("cnn_head_accuracy"),
+                "upper_bound_label": "CNN Head",
+                "per_class": per_class_acc,
+                "trie_stats": trie_data.get("trie_stats", {}),
+                "config": data.get("config", {}),
+            }
+        )
 
     return results
 
@@ -171,24 +174,26 @@ def extract_text(data: dict[str, Any]) -> list[dict[str, Any]]:
         for cls_name, info in trie_data.get("per_class", {}).items():
             per_class_acc[cls_name] = info.get("accuracy", 0.0)
 
-        results.append({
-            "name": label,
-            "trie": trie_data.get("accuracy"),
-            "knn_k1": baselines.get("knn_k1", {}).get("accuracy"),
-            "knn_k5": baselines.get("knn_k5", {}).get("accuracy"),
-            "rf": baselines.get("rf", {}).get("accuracy"),
-            "svm_rbf": baselines.get("svm_rbf", {}).get("accuracy"),
-            "logreg": baselines.get("logreg", {}).get("accuracy"),
-            "upper_bound": full_logreg.get("accuracy"),
-            "upper_bound_label": "Full TF-IDF LR",
-            "per_class": per_class_acc,
-            "trie_stats": trie_data.get("trie_stats", {}),
-            "config": {
-                "n_train": mode_data.get("n_train"),
-                "n_test": mode_data.get("n_test"),
-                "n_classes": mode_data.get("n_classes"),
-            },
-        })
+        results.append(
+            {
+                "name": label,
+                "trie": trie_data.get("accuracy"),
+                "knn_k1": baselines.get("knn_k1", {}).get("accuracy"),
+                "knn_k5": baselines.get("knn_k5", {}).get("accuracy"),
+                "rf": baselines.get("rf", {}).get("accuracy"),
+                "svm_rbf": baselines.get("svm_rbf", {}).get("accuracy"),
+                "logreg": baselines.get("logreg", {}).get("accuracy"),
+                "upper_bound": full_logreg.get("accuracy"),
+                "upper_bound_label": "Full TF-IDF LR",
+                "per_class": per_class_acc,
+                "trie_stats": trie_data.get("trie_stats", {}),
+                "config": {
+                    "n_train": mode_data.get("n_train"),
+                    "n_test": mode_data.get("n_test"),
+                    "n_classes": mode_data.get("n_classes"),
+                },
+            }
+        )
 
     return results
 
@@ -245,7 +250,9 @@ def print_gap_analysis(benchmarks: list[dict[str, Any]]) -> None:
     print("TRIE vs kNN-5 GAP ANALYSIS")
     print("=" * 70)
 
-    header = f"{'Benchmark':<{BENCHMARK_COL}} | {'Trie':>7} | {'kNN-5':>7} | {'Gap':>7} | {'Status':>12}"
+    header = (
+        f"{'Benchmark':<{BENCHMARK_COL}} | {'Trie':>7} | {'kNN-5':>7} | {'Gap':>7} | {'Status':>12}"
+    )
     print(header)
     print("-" * len(header))
 
@@ -363,21 +370,25 @@ def build_summary_json(benchmarks: list[dict[str, Any]]) -> dict[str, Any]:
         # Gap analysis
         if trie_acc is not None and knn_acc is not None:
             gap_pp = (trie_acc - knn_acc) * 100
-            gap_analysis.append({
-                "benchmark": bm["name"],
-                "trie_accuracy": trie_acc,
-                "knn_k5_accuracy": knn_acc,
-                "gap_pp": round(gap_pp, 2),
-                "within_target": abs(gap_pp) <= GAP_TARGET_PP,
-            })
+            gap_analysis.append(
+                {
+                    "benchmark": bm["name"],
+                    "trie_accuracy": trie_acc,
+                    "knn_k5_accuracy": knn_acc,
+                    "gap_pp": round(gap_pp, 2),
+                    "within_target": abs(gap_pp) <= GAP_TARGET_PP,
+                }
+            )
 
         # Structure
         stats = bm.get("trie_stats", {})
         if stats:
-            structure_comparison.append({
-                "benchmark": bm["name"],
-                **stats,
-            })
+            structure_comparison.append(
+                {
+                    "benchmark": bm["name"],
+                    **stats,
+                }
+            )
 
     # Failure modes
     failure_modes: list[dict[str, Any]] = []
@@ -387,16 +398,15 @@ def build_summary_json(benchmarks: list[dict[str, Any]]) -> dict[str, Any]:
             continue
         sorted_classes = sorted(per_class.items(), key=lambda x: x[1])
         n_show = min(3, len(sorted_classes))
-        failure_modes.append({
-            "benchmark": bm["name"],
-            "worst_classes": [
-                {"class": c, "accuracy": a} for c, a in sorted_classes[:n_show]
-            ],
-            "best_classes": [
-                {"class": c, "accuracy": a}
-                for c, a in reversed(sorted_classes[-n_show:])
-            ],
-        })
+        failure_modes.append(
+            {
+                "benchmark": bm["name"],
+                "worst_classes": [{"class": c, "accuracy": a} for c, a in sorted_classes[:n_show]],
+                "best_classes": [
+                    {"class": c, "accuracy": a} for c, a in reversed(sorted_classes[-n_show:])
+                ],
+            }
+        )
 
     # Overall verdict
     on_target = sum(1 for g in gap_analysis if g["within_target"])
@@ -543,10 +553,7 @@ def main() -> None:
     # List benchmarks that miss target
     for gap in summary["gap_analysis"]:
         if not gap["within_target"]:
-            print(
-                f"  [BELOW TARGET] {gap['benchmark']}: "
-                f"gap = {gap['gap_pp']:+.1f}pp"
-            )
+            print(f"  [BELOW TARGET] {gap['benchmark']}: gap = {gap['gap_pp']:+.1f}pp")
 
     print()
 

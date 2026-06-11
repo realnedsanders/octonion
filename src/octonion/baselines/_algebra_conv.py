@@ -19,8 +19,6 @@ Parameter counts (no bias):
 
 from __future__ import annotations
 
-from typing import Union
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,7 +31,7 @@ from octonion.baselines._initialization import (
     real_init,
 )
 
-_KernelSize = Union[int, tuple[int, ...]]
+_KernelSize = int | tuple[int, ...]
 
 
 # ── Real Convolutions ─────────────────────────────────────────────
@@ -67,8 +65,13 @@ class RealConv1d(nn.Module):
     ) -> None:
         super().__init__()
         self.conv = nn.Conv1d(
-            in_channels, out_channels, kernel_size,
-            stride=stride, padding=padding, bias=bias, dtype=dtype,
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias,
+            dtype=dtype,
         )
         real_init(self.conv.weight.data.view(out_channels, -1), criterion="he")
 
@@ -95,8 +98,13 @@ class RealConv2d(nn.Module):
     ) -> None:
         super().__init__()
         self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size,  # type: ignore[arg-type]
-            stride=stride, padding=padding, bias=bias, dtype=dtype,  # type: ignore[arg-type]
+            in_channels,
+            out_channels,
+            kernel_size,  # type: ignore[arg-type]
+            stride=stride,  # type: ignore[arg-type]
+            padding=padding,  # type: ignore[arg-type]
+            bias=bias,
+            dtype=dtype,  # type: ignore[arg-type]
         )
         real_init(self.conv.weight.data.view(out_channels, -1), criterion="he")
 
@@ -134,12 +142,8 @@ class ComplexConv1d(nn.Module):
         self.stride = stride
         self.padding = padding
 
-        self.W_r = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
-        self.W_i = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
+        self.W_r = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
+        self.W_i = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
 
         if bias:
             self.bias_r = nn.Parameter(torch.zeros(out_channels, dtype=dtype))
@@ -167,13 +171,11 @@ class ComplexConv1d(nn.Module):
         x_r = x[:, :, 0, :]  # [B, in_ch, L]
         x_i = x[:, :, 1, :]  # [B, in_ch, L]
 
-        out_r = (
-            F.conv1d(x_r, self.W_r, stride=self.stride, padding=self.padding)
-            - F.conv1d(x_i, self.W_i, stride=self.stride, padding=self.padding)
+        out_r = F.conv1d(x_r, self.W_r, stride=self.stride, padding=self.padding) - F.conv1d(
+            x_i, self.W_i, stride=self.stride, padding=self.padding
         )
-        out_i = (
-            F.conv1d(x_r, self.W_i, stride=self.stride, padding=self.padding)
-            + F.conv1d(x_i, self.W_r, stride=self.stride, padding=self.padding)
+        out_i = F.conv1d(x_r, self.W_i, stride=self.stride, padding=self.padding) + F.conv1d(
+            x_i, self.W_r, stride=self.stride, padding=self.padding
         )
 
         if self.bias_r is not None:
@@ -210,12 +212,8 @@ class ComplexConv2d(nn.Module):
             kernel_size = (kernel_size, kernel_size)
         self._kernel_size = kernel_size
 
-        self.W_r = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
-        self.W_i = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
+        self.W_r = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
+        self.W_i = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
 
         if bias:
             self.bias_r = nn.Parameter(torch.zeros(out_channels, dtype=dtype))
@@ -242,13 +240,11 @@ class ComplexConv2d(nn.Module):
         x_r = x[:, :, 0, :, :]  # [B, in_ch, H, W]
         x_i = x[:, :, 1, :, :]  # [B, in_ch, H, W]
 
-        out_r = (
-            F.conv2d(x_r, self.W_r, stride=self.stride, padding=self.padding)
-            - F.conv2d(x_i, self.W_i, stride=self.stride, padding=self.padding)
+        out_r = F.conv2d(x_r, self.W_r, stride=self.stride, padding=self.padding) - F.conv2d(
+            x_i, self.W_i, stride=self.stride, padding=self.padding
         )
-        out_i = (
-            F.conv2d(x_r, self.W_i, stride=self.stride, padding=self.padding)
-            + F.conv2d(x_i, self.W_r, stride=self.stride, padding=self.padding)
+        out_i = F.conv2d(x_r, self.W_i, stride=self.stride, padding=self.padding) + F.conv2d(
+            x_i, self.W_r, stride=self.stride, padding=self.padding
         )
 
         if self.bias_r is not None:
@@ -286,23 +282,13 @@ class QuaternionConv1d(nn.Module):
         self.stride = stride
         self.padding = padding
 
-        self.W_r = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
-        self.W_i = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
-        self.W_j = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
-        self.W_k = nn.Parameter(
-            torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-        )
+        self.W_r = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
+        self.W_i = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
+        self.W_j = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
+        self.W_k = nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_channels, 4, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_channels, 4, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -332,12 +318,15 @@ class QuaternionConv1d(nn.Module):
         x_cat = x.permute(0, 2, 1, 3).reshape(B, 4 * in_ch, L)
 
         # Hamilton product weight matrix: [4*out_ch, 4*in_ch, K]
-        W = torch.cat([
-            torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
-            torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
-            torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
-            torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
-        ], dim=0)
+        W = torch.cat(
+            [
+                torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
+                torch.cat([self.W_i, self.W_r, -self.W_k, self.W_j], dim=1),
+                torch.cat([self.W_j, self.W_k, self.W_r, -self.W_i], dim=1),
+                torch.cat([self.W_k, -self.W_j, self.W_i, self.W_r], dim=1),
+            ],
+            dim=0,
+        )
 
         out_cat = F.conv1d(x_cat, W, stride=self.stride, padding=self.padding)
 
@@ -377,23 +366,13 @@ class QuaternionConv2d(nn.Module):
             kernel_size = (kernel_size, kernel_size)
         self._kernel_size = kernel_size
 
-        self.W_r = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
-        self.W_i = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
-        self.W_j = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
-        self.W_k = nn.Parameter(
-            torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype)
-        )
+        self.W_r = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
+        self.W_i = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
+        self.W_j = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
+        self.W_k = nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_channels, 4, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_channels, 4, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -447,12 +426,15 @@ class QuaternionConv2d(nn.Module):
             # Build Hamilton product weight matrix: [4*out_ch, 4*in_ch, kH, kW]
             # Rows correspond to output components (r,i,j,k)
             # Columns correspond to input components (r,i,j,k)
-            weight = torch.cat([
-                torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
-                torch.cat([self.W_i,  self.W_r, -self.W_k,  self.W_j], dim=1),
-                torch.cat([self.W_j,  self.W_k,  self.W_r, -self.W_i], dim=1),
-                torch.cat([self.W_k, -self.W_j,  self.W_i,  self.W_r], dim=1),
-            ], dim=0)
+            weight = torch.cat(
+                [
+                    torch.cat([self.W_r, -self.W_i, -self.W_j, -self.W_k], dim=1),
+                    torch.cat([self.W_i, self.W_r, -self.W_k, self.W_j], dim=1),
+                    torch.cat([self.W_j, self.W_k, self.W_r, -self.W_i], dim=1),
+                    torch.cat([self.W_k, -self.W_j, self.W_i, self.W_r], dim=1),
+                ],
+                dim=0,
+            )
             if not self.training:
                 self._fused_cache = weight
 
@@ -499,17 +481,15 @@ class OctonionConv1d(nn.Module):
         self.stride = stride
         self.padding = padding
 
-        self.weights = nn.ParameterList([
-            nn.Parameter(
-                torch.empty(out_channels, in_channels, kernel_size, dtype=dtype)
-            )
-            for _ in range(8)
-        ])
+        self.weights = nn.ParameterList(
+            [
+                nn.Parameter(torch.empty(out_channels, in_channels, kernel_size, dtype=dtype))
+                for _ in range(8)
+            ]
+        )
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_channels, 8, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_channels, 8, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -521,9 +501,7 @@ class OctonionConv1d(nn.Module):
         # Register structure constants as a non-persistent buffer so it
         # automatically migrates with .to(device/dtype) but is NOT saved
         # in state_dict (avoids bloating checkpoints with a constant).
-        self.register_buffer(
-            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
-        )
+        self.register_buffer("_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: fused octonionic 1D convolution (single-kernel).
@@ -595,19 +573,15 @@ class OctonionConv2d(nn.Module):
             kernel_size = (kernel_size, kernel_size)
         self._kernel_size = kernel_size
 
-        self.weights = nn.ParameterList([
-            nn.Parameter(
-                torch.empty(
-                    out_channels, in_channels, *kernel_size, dtype=dtype
-                )
-            )
-            for _ in range(8)
-        ])
+        self.weights = nn.ParameterList(
+            [
+                nn.Parameter(torch.empty(out_channels, in_channels, *kernel_size, dtype=dtype))
+                for _ in range(8)
+            ]
+        )
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_channels, 8, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_channels, 8, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -619,9 +593,7 @@ class OctonionConv2d(nn.Module):
         # Register structure constants as a non-persistent buffer so it
         # automatically migrates with .to(device/dtype) but is NOT saved
         # in state_dict (avoids bloating checkpoints with a constant).
-        self.register_buffer(
-            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
-        )
+        self.register_buffer("_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False)
 
         # Eval-mode fused weight cache. During evaluation, weights don't
         # change between batches, so the fused weight matrix is computed

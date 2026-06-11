@@ -116,31 +116,41 @@ def build_cifar10_data(
                   input_dim, output_dim, input_channels).
         input_dim = 3 (CIFAR channels), output_dim = 10, input_channels = 3.
     """
-    import torchvision  # type: ignore[import-untyped]
-    import torchvision.transforms as T  # type: ignore[import-untyped]
+    import torchvision
+    import torchvision.transforms as T
 
     # CIFAR-10 normalization statistics
     mean = (0.4914, 0.4822, 0.4465)
     std = (0.2023, 0.1994, 0.2010)
 
-    train_transform = T.Compose([
-        T.RandomCrop(32, padding=4),
-        T.RandomHorizontalFlip(),
-        T.ToTensor(),
-        T.Normalize(mean, std),
-    ])
+    train_transform = T.Compose(
+        [
+            T.RandomCrop(32, padding=4),
+            T.RandomHorizontalFlip(),
+            T.ToTensor(),
+            T.Normalize(mean, std),
+        ]
+    )
 
-    test_transform = T.Compose([
-        T.ToTensor(),
-        T.Normalize(mean, std),
-    ])
+    test_transform = T.Compose(
+        [
+            T.ToTensor(),
+            T.Normalize(mean, std),
+        ]
+    )
 
     # Load full training set and test set
     full_train = torchvision.datasets.CIFAR10(
-        root=data_dir, train=True, download=True, transform=train_transform,
+        root=data_dir,
+        train=True,
+        download=True,
+        transform=train_transform,
     )
     test_set = torchvision.datasets.CIFAR10(
-        root=data_dir, train=False, download=True, transform=test_transform,
+        root=data_dir,
+        train=False,
+        download=True,
+        transform=test_transform,
     )
 
     # Split training into train/val
@@ -155,7 +165,10 @@ def build_cifar10_data(
 
     # Create validation set with test transforms (no augmentation)
     val_set_no_aug = torchvision.datasets.CIFAR10(
-        root=data_dir, train=True, download=False, transform=test_transform,
+        root=data_dir,
+        train=True,
+        download=False,
+        transform=test_transform,
     )
 
     train_subset = Subset(full_train, train_indices)
@@ -166,19 +179,32 @@ def build_cifar10_data(
     persist = num_workers > 0
 
     train_loader = DataLoader(
-        train_subset, batch_size=batch_size, shuffle=True,
-        num_workers=num_workers, pin_memory=True, drop_last=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        train_subset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
     val_loader = DataLoader(
-        val_subset, batch_size=batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        val_subset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
     test_loader = DataLoader(
-        test_set, batch_size=batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        test_set,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
 
     # input_dim=3 (RGB channels), output_dim=10 (classes), input_channels=3
@@ -214,23 +240,33 @@ def build_cifar100_data(
     mean = (0.5071, 0.4867, 0.4408)
     std = (0.2675, 0.2565, 0.2761)
 
-    train_transform = T.Compose([
-        T.RandomCrop(32, padding=4),
-        T.RandomHorizontalFlip(),
-        T.ToTensor(),
-        T.Normalize(mean, std),
-    ])
+    train_transform = T.Compose(
+        [
+            T.RandomCrop(32, padding=4),
+            T.RandomHorizontalFlip(),
+            T.ToTensor(),
+            T.Normalize(mean, std),
+        ]
+    )
 
-    test_transform = T.Compose([
-        T.ToTensor(),
-        T.Normalize(mean, std),
-    ])
+    test_transform = T.Compose(
+        [
+            T.ToTensor(),
+            T.Normalize(mean, std),
+        ]
+    )
 
     full_train = torchvision.datasets.CIFAR100(
-        root=data_dir, train=True, download=True, transform=train_transform,
+        root=data_dir,
+        train=True,
+        download=True,
+        transform=train_transform,
     )
     test_set = torchvision.datasets.CIFAR100(
-        root=data_dir, train=False, download=True, transform=test_transform,
+        root=data_dir,
+        train=False,
+        download=True,
+        transform=test_transform,
     )
 
     n_total = len(full_train)
@@ -242,7 +278,10 @@ def build_cifar100_data(
     val_indices = indices[n_train:]
 
     val_set_no_aug = torchvision.datasets.CIFAR100(
-        root=data_dir, train=True, download=False, transform=test_transform,
+        root=data_dir,
+        train=True,
+        download=False,
+        transform=test_transform,
     )
 
     train_subset = Subset(full_train, train_indices)
@@ -253,19 +292,32 @@ def build_cifar100_data(
     persist = num_workers > 0
 
     train_loader = DataLoader(
-        train_subset, batch_size=batch_size, shuffle=True,
-        num_workers=num_workers, pin_memory=True, drop_last=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        train_subset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
     val_loader = DataLoader(
-        val_subset, batch_size=batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        val_subset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
     test_loader = DataLoader(
-        test_set, batch_size=batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True,
-        multiprocessing_context=mp_ctx, persistent_workers=persist,
+        test_set,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        multiprocessing_context=mp_ctx,
+        persistent_workers=persist,
     )
 
     return train_loader, val_loader, test_loader, 3, 100, 3
@@ -450,8 +502,7 @@ def reproduction_report(
     report = {
         "verdicts": verdicts,
         "overall_pass": all(
-            v["verdict"] in ("PASS", "N/A (no published target)")
-            for v in verdicts.values()
+            v["verdict"] in ("PASS", "N/A (no published target)") for v in verdicts.values()
         ),
         "n_algebras": len(ours),
         "algebras_tested": algebras_tested,
@@ -489,22 +540,24 @@ def reproduction_report(
         if v["our_std_pct"] is not None:
             our_str += f" +/- {v['our_std_pct']:.2f}%"
         param_str = f"{v['param_count']:,}" if v["param_count"] is not None else "N/A"
-        md_lines.append(
-            f"| {alg} | {pub_str} | {our_str} | {param_str} | {v['verdict']} |"
-        )
+        md_lines.append(f"| {alg} | {pub_str} | {our_str} | {param_str} | {v['verdict']} |")
 
-    md_lines.extend([
-        "",
-        "## Details",
-        "",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Details",
+            "",
+        ]
+    )
 
     for alg in ours:
         v = verdicts[alg]
         md_lines.append(f"### {alg} ({v['source']})")
         md_lines.append("")
         if v["published_error_pct"] is not None:
-            md_lines.append(f"- Published: {v['published_error_pct']:.2f}% +/- {v['published_std_pct']:.2f}%")
+            md_lines.append(
+                f"- Published: {v['published_error_pct']:.2f}% +/- {v['published_std_pct']:.2f}%"
+            )
             md_lines.append(f"- Ours: {v['our_error_pct']:.2f}% +/- {v['our_std_pct']:.2f}%")
             md_lines.append(f"- Difference: {v['diff_pct']:.2f}%")
             md_lines.append(f"- Comparison std: {v['comparison_std']:.2f}%")

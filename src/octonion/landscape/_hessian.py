@@ -42,9 +42,7 @@ def _set_flat_params(model: nn.Module, flat_params: torch.Tensor) -> None:
             offset += numel
 
 
-def _unflatten_like(
-    flat_vector: torch.Tensor, params: list[nn.Parameter]
-) -> list[torch.Tensor]:
+def _unflatten_like(flat_vector: torch.Tensor, params: list[nn.Parameter]) -> list[torch.Tensor]:
     """Reshape flat vector into list of tensors matching param shapes."""
     views: list[torch.Tensor] = []
     offset = 0
@@ -367,8 +365,6 @@ def compute_hessian_spectrum(
     if method == "full":
         return compute_full_hessian(model, loss_fn, data_x, data_y, device=device)
     elif method == "lanczos":
-        return stochastic_lanczos(
-            model, loss_fn, data_x, data_y, device=device, **lanczos_kwargs
-        )
+        return stochastic_lanczos(model, loss_fn, data_x, data_y, device=device, **lanczos_kwargs)
     else:
         raise ValueError(f"Unknown method: {method!r}. Use 'full', 'lanczos', or 'auto'.")

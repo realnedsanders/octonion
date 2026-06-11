@@ -93,9 +93,7 @@ def load_20newsgroups(
     train = fetch_20newsgroups(
         subset="train", categories=categories, remove=remove, random_state=42
     )
-    test = fetch_20newsgroups(
-        subset="test", categories=categories, remove=remove, random_state=42
-    )
+    test = fetch_20newsgroups(subset="test", categories=categories, remove=remove, random_state=42)
 
     return (
         train.data,
@@ -323,18 +321,23 @@ def run_experiment(
 
     # Step 1: Load data
     logger.info("\n[1/10] Loading 20 Newsgroups data...")
-    train_texts, train_labels, test_texts, test_labels, target_names = (
-        load_20newsgroups(categories=categories)
+    train_texts, train_labels, test_texts, test_labels, target_names = load_20newsgroups(
+        categories=categories
     )
     logger.info(f"  Train: {len(train_texts)}, Test: {len(test_texts)}")
-    logger.info(f"  Classes: {n_classes} ({', '.join(target_names[:5])}{'...' if len(target_names) > 5 else ''})")
+    logger.info(
+        f"  Classes: {n_classes} "
+        f"({', '.join(target_names[:5])}{'...' if len(target_names) > 5 else ''})"
+    )
 
     # Step 2: TF-IDF + TruncatedSVD
     logger.info("\n[2/10] TF-IDF vectorization + TruncatedSVD...")
     train_reduced, test_reduced, explained_var, _, _ = tfidf_svd_pipeline(
         train_texts, test_texts, n_components=n_components, seed=seed
     )
-    logger.info(f"  Explained variance ({n_components}D): {explained_var:.4f} ({explained_var:.1%})")
+    logger.info(
+        f"  Explained variance ({n_components}D): {explained_var:.4f} ({explained_var:.1%})"
+    )
     logger.info(f"  Train shape: {train_reduced.shape}, Test shape: {test_reduced.shape}")
 
     # Step 3: Full TF-IDF upper bound (LogReg on full features)
@@ -351,18 +354,21 @@ def run_experiment(
     test_oct = normalize_to_unit_octonions(test_reduced)
     train_norms = np.linalg.norm(train_oct, axis=1)
     n_zero = int((train_norms < 1e-6).sum())
-    nonzero_mean = float(train_norms[train_norms >= 1e-6].mean()) if n_zero < len(train_norms) else 0.0
+    nonzero_mean = (
+        float(train_norms[train_norms >= 1e-6].mean()) if n_zero < len(train_norms) else 0.0
+    )
     logger.info(f"  Norm check (non-zero): mean={nonzero_mean:.6f}")
     if n_zero > 0:
         logger.info(f"  WARNING: {n_zero} empty documents (zero vectors after TF-IDF)")
 
     # Step 5: sklearn baselines on same 8D features
     logger.info("\n[5/10] Running sklearn baselines on 8D features...")
-    baselines = run_sklearn_baselines(
-        train_oct, train_labels, test_oct, test_labels
-    )
+    baselines = run_sklearn_baselines(train_oct, train_labels, test_oct, test_labels)
     for name, res in baselines.items():
-        logger.info(f"  {name}: {res['accuracy']:.4f} (train: {res['train_time']:.1f}s, test: {res['test_time']:.1f}s)")
+        logger.info(
+            f"  {name}: {res['accuracy']:.4f} "
+            f"(train: {res['train_time']:.1f}s, test: {res['test_time']:.1f}s)"
+        )
 
     # Step 6: Trie classifier
     logger.info(f"\n[6/10] Running octonionic trie ({epochs} epochs)...")
@@ -376,15 +382,19 @@ def run_experiment(
     )
     logger.info(f"  Trie accuracy: {trie_result['accuracy']:.4f}")
     logger.info(f"  Train: {trie_result['train_time']:.1f}s, Test: {trie_result['test_time']:.1f}s")
-    logger.info(f"  Nodes: {trie_result['trie_stats']['n_nodes']}, "
-                f"Leaves: {trie_result['trie_stats']['n_leaves']}, "
-                f"Max depth: {trie_result['trie_stats']['max_depth']}")
+    logger.info(
+        f"  Nodes: {trie_result['trie_stats']['n_nodes']}, "
+        f"Leaves: {trie_result['trie_stats']['n_leaves']}, "
+        f"Max depth: {trie_result['trie_stats']['max_depth']}"
+    )
 
     # Step 7: Learning curves
     logger.info("\n[7/10] Computing learning curves...")
     curves = run_learning_curves(
-        train_texts, train_labels,
-        test_texts, test_labels,
+        train_texts,
+        train_labels,
+        test_texts,
+        test_labels,
         n_components=n_components,
         epochs=epochs,
         seed=seed,
@@ -395,11 +405,11 @@ def run_experiment(
     # Use short names for 20-class, target names for subset
     display_names = SHORT_NAMES_20 if mode == "full" else target_names
     trie_preds = np.array(trie_result["predictions"])
-    per_class = compute_per_class_accuracy(
-        test_labels, trie_preds, display_names
-    )
+    per_class = compute_per_class_accuracy(test_labels, trie_preds, display_names)
     for name, stats in per_class.items():
-        logger.info(f"  {name:25s}: {stats['correct']:4d}/{stats['total']:4d} = {stats['accuracy']:.3f}")
+        logger.info(
+            f"  {name:25s}: {stats['correct']:4d}/{stats['total']:4d} = {stats['accuracy']:.3f}"
+        )
 
     # Step 9: Confusion matrix
     logger.info("\n[9/10] Generating confusion matrix...")
@@ -427,11 +437,22 @@ def run_experiment(
     logger.info(f"\n[10/10] Comparison table ({mode_label}):")
     logger.info(f"  {'Method':25s} {'Accuracy':>10s} {'Train(s)':>10s} {'Test(s)':>10s}")
     logger.info(f"  {'-' * 55}")
-    logger.info(f"  {'Full TF-IDF LogReg*':25s} {full_tfidf_result['accuracy']:10.4f} {full_tfidf_result['train_time']:10.1f} {full_tfidf_result['test_time']:10.1f}")
+    logger.info(
+        f"  {'Full TF-IDF LogReg*':25s} {full_tfidf_result['accuracy']:10.4f} "
+        f"{full_tfidf_result['train_time']:10.1f} {full_tfidf_result['test_time']:10.1f}"
+    )
     for name, res in baselines.items():
-        logger.info(f"  {name:25s} {res['accuracy']:10.4f} {res['train_time']:10.1f} {res['test_time']:10.1f}")
-    logger.info(f"  {'trie':25s} {trie_result['accuracy']:10.4f} {trie_result['train_time']:10.1f} {trie_result['test_time']:10.1f}")
-    logger.info(f"  * Full TF-IDF LogReg uses {full_tfidf_result['n_features']}D features (upper bound)")
+        logger.info(
+            f"  {name:25s} {res['accuracy']:10.4f} "
+            f"{res['train_time']:10.1f} {res['test_time']:10.1f}"
+        )
+    logger.info(
+        f"  {'trie':25s} {trie_result['accuracy']:10.4f} "
+        f"{trie_result['train_time']:10.1f} {trie_result['test_time']:10.1f}"
+    )
+    logger.info(
+        f"  * Full TF-IDF LogReg uses {full_tfidf_result['n_features']}D features (upper bound)"
+    )
 
     # Learning curve plot
     lc_path = output_dir / f"learning_curves_{mode}.png"
@@ -445,9 +466,7 @@ def run_experiment(
     # Strip predictions from baselines for JSON serialization (they are numpy arrays)
     baselines_clean = {}
     for name, res in baselines.items():
-        baselines_clean[name] = {
-            k: v for k, v in res.items() if k != "predictions"
-        }
+        baselines_clean[name] = {k: v for k, v in res.items() if k != "predictions"}
 
     return {
         "n_train": len(train_texts),
@@ -456,9 +475,7 @@ def run_experiment(
         "class_names": target_names,
         "explained_variance_8d": explained_var,
         "full_tfidf_logreg": full_tfidf_result,
-        "trie": {
-            k: v for k, v in trie_result.items() if k != "predictions"
-        },
+        "trie": {k: v for k, v in trie_result.items() if k != "predictions"},
         "baselines": baselines_clean,
         "learning_curve": curves,
         "per_class_accuracy": per_class,
@@ -551,8 +568,12 @@ def main() -> None:
         result_key = "full_20class" if mode == "full" else "subset_4class"
         r = all_results[result_key]
         logger.info(f"\n  {result_key} ({r['n_classes']} classes):")
-        logger.info(f"    Explained variance ({args.n_components}D): {r['explained_variance_8d']:.4f}")
-        logger.info(f"    Full TF-IDF LogReg (upper bound): {r['full_tfidf_logreg']['accuracy']:.4f}")
+        logger.info(
+            f"    Explained variance ({args.n_components}D): {r['explained_variance_8d']:.4f}"
+        )
+        logger.info(
+            f"    Full TF-IDF LogReg (upper bound): {r['full_tfidf_logreg']['accuracy']:.4f}"
+        )
         logger.info(f"    Trie:     {r['trie']['accuracy']:.4f}")
         best_baseline_name = max(r["baselines"], key=lambda k: r["baselines"][k]["accuracy"])
         best_baseline_acc = r["baselines"][best_baseline_name]["accuracy"]

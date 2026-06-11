@@ -10,9 +10,12 @@ Per D-31: fixed seed=42.
 Per D-27: all configs run to completion.
 
 Usage:
-    python scripts/sweep/run_adaptive_sweep.py --strategy ema --features-dir results/T2/features --db results/T2/sweep.db --workers 24
-    python scripts/sweep/run_adaptive_sweep.py --strategy mean_std --features-dir results/T2/features --db results/T2/sweep.db
-    python scripts/sweep/run_adaptive_sweep.py --strategy depth --features-dir results/T2/features --db results/T2/sweep.db
+    python scripts/sweep/run_adaptive_sweep.py --strategy ema \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_adaptive_sweep.py --strategy mean_std \\
+        --features-dir results/T2/features --db results/T2/sweep.db
+    python scripts/sweep/run_adaptive_sweep.py --strategy depth \\
+        --features-dir results/T2/features --db results/T2/sweep.db
     python scripts/sweep/run_adaptive_sweep.py --strategy all  # runs all 3
 """
 
@@ -66,9 +69,7 @@ DEPTH_DECAY_VALUES = [0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3]
 # ── Query best global configs from DB ────────────────────────────
 
 
-def get_top_global_assoc_thresholds(
-    db_path: str, n: int = 5
-) -> list[float]:
+def get_top_global_assoc_thresholds(db_path: str, n: int = 5) -> list[float]:
     """Query top-N assoc_threshold values from global sweep by mean accuracy.
 
     Uses final-epoch results from global sweep (policy_type='global').
@@ -117,9 +118,7 @@ def get_top_global_assoc_thresholds(
         conn.close()
 
 
-def get_top_global_sim_thresholds(
-    db_path: str, n: int = 3
-) -> list[float]:
+def get_top_global_sim_thresholds(db_path: str, n: int = 3) -> list[float]:
     """Query top-N sim_threshold values from global sweep by mean accuracy.
 
     Per D-03: co-adapt sim_threshold with adaptive hyperparameters.
@@ -167,9 +166,7 @@ def get_top_global_sim_thresholds(
         conn.close()
 
 
-def get_top_global_consolidation_configs(
-    db_path: str, n: int = 2
-) -> list[tuple[float, int]]:
+def get_top_global_consolidation_configs(db_path: str, n: int = 2) -> list[tuple[float, int]]:
     """Query top-N consolidation configs from global sweep.
 
     Per D-03: co-adapt consolidation alongside threshold.
@@ -549,9 +546,7 @@ def generate_expanded_sweep_configs(
     return configs
 
 
-def _get_top_strategy_configs(
-    db_path: str, strategy: str, n: int = 10
-) -> list[dict[str, Any]]:
+def _get_top_strategy_configs(db_path: str, strategy: str, n: int = 10) -> list[dict[str, Any]]:
     """Query top-N configs for a strategy by mean accuracy across benchmarks.
 
     Args:
@@ -648,9 +643,11 @@ def print_comparison_table(db_path: str, strategy: str, benchmarks: list[str]) -
 
                 # Parse policy params for display
                 pp = json.loads(row["policy_params"])
-                pp_str = ", ".join(f"{k}={v}" for k, v in sorted(pp.items())
-                                  if k not in ("min_share", "min_count",
-                                               "sim_threshold", "base_assoc"))
+                pp_str = ", ".join(
+                    f"{k}={v}"
+                    for k, v in sorted(pp.items())
+                    if k not in ("min_share", "min_count", "sim_threshold", "base_assoc")
+                )
 
                 logger.info(
                     f"{bm:<15} {g_acc:>12.4f} {s_acc:>14.4f} "
@@ -716,9 +713,11 @@ def _print_cross_benchmark_ranking(
         logger.info(f"Top-5 {strategy} configs by mean accuracy across benchmarks:")
         for i, row in enumerate(rows, 1):
             pp = json.loads(row["policy_params"])
-            pp_str = ", ".join(f"{k}={v}" for k, v in sorted(pp.items())
-                              if k not in ("min_share", "min_count",
-                                           "sim_threshold", "base_assoc"))
+            pp_str = ", ".join(
+                f"{k}={v}"
+                for k, v in sorted(pp.items())
+                if k not in ("min_share", "min_count", "sim_threshold", "base_assoc")
+            )
             logger.info(
                 f"  {i}. mean={row['mean_acc']:.4f} "
                 f"[{row['min_acc']:.4f}, {row['max_acc']:.4f}] "
@@ -763,8 +762,7 @@ def run_strategy_sweep(
 
     if strategy not in config_generators:
         raise ValueError(
-            f"Unknown strategy: {strategy!r}. "
-            f"Expected one of: {list(config_generators.keys())}"
+            f"Unknown strategy: {strategy!r}. Expected one of: {list(config_generators.keys())}"
         )
 
     configs = config_generators[strategy](benchmarks, db_path, seed=SEED)
@@ -782,7 +780,9 @@ def run_strategy_sweep(
     elapsed = time.time() - t0
 
     ok_count = sum(1 for r in results if r["status"] == "ok")
-    logger.info(f"\nInitial {strategy} sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s")
+    logger.info(
+        f"\nInitial {strategy} sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s"
+    )
 
     # 3. Print comparison table
     print_comparison_table(db_path, strategy, benchmarks)
@@ -833,10 +833,12 @@ Examples:
   python scripts/sweep/run_adaptive_sweep.py --strategy all --features-dir results/T2/features
 
   # Run with expanded sweep on top configs:
-  python scripts/sweep/run_adaptive_sweep.py --strategy ema --expanded --features-dir results/T2/features
+  python scripts/sweep/run_adaptive_sweep.py --strategy ema --expanded \\
+      --features-dir results/T2/features
 
   # Custom workers and database:
-  python scripts/sweep/run_adaptive_sweep.py --strategy all --workers 8 --db custom.db --features-dir features/
+  python scripts/sweep/run_adaptive_sweep.py --strategy all --workers 8 \\
+      --db custom.db --features-dir features/
         """,
     )
     parser.add_argument(
@@ -907,9 +909,7 @@ Examples:
 
     t_total = time.time()
 
-    strategies_to_run = (
-        ["ema", "mean_std", "depth"] if args.strategy == "all" else [args.strategy]
-    )
+    strategies_to_run = ["ema", "mean_std", "depth"] if args.strategy == "all" else [args.strategy]
 
     all_results: list[dict] = []
     for strategy in strategies_to_run:
@@ -1016,7 +1016,9 @@ def _print_final_comparison(db_path: str, benchmarks: list[str]) -> None:
                     best_strategy = s
 
         if best_strategy:
-            logger.info(f"\nBest overall strategy: {best_strategy} (mean accuracy: {best_mean:.4f})")
+            logger.info(
+                f"\nBest overall strategy: {best_strategy} (mean accuracy: {best_mean:.4f})"
+            )
 
     finally:
         conn.close()

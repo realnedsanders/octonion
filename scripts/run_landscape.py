@@ -199,9 +199,12 @@ def build_config(args: argparse.Namespace) -> LandscapeConfig:
                 [ALGEBRA_MAP[a] for a in args.algebras]
                 if args.algebras
                 else [
-                    AlgebraType.REAL, AlgebraType.COMPLEX,
-                    AlgebraType.QUATERNION, AlgebraType.OCTONION,
-                    AlgebraType.PHM8, AlgebraType.R8_DENSE,
+                    AlgebraType.REAL,
+                    AlgebraType.COMPLEX,
+                    AlgebraType.QUATERNION,
+                    AlgebraType.OCTONION,
+                    AlgebraType.PHM8,
+                    AlgebraType.R8_DENSE,
                 ]
             ),
             optimizers=args.optimizers or ALL_OPTIMIZERS,
@@ -285,14 +288,15 @@ def main() -> None:
 
     # Print configuration
     total_runs = (
-        len(config.tasks) * len(config.optimizers)
-        * len(config.algebras) * len(config.seeds)
+        len(config.tasks) * len(config.optimizers) * len(config.algebras) * len(config.seeds)
     )
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  Phase 5: Optimization Landscape Experiment")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Tasks:      {len(config.tasks)} ({', '.join(config.tasks)})")
-    print(f"  Algebras:   {len(config.algebras)} ({', '.join(a.short_name for a in config.algebras)})")
+    print(
+        f"  Algebras:   {len(config.algebras)} ({', '.join(a.short_name for a in config.algebras)})"
+    )
     print(f"  Optimizers: {len(config.optimizers)} ({', '.join(config.optimizers)})")
     print(f"  Seeds:      {len(config.seeds)}")
     print(f"  Total runs: {total_runs}")
@@ -304,7 +308,7 @@ def main() -> None:
         print("  Mode:       SMOKE TEST")
     if args.resume:
         print("  Resume:     YES (skipping existing results)")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Run experiment
     start = time.time()
@@ -325,10 +329,10 @@ def main() -> None:
                             n_completed += 1
 
     # Print summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  EXPERIMENT COMPLETE")
-    print(f"{'='*60}")
-    print(f"  Total time:    {elapsed:.1f}s ({elapsed/60:.1f}min)")
+    print(f"{'=' * 60}")
+    print(f"  Total time:    {elapsed:.1f}s ({elapsed / 60:.1f}min)")
     print(f"  Runs completed: {n_completed}")
     print(f"  Runs failed:    {n_failed}")
     print(f"  Results saved:  {config.output_dir}")
@@ -354,7 +358,7 @@ def main() -> None:
     else:
         print("\n  Gate evaluation: SKIPPED (need O and R8D algebras)")
 
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 if __name__ == "__main__":

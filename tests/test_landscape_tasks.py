@@ -134,25 +134,19 @@ class TestCrossProductRecovery:
     """Tests for build_cross_product_recovery."""
 
     def test_returns_tensor_datasets(self) -> None:
-        train_ds, test_ds = build_cross_product_recovery(
-            n_train=100, n_test=20, cross_dim=7
-        )
+        train_ds, test_ds = build_cross_product_recovery(n_train=100, n_test=20, cross_dim=7)
         assert isinstance(train_ds, TensorDataset)
         assert isinstance(test_ds, TensorDataset)
 
     def test_shapes_cross_dim7(self) -> None:
-        train_ds, test_ds = build_cross_product_recovery(
-            n_train=500, n_test=100, cross_dim=7
-        )
+        train_ds, test_ds = build_cross_product_recovery(n_train=500, n_test=100, cross_dim=7)
         x, y = train_ds.tensors
         assert x.shape == (500, 7)
         assert y.shape == (500, 7)
 
     def test_shapes_cross_dim3(self) -> None:
         """Positive control: 3D cross product."""
-        train_ds, _ = build_cross_product_recovery(
-            n_train=100, n_test=20, cross_dim=3
-        )
+        train_ds, _ = build_cross_product_recovery(n_train=100, n_test=20, cross_dim=3)
         x, y = train_ds.tensors
         assert x.shape == (100, 3)
         assert y.shape == (100, 3)
@@ -179,9 +173,7 @@ class TestCrossProductRecovery:
         # Test data should be identical (clean in both cases)
         assert torch.allclose(test_clean.tensors[1], test_noisy.tensors[1], atol=1e-10)
         # Training data should differ due to noise
-        assert not torch.allclose(
-            train_clean.tensors[1], train_noisy.tensors[1], atol=1e-5
-        )
+        assert not torch.allclose(train_clean.tensors[1], train_noisy.tensors[1], atol=1e-5)
 
     def test_3d_cross_product_valid(self) -> None:
         """3D cross product positive control: verify against torch.linalg.cross."""
@@ -229,9 +221,7 @@ class TestSinusoidalRegression:
         assert isinstance(test_ds, TensorDataset)
 
     def test_shapes_dim8(self) -> None:
-        train_ds, _ = build_sinusoidal_regression(
-            n_train=500, n_test=100, dim=8, n_components=3
-        )
+        train_ds, _ = build_sinusoidal_regression(n_train=500, n_test=100, dim=8, n_components=3)
         x, y = train_ds.tensors
         assert x.shape == (500, 8)
         assert y.shape == (500, 3)
@@ -275,9 +265,7 @@ class TestClassification:
         assert isinstance(meta, dict)
 
     def test_shapes_dim8(self) -> None:
-        train_ds, test_ds, _ = build_classification(
-            n_train=500, n_test=100, dim=8, n_classes=5
-        )
+        train_ds, test_ds, _ = build_classification(n_train=500, n_test=100, dim=8, n_classes=5)
         x, y = train_ds.tensors
         assert x.shape == (500, 8)
         assert y.shape == (500,)

@@ -253,10 +253,9 @@ class OctonionDenseLinear(nn.Module):
         self.out_features = out_features
 
         # 8 weight matrices, one per basis element
-        self.weights = nn.ParameterList([
-            nn.Parameter(torch.empty(out_features, in_features, dtype=dtype))
-            for _ in range(8)
-        ])
+        self.weights = nn.ParameterList(
+            [nn.Parameter(torch.empty(out_features, in_features, dtype=dtype)) for _ in range(8)]
+        )
 
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features, 8, dtype=dtype))
@@ -268,9 +267,7 @@ class OctonionDenseLinear(nn.Module):
         # Register structure constants as a non-persistent buffer so it
         # automatically migrates with .to(device/dtype) but is NOT saved
         # in state_dict (avoids bloating checkpoints with a constant).
-        self.register_buffer(
-            "_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False
-        )
+        self.register_buffer("_C", STRUCTURE_CONSTANTS.to(dtype=dtype), persistent=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass: fused octonionic matrix-vector product via einsum.
@@ -314,9 +311,7 @@ class OctonionDenseLinear(nn.Module):
         # Permute to [k, out_f, j, in_f] = [8, out_f, 8, in_f]
         # Reshape to [8*out_f, 8*in_f]: row = k*out_f+o, col = j*in_f+q
         # This matches x_flat[..., j*in_f+q] = x[..., q, j]
-        fused_flat = fused.permute(0, 2, 1, 3).reshape(
-            8 * self.out_features, 8 * self.in_features
-        )
+        fused_flat = fused.permute(0, 2, 1, 3).reshape(8 * self.out_features, 8 * self.in_features)
 
         # Single F.linear call: [..., 8*in_f] x [8*out_f, 8*in_f]^T -> [..., 8*out_f]
         out_flat = F.linear(x_flat, fused_flat)

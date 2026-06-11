@@ -164,9 +164,7 @@ class TestBatchConsistency:
         # Element-wise computation
         for i in range(N):
             single_result = octonion_exp(Octonion(data[i]))
-            assert torch.allclose(
-                batch_result.components[i], single_result.components, atol=1e-12
-            )
+            assert torch.allclose(batch_result.components[i], single_result.components, atol=1e-12)
 
     def test_batch_consistency_inner_product(self) -> None:
         """Batch inner product matches loop over individual elements."""

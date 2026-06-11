@@ -110,18 +110,24 @@ class TestOctonionSubtraction:
 
     def test_sub_octonions(self) -> None:
         """Octonion - Octonion is component-wise subtraction."""
-        a = Octonion(torch.tensor([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0], dtype=torch.float64))
+        a = Octonion(
+            torch.tensor([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0], dtype=torch.float64)
+        )
         b = Octonion(torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64))
         result = a - b
         assert isinstance(result, Octonion)
-        expected = torch.tensor([9.0, 18.0, 27.0, 36.0, 45.0, 54.0, 63.0, 72.0], dtype=torch.float64)
+        expected = torch.tensor(
+            [9.0, 18.0, 27.0, 36.0, 45.0, 54.0, 63.0, 72.0], dtype=torch.float64
+        )
         assert torch.equal(result.components, expected)
 
     def test_rsub_scalar(self) -> None:
         """scalar - Octonion subtracts from real part and negates imaginary."""
         a = Octonion(torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64))
         result = 10.0 - a
-        expected = torch.tensor([9.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0], dtype=torch.float64)
+        expected = torch.tensor(
+            [9.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0], dtype=torch.float64
+        )
         assert torch.equal(result.components, expected)
 
 
@@ -130,7 +136,9 @@ class TestOctonionNeg:
 
     def test_neg(self) -> None:
         """-Octonion negates all components."""
-        a = Octonion(torch.tensor([1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0, -8.0], dtype=torch.float64))
+        a = Octonion(
+            torch.tensor([1.0, -2.0, 3.0, -4.0, 5.0, -6.0, 7.0, -8.0], dtype=torch.float64)
+        )
         result = -a
         assert isinstance(result, Octonion)
         expected = torch.tensor([-1.0, 2.0, -3.0, 4.0, -5.0, 6.0, -7.0, 8.0], dtype=torch.float64)
@@ -186,7 +194,9 @@ class TestOctonionConjugate:
         a = Octonion(torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64))
         conj = a.conjugate()
         assert isinstance(conj, Octonion)
-        expected = torch.tensor([1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0], dtype=torch.float64)
+        expected = torch.tensor(
+            [1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0], dtype=torch.float64
+        )
         assert torch.equal(conj.components, expected)
 
 
@@ -197,12 +207,14 @@ class TestOctonionNorm:
         """.norm() returns sqrt of sum of squared components."""
         data = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64)
         o = Octonion(data)
-        expected = torch.sqrt(torch.sum(data ** 2))
+        expected = torch.sqrt(torch.sum(data**2))
         assert torch.isclose(o.norm(), expected)
 
     def test_norm_unit(self) -> None:
         """Unit octonion (identity) has norm 1."""
-        identity = Octonion(torch.tensor([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=torch.float64))
+        identity = Octonion(
+            torch.tensor([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=torch.float64)
+        )
         assert torch.isclose(identity.norm(), torch.tensor(1.0, dtype=torch.float64))
 
 
@@ -259,9 +271,9 @@ class TestOctonionImmutability:
         """Octonion has no in-place mutation methods."""
         o = Octonion(torch.zeros(8, dtype=torch.float64))
         # Verify no __iadd__, __imul__, __isub__ etc.
-        assert not hasattr(o, '__iadd__')
-        assert not hasattr(o, '__imul__')
-        assert not hasattr(o, '__isub__')
+        assert not hasattr(o, "__iadd__")
+        assert not hasattr(o, "__imul__")
+        assert not hasattr(o, "__isub__")
 
     def test_operations_return_new_instances(self) -> None:
         """All operations return new Octonion instances, not the same object."""
@@ -288,7 +300,7 @@ class TestOctonionNoDiv:
         """Octonion has no __pow__ operator."""
         a = Octonion(torch.ones(8, dtype=torch.float64))
         with pytest.raises(TypeError):
-            a ** 2  # type: ignore[operator]
+            a**2  # type: ignore[operator]
 
 
 class TestAssociator:

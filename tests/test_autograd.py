@@ -116,9 +116,7 @@ class TestAutogradForward:
         b=octonion_tensors(min_value=-2, max_value=2),
     )
     @settings(max_examples=20, deadline=None)
-    def test_inner_product_forward(
-        self, a: torch.Tensor, b: torch.Tensor
-    ) -> None:
+    def test_inner_product_forward(self, a: torch.Tensor, b: torch.Tensor) -> None:
         expected = inner_product(Octonion(a), Octonion(b))
         result = OctonionInnerProductFunction.apply(a, b)
         assert torch.allclose(result, expected, atol=1e-14)
@@ -128,9 +126,7 @@ class TestAutogradForward:
         b=octonion_tensors(min_value=-2, max_value=2),
     )
     @settings(max_examples=20, deadline=None)
-    def test_cross_product_forward(
-        self, a: torch.Tensor, b: torch.Tensor
-    ) -> None:
+    def test_cross_product_forward(self, a: torch.Tensor, b: torch.Tensor) -> None:
         expected = cross_product(Octonion(a), Octonion(b)).components
         result = OctonionCrossProductFunction.apply(a, b)
         assert torch.allclose(result, expected, atol=1e-14)

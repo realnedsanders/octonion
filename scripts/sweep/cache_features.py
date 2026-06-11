@@ -16,8 +16,10 @@ Each .pt file is a dict with keys:
 
 Usage:
     docker compose run --rm dev uv run python scripts/sweep/cache_features.py --benchmarks all
-    docker compose run --rm dev uv run python scripts/sweep/cache_features.py --benchmarks mnist,fashion_mnist --subset-only
-    docker compose run --rm dev uv run python scripts/sweep/cache_features.py --benchmarks mnist --output-dir /tmp/test_cache
+    docker compose run --rm dev uv run python scripts/sweep/cache_features.py \\
+        --benchmarks mnist,fashion_mnist --subset-only
+    docker compose run --rm dev uv run python scripts/sweep/cache_features.py \\
+        --benchmarks mnist --output-dir /tmp/test_cache
 """
 
 from __future__ import annotations
@@ -96,8 +98,7 @@ def save_cached_features(
     }
     torch.save(data, path)
     logger.info(
-        f"  Saved {path.name}: train={train_x.shape}, test={test_x.shape}, "
-        f"dtype={train_x.dtype}"
+        f"  Saved {path.name}: train={train_x.shape}, test={test_x.shape}, dtype={train_x.dtype}"
     )
 
 
@@ -174,9 +175,12 @@ def cache_mnist(
         logger.info(f"[MNIST] PCA (full): 8 components explain {explained:.1%} of variance")
         save_cached_features(
             output_dir / "mnist_features.pt",
-            train_oct, train_labels_all,
-            test_oct, test_labels_all,
-            class_names, "mnist",
+            train_oct,
+            train_labels_all,
+            test_oct,
+            test_labels_all,
+            class_names,
+            "mnist",
         )
 
     # 10K subset: subsample FIRST, then PCA on subsampled data
@@ -192,15 +196,16 @@ def cache_mnist(
         sub_test_labels = test_labels_all[test_idx]
 
         logger.info("[MNIST] Computing PCA (784D -> 8D) on 10K subset...")
-        train_oct_sub, test_oct_sub, explained_sub = _mnist_pca8(
-            sub_train_flat, sub_test_flat
-        )
+        train_oct_sub, test_oct_sub, explained_sub = _mnist_pca8(sub_train_flat, sub_test_flat)
         logger.info(f"[MNIST] PCA (10K): 8 components explain {explained_sub:.1%} of variance")
         save_cached_features(
             output_dir / "mnist_10k_features.pt",
-            train_oct_sub, sub_train_labels,
-            test_oct_sub, sub_test_labels,
-            class_names, "mnist_10k",
+            train_oct_sub,
+            sub_train_labels,
+            test_oct_sub,
+            sub_test_labels,
+            class_names,
+            "mnist_10k",
         )
 
 
@@ -265,8 +270,16 @@ def cache_fashion_mnist(
     full_test_labels = test_ds.targets.clone()
 
     class_names = [
-        "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
-        "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot",
+        "T-shirt/top",
+        "Trouser",
+        "Pullover",
+        "Dress",
+        "Coat",
+        "Sandal",
+        "Shirt",
+        "Sneaker",
+        "Bag",
+        "Ankle boot",
     ]
 
     # Train CNN encoder on full training set (seed=42 for reproducibility)
@@ -320,9 +333,12 @@ def cache_fashion_mnist(
     if full:
         save_cached_features(
             output_dir / "fashion_mnist_features.pt",
-            train_oct, full_train_labels,
-            test_oct, full_test_labels,
-            class_names, "fashion_mnist",
+            train_oct,
+            full_train_labels,
+            test_oct,
+            full_test_labels,
+            class_names,
+            "fashion_mnist",
         )
 
     # 10K subset
@@ -332,9 +348,12 @@ def cache_fashion_mnist(
         test_idx = torch.randperm(len(test_oct), generator=gen)[:2000]
         save_cached_features(
             output_dir / "fashion_mnist_10k_features.pt",
-            train_oct[train_idx], full_train_labels[train_idx],
-            test_oct[test_idx], full_test_labels[test_idx],
-            class_names, "fashion_mnist_10k",
+            train_oct[train_idx],
+            full_train_labels[train_idx],
+            test_oct[test_idx],
+            full_test_labels[test_idx],
+            class_names,
+            "fashion_mnist_10k",
         )
 
 
@@ -421,27 +440,43 @@ def cache_cifar10(
     cifar_mean = (0.4914, 0.4822, 0.4465)
     cifar_std = (0.2470, 0.2435, 0.2616)
 
-    train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
-        transforms.ToTensor(),
-        transforms.Normalize(cifar_mean, cifar_std),
-    ])
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(cifar_mean, cifar_std),
-    ])
+    train_transform = transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32, padding=4),
+            transforms.ToTensor(),
+            transforms.Normalize(cifar_mean, cifar_std),
+        ]
+    )
+    test_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(cifar_mean, cifar_std),
+        ]
+    )
 
     train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=train_transform)
     test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True, transform=test_transform)
 
     # Non-augmented version for feature extraction
-    train_dataset_eval = CIFAR10(root=DATA_DIR, train=True, download=False, transform=test_transform)
-    test_dataset_eval = CIFAR10(root=DATA_DIR, train=False, download=False, transform=test_transform)
+    train_dataset_eval = CIFAR10(
+        root=DATA_DIR, train=True, download=False, transform=test_transform
+    )
+    test_dataset_eval = CIFAR10(
+        root=DATA_DIR, train=False, download=False, transform=test_transform
+    )
 
     class_names = [
-        "airplane", "automobile", "bird", "cat", "deer",
-        "dog", "frog", "horse", "ship", "truck",
+        "airplane",
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "frog",
+        "horse",
+        "ship",
+        "truck",
     ]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -554,9 +589,12 @@ def cache_cifar10(
     if full:
         save_cached_features(
             output_dir / "cifar10_features.pt",
-            train_oct, train_labels_all,
-            test_oct, test_labels_all,
-            class_names, "cifar10",
+            train_oct,
+            train_labels_all,
+            test_oct,
+            test_labels_all,
+            class_names,
+            "cifar10",
         )
 
     # 10K subset
@@ -566,9 +604,12 @@ def cache_cifar10(
         test_idx = torch.randperm(len(test_oct), generator=gen)[:2000]
         save_cached_features(
             output_dir / "cifar10_10k_features.pt",
-            train_oct[train_idx], train_labels_all[train_idx],
-            test_oct[test_idx], test_labels_all[test_idx],
-            class_names, "cifar10_10k",
+            train_oct[train_idx],
+            train_labels_all[train_idx],
+            test_oct[test_idx],
+            test_labels_all[test_idx],
+            class_names,
+            "cifar10_10k",
         )
 
 
@@ -583,11 +624,26 @@ SUBSET_CATEGORIES = [
 ]
 
 SHORT_NAMES_20 = [
-    "alt.atheism", "comp.graphics", "comp.os.ms-win", "comp.sys.ibm",
-    "comp.sys.mac", "comp.windows.x", "misc.forsale", "rec.autos",
-    "rec.motorcycles", "rec.sport.bball", "rec.sport.hockey", "sci.crypt",
-    "sci.electronics", "sci.med", "sci.space", "soc.rel.christian",
-    "talk.pol.guns", "talk.pol.mideast", "talk.pol.misc", "talk.rel.misc",
+    "alt.atheism",
+    "comp.graphics",
+    "comp.os.ms-win",
+    "comp.sys.ibm",
+    "comp.sys.mac",
+    "comp.windows.x",
+    "misc.forsale",
+    "rec.autos",
+    "rec.motorcycles",
+    "rec.sport.bball",
+    "rec.sport.hockey",
+    "sci.crypt",
+    "sci.electronics",
+    "sci.med",
+    "sci.space",
+    "soc.rel.christian",
+    "talk.pol.guns",
+    "talk.pol.mideast",
+    "talk.pol.misc",
+    "talk.rel.misc",
 ]
 
 
@@ -619,12 +675,16 @@ def _cache_text(
 
     logger.info(f"\n[{benchmark_name}] Loading 20 Newsgroups ({mode})...")
     train = fetch_20newsgroups(
-        subset="train", categories=categories,
-        remove=("headers", "footers", "quotes"), random_state=SEED
+        subset="train",
+        categories=categories,
+        remove=("headers", "footers", "quotes"),
+        random_state=SEED,
     )
     test = fetch_20newsgroups(
-        subset="test", categories=categories,
-        remove=("headers", "footers", "quotes"), random_state=SEED
+        subset="test",
+        categories=categories,
+        remove=("headers", "footers", "quotes"),
+        random_state=SEED,
     )
 
     train_texts = train.data
@@ -633,7 +693,10 @@ def _cache_text(
     test_labels = np.array(test.target)
     target_names = list(train.target_names)
 
-    logger.info(f"[{benchmark_name}] Train: {len(train_texts)}, Test: {len(test_texts)}, Classes: {len(target_names)}")
+    logger.info(
+        f"[{benchmark_name}] Train: {len(train_texts)}, Test: {len(test_texts)}, "
+        f"Classes: {len(target_names)}"
+    )
 
     # TF-IDF vectorization (exact match to run_trie_text.py)
     logger.info(f"[{benchmark_name}] TF-IDF vectorization...")
@@ -678,9 +741,12 @@ def _cache_text(
     if full:
         save_cached_features(
             output_dir / f"{benchmark_name}_features.pt",
-            train_oct, train_y,
-            test_oct, test_y,
-            actual_class_names, benchmark_name,
+            train_oct,
+            train_y,
+            test_oct,
+            test_y,
+            actual_class_names,
+            benchmark_name,
         )
 
     # 10K subset (or fewer if dataset is smaller)
@@ -693,9 +759,12 @@ def _cache_text(
         test_idx = torch.randperm(len(test_oct), generator=gen)[:n_test_sub]
         save_cached_features(
             output_dir / f"{benchmark_name}_10k_features.pt",
-            train_oct[train_idx], train_y[train_idx],
-            test_oct[test_idx], test_y[test_idx],
-            actual_class_names, f"{benchmark_name}_10k",
+            train_oct[train_idx],
+            train_y[train_idx],
+            test_oct[test_idx],
+            test_y[test_idx],
+            actual_class_names,
+            f"{benchmark_name}_10k",
         )
 
 

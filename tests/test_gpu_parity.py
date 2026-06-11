@@ -137,7 +137,6 @@ class TestGPUCPUParity:
         t = torch.randn(8, dtype=torch.float64)
         t[0] = abs(t[0]) + 1.0  # Ensure positive scalar part
 
-
         t_cpu = t.clone().requires_grad_(True)
         t_gpu = t.clone().cuda().requires_grad_(True)
 

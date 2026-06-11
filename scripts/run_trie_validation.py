@@ -146,9 +146,7 @@ def experiment_subalgebra_routing(
         n_total = len(all_labels)
 
         # Compute product with node and find dominant subalgebra
-        products = octonion_mul(
-            node_t.unsqueeze(0).expand(n_total, -1), all_samples
-        )
+        products = octonion_mul(node_t.unsqueeze(0).expand(n_total, -1), all_samples)
         dom_sub = dominant_subalgebra(products)  # [N]
 
         # Within-category consistency: for each category, what fraction
@@ -268,14 +266,19 @@ def experiment_associator_novelty(
     transition_indices = [i for i, t in enumerate(is_transition) if t]
     transition_details = []
     for idx in transition_indices:
-        transition_details.append({
-            "position": idx + 1,  # +1 because assoc_norms is offset by 1
-            "from_category": labels[idx],
-            "to_category": labels[idx + 1],
-            "associator_norm": assoc_norms[idx],
-        })
+        transition_details.append(
+            {
+                "position": idx + 1,  # +1 because assoc_norms is offset by 1
+                "from_category": labels[idx],
+                "to_category": labels[idx + 1],
+                "associator_norm": assoc_norms[idx],
+            }
+        )
 
-    logger.info(f"\n  Stream length:     {len(stream)} ({n_categories} categories x {n_samples_per_category} samples)")
+    logger.info(
+        f"\n  Stream length:     {len(stream)} "
+        f"({n_categories} categories x {n_samples_per_category} samples)"
+    )
     logger.info(f"  Mean within-cat:   {mean_within:.6f}")
     logger.info(f"  Mean at transition:{mean_transition:.6f}")
     logger.info(f"  Spike ratio:       {spike_ratio:.2f}x")
@@ -345,11 +348,13 @@ def experiment_composition_depth(
         logger.info(f"\n  dtype: {dtype_name}")
 
         # Depths to measure at
-        depths = sorted(set(
-            list(range(1, min(21, max_depth + 1)))
-            + list(range(25, min(101, max_depth + 1), 25))
-            + list(range(100, max_depth + 1, 50))
-        ))
+        depths = sorted(
+            set(
+                list(range(1, min(21, max_depth + 1)))
+                + list(range(25, min(101, max_depth + 1), 25))
+                + list(range(100, max_depth + 1, 50))
+            )
+        )
 
         last_input_errors = {d: [] for d in depths}
         first_input_errors = {d: [] for d in depths}
@@ -378,7 +383,9 @@ def experiment_composition_depth(
                     composed = sequence[0].clone()
                 else:
                     prev_composed = composed.clone()
-                    composed = octonion_mul(composed.unsqueeze(0), sequence[k].unsqueeze(0)).squeeze(0)
+                    composed = octonion_mul(
+                        composed.unsqueeze(0), sequence[k].unsqueeze(0)
+                    ).squeeze(0)
 
                     if tail is None:
                         tail = sequence[1].clone()
@@ -398,8 +405,12 @@ def experiment_composition_depth(
                     prev_conj[1:] = -prev_conj[1:]
                     prev_inv = prev_conj / prev_norm_sq
 
-                    recovered = octonion_mul(prev_inv.unsqueeze(0), composed.unsqueeze(0)).squeeze(0)
-                    error = torch.linalg.norm(recovered - sequence[k]) / torch.linalg.norm(sequence[k])
+                    recovered = octonion_mul(prev_inv.unsqueeze(0), composed.unsqueeze(0)).squeeze(
+                        0
+                    )
+                    error = torch.linalg.norm(recovered - sequence[k]) / torch.linalg.norm(
+                        sequence[k]
+                    )
                     last_input_errors[depth].append(error.item())
 
                 # Test 2: First-input recovery (x_1 = c_k * tail^{-1})
@@ -408,8 +419,12 @@ def experiment_composition_depth(
                     tail_conj[1:] = -tail_conj[1:]
                     tail_inv = tail_conj / torch.dot(tail, tail)
 
-                    recovered_first = octonion_mul(composed.unsqueeze(0), tail_inv.unsqueeze(0)).squeeze(0)
-                    error_first = torch.linalg.norm(recovered_first - sequence[0]) / torch.linalg.norm(sequence[0])
+                    recovered_first = octonion_mul(
+                        composed.unsqueeze(0), tail_inv.unsqueeze(0)
+                    ).squeeze(0)
+                    error_first = torch.linalg.norm(
+                        recovered_first - sequence[0]
+                    ) / torch.linalg.norm(sequence[0])
                     first_input_errors[depth].append(error_first.item())
 
                 # Test 3: Round-trip (compose then invert the whole thing)
@@ -446,7 +461,10 @@ def experiment_composition_depth(
         results[dtype_name] = depth_results
 
         # Print summary
-        logger.info(f"\n    {'Depth':>6} | {'Last-in err':>12} | {'First-in err':>12} | {'Roundtrip err':>13}")
+        logger.info(
+            f"\n    {'Depth':>6} | {'Last-in err':>12} "
+            f"| {'First-in err':>12} | {'Roundtrip err':>13}"
+        )
         logger.info(f"    {'':->6}-+-{'':->12}-+-{'':->12}-+-{'':->13}")
         for entry in depth_results:
             d = entry["depth"]
@@ -464,11 +482,16 @@ def experiment_composition_depth(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Octonionic Trie Validation Experiments")
     parser.add_argument(
-        "--experiment", type=int, choices=[1, 2, 3], default=None,
+        "--experiment",
+        type=int,
+        choices=[1, 2, 3],
+        default=None,
         help="Run a specific experiment (1, 2, or 3). Default: run all.",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="results/trie_validation",
+        "--output-dir",
+        type=str,
+        default="results/trie_validation",
         help="Directory to save results.",
     )
     args = parser.parse_args()
@@ -508,14 +531,24 @@ def main() -> None:
         best_noise = min(r1["noise_levels"].keys(), key=lambda k: float(k))
         worst_noise = max(r1["noise_levels"].keys(), key=lambda k: float(k))
         logger.info("\n  Exp 1 - Subalgebra Routing:")
-        logger.info(f"    Best noise ({best_noise}):  within={r1['noise_levels'][best_noise]['within_consistency']:.3f}, separation={r1['noise_levels'][best_noise]['cross_separation']:.3f}")
-        logger.info(f"    Worst noise ({worst_noise}): within={r1['noise_levels'][worst_noise]['within_consistency']:.3f}, separation={r1['noise_levels'][worst_noise]['cross_separation']:.3f}")
+        logger.info(
+            f"    Best noise ({best_noise}):  "
+            f"within={r1['noise_levels'][best_noise]['within_consistency']:.3f}, "
+            f"separation={r1['noise_levels'][best_noise]['cross_separation']:.3f}"
+        )
+        logger.info(
+            f"    Worst noise ({worst_noise}): "
+            f"within={r1['noise_levels'][worst_noise]['within_consistency']:.3f}, "
+            f"separation={r1['noise_levels'][worst_noise]['cross_separation']:.3f}"
+        )
 
     if "associator_novelty" in all_results:
         r2 = all_results["associator_novelty"]
         logger.info("\n  Exp 2 - Associator Novelty:")
         logger.info(f"    Spike ratio: {r2['spike_ratio']:.2f}x")
-        logger.info(f"    Transitions above p99: {r2['transitions_above_p99']}/{r2['n_transitions']}")
+        logger.info(
+            f"    Transitions above p99: {r2['transitions_above_p99']}/{r2['n_transitions']}"
+        )
 
     if "composition_depth" in all_results:
         r3 = all_results["composition_depth"]
@@ -524,8 +557,14 @@ def main() -> None:
             last_entry = entries[-1]
             logger.info(f"\n  Exp 3 - Composition Depth ({dtype_name}):")
             logger.info(f"    Max depth tested: {last_entry['depth']}")
-            logger.info(f"    Last-input error at max depth: {last_entry.get('last_input_error_mean', 'N/A'):.4e}")
-            logger.info(f"    Roundtrip error at max depth:  {last_entry.get('roundtrip_error_mean', 'N/A'):.4e}")
+            logger.info(
+                f"    Last-input error at max depth: "
+                f"{last_entry.get('last_input_error_mean', 'N/A'):.4e}"
+            )
+            logger.info(
+                f"    Roundtrip error at max depth:  "
+                f"{last_entry.get('roundtrip_error_mean', 'N/A'):.4e}"
+            )
 
     logger.info(f"\n  Results saved to {output_dir}/")
 

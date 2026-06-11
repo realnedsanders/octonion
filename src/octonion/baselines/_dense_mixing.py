@@ -57,9 +57,7 @@ class DenseMixingLinear(nn.Module):
         nn.init.xavier_normal_(self.weight)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features * self.DIM, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features * self.DIM, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 

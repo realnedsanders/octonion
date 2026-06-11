@@ -10,7 +10,8 @@ recognition.
 Usage:
     docker compose run --rm dev uv run python scripts/run_trie_fashion_mnist.py
     docker compose run --rm dev uv run python scripts/run_trie_fashion_mnist.py --n-train 10000
-    docker compose run --rm dev uv run python scripts/run_trie_fashion_mnist.py --cnn-epochs 10 --epochs 3
+    docker compose run --rm dev uv run python scripts/run_trie_fashion_mnist.py \\
+        --cnn-epochs 10 --epochs 3
 """
 
 from __future__ import annotations
@@ -272,8 +273,12 @@ def run_learning_curves(
 
         # Trie
         trie_result = run_trie_classifier(
-            sub_train_x, sub_train_y, test_x, test_y,
-            epochs=epochs, seed=seed,
+            sub_train_x,
+            sub_train_y,
+            test_x,
+            test_y,
+            epochs=epochs,
+            seed=seed,
         )
         curves["Octonionic Trie"].append({"n_train": n, "accuracy": trie_result["accuracy"]})
 
@@ -299,7 +304,9 @@ def print_comparison_table(
     logger.info(f"  {'':->20}-+-{'':->8}-+-{'':->10}-+-{'':->9}")
 
     # CNN head (upper bound)
-    logger.info(f"  {'CNN Head (bound)':.<20} | {cnn_head_accuracy:>8.4f} | {'N/A':>10} | {'N/A':>9}")
+    logger.info(
+        f"  {'CNN Head (bound)':.<20} | {cnn_head_accuracy:>8.4f} | {'N/A':>10} | {'N/A':>9}"
+    )
 
     # Trie
     if "trie" in results:
@@ -329,18 +336,26 @@ def print_comparison_table(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fashion-MNIST Octonionic Trie Benchmark")
-    parser.add_argument("--n-train", type=int, default=10000,
-                        help="Number of training samples for trie/baselines (default: 10000)")
-    parser.add_argument("--n-test", type=int, default=2000,
-                        help="Number of test samples (default: 2000)")
-    parser.add_argument("--epochs", type=int, default=3,
-                        help="Trie training epochs (default: 3)")
-    parser.add_argument("--cnn-epochs", type=int, default=10,
-                        help="CNN encoder training epochs (default: 10)")
-    parser.add_argument("--output-dir", type=str, default="results/trie_benchmarks/fashion_mnist",
-                        help="Output directory for results")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="Random seed (default: 42)")
+    parser.add_argument(
+        "--n-train",
+        type=int,
+        default=10000,
+        help="Number of training samples for trie/baselines (default: 10000)",
+    )
+    parser.add_argument(
+        "--n-test", type=int, default=2000, help="Number of test samples (default: 2000)"
+    )
+    parser.add_argument("--epochs", type=int, default=3, help="Trie training epochs (default: 3)")
+    parser.add_argument(
+        "--cnn-epochs", type=int, default=10, help="CNN encoder training epochs (default: 10)"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="results/trie_benchmarks/fashion_mnist",
+        help="Output directory for results",
+    )
+    parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -365,7 +380,11 @@ def main() -> None:
     # Step 2: Extract 8D features from CNN
     logger.info("\nExtracting 8D CNN features...")
     train_oct, test_oct = extract_features(
-        cnn, train_images, test_images, n_test=args.n_test, seed=args.seed,
+        cnn,
+        train_images,
+        test_images,
+        n_test=args.n_test,
+        seed=args.seed,
     )
 
     # Subsample test set (train already subsampled in train_cnn_encoder)
@@ -381,8 +400,10 @@ def main() -> None:
     # Step 3: Run sklearn baselines on same 8D CNN features
     logger.info("\nRunning sklearn baselines on 8D CNN features...")
     baseline_results = run_sklearn_baselines(
-        train_x.numpy(), train_y.numpy(),
-        test_x.numpy(), test_y.numpy(),
+        train_x.numpy(),
+        train_y.numpy(),
+        test_x.numpy(),
+        test_y.numpy(),
     )
     for name, res in baseline_results.items():
         logger.info(f"  {name}: {res['accuracy']:.4f}")
@@ -390,15 +411,19 @@ def main() -> None:
     # Step 4: Run octonionic trie
     logger.info(f"\nRunning octonionic trie ({args.epochs} epochs)...")
     trie_result = run_trie_classifier(
-        train_x, train_y,
-        test_x, test_y,
+        train_x,
+        train_y,
+        test_x,
+        test_y,
         epochs=args.epochs,
         seed=args.seed,
     )
     logger.info(f"  Trie accuracy: {trie_result['accuracy']:.4f}")
-    logger.info(f"  Nodes: {trie_result['trie_stats']['n_nodes']}, "
-                f"Leaves: {trie_result['trie_stats']['n_leaves']}, "
-                f"Depth: {trie_result['trie_stats']['max_depth']}")
+    logger.info(
+        f"  Nodes: {trie_result['trie_stats']['n_nodes']}, "
+        f"Leaves: {trie_result['trie_stats']['n_leaves']}, "
+        f"Depth: {trie_result['trie_stats']['max_depth']}"
+    )
 
     # Step 5: Per-class accuracy for trie
     y_true = test_y.numpy()
@@ -406,12 +431,17 @@ def main() -> None:
     per_class = compute_per_class_accuracy(y_true, y_pred, CLASSES)
     logger.info("\n  Per-class accuracy (trie):")
     for cls_name, stats in per_class.items():
-        logger.info(f"    {cls_name:>15}: {stats['correct']:>3}/{stats['total']:>3} = {stats['accuracy']:.3f}")
+        logger.info(
+            f"    {cls_name:>15}: {stats['correct']:>3}/{stats['total']:>3}"
+            f" = {stats['accuracy']:.3f}"
+        )
 
     # Step 6: Confusion matrix
     logger.info("\nGenerating confusion matrix...")
     plot_confusion_matrix(
-        y_true, y_pred, CLASSES,
+        y_true,
+        y_pred,
+        CLASSES,
         title="Fashion-MNIST: Octonionic Trie Confusion Matrix",
         save_path=output_dir / "confusion_matrix.png",
     )
@@ -420,8 +450,10 @@ def main() -> None:
     # Step 7: Learning curves
     logger.info("\nGenerating learning curves...")
     curves = run_learning_curves(
-        train_x, train_y,
-        test_x, test_y,
+        train_x,
+        train_y,
+        test_x,
+        test_y,
         fractions=[0.1, 0.25, 0.5, 1.0],
         epochs=args.epochs,
         seed=args.seed,

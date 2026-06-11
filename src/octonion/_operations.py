@@ -188,7 +188,5 @@ def cross_product(a: Octonion, b: Octonion) -> Octonion:
     # Compute product of pure imaginary parts
     product = octonion_mul(a_pure_data, b_pure_data)
     # Extract imaginary part of the product (real part of pure*pure is -<a,b>, drop it)
-    result_data = torch.cat(
-        [torch.zeros_like(product[..., :1]), product[..., 1:]], dim=-1
-    )
+    result_data = torch.cat([torch.zeros_like(product[..., :1]), product[..., 1:]], dim=-1)
     return Octonion(result_data)

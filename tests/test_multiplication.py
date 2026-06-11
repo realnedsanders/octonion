@@ -63,8 +63,13 @@ class TestFanoTripleProducts:
 
     # The 7 oriented triples from Baez 2002 (mod-7 convention)
     TRIPLES = [
-        (1, 2, 4), (2, 3, 5), (3, 4, 6), (4, 5, 7),
-        (5, 6, 1), (6, 7, 2), (7, 1, 3),
+        (1, 2, 4),
+        (2, 3, 5),
+        (3, 4, 6),
+        (4, 5, 7),
+        (5, 6, 1),
+        (6, 7, 2),
+        (7, 1, 3),
     ]
 
     def test_forward_cyclic_products(self) -> None:
@@ -155,8 +160,13 @@ class TestFullBasisTable:
 
         # Fano plane triples
         triples = [
-            (1, 2, 4), (2, 3, 5), (3, 4, 6), (4, 5, 7),
-            (5, 6, 1), (6, 7, 2), (7, 1, 3),
+            (1, 2, 4),
+            (2, 3, 5),
+            (3, 4, 6),
+            (4, 5, 7),
+            (5, 6, 1),
+            (6, 7, 2),
+            (7, 1, 3),
         ]
         for i, j, k in triples:
             expected[i, j, k] = 1.0
@@ -222,9 +232,7 @@ class TestDistributivity:
         c=octonion_tensors(min_value=-1e3, max_value=1e3),
     )
     @settings(max_examples=200)
-    def test_left_distributivity(
-        self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
-    ) -> None:
+    def test_left_distributivity(self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor) -> None:
         """a * (b + c) = a*b + a*c for random octonions."""
         lhs = octonion_mul(a, b + c)
         rhs = octonion_mul(a, b) + octonion_mul(a, c)
@@ -238,9 +246,7 @@ class TestDistributivity:
         c=octonion_tensors(min_value=-1e3, max_value=1e3),
     )
     @settings(max_examples=200)
-    def test_right_distributivity(
-        self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
-    ) -> None:
+    def test_right_distributivity(self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor) -> None:
         """(a + b) * c = a*c + b*c for random octonions."""
         lhs = octonion_mul(a + b, c)
         rhs = octonion_mul(a, c) + octonion_mul(b, c)
@@ -263,9 +269,11 @@ class TestNonAssociativity:
             f"Expected non-zero associator, got {associator}"
         )
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10),
-           c=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+        c=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50)
     def test_not_associative_generic(
         self, a: torch.Tensor, b: torch.Tensor, c: torch.Tensor
@@ -296,8 +304,13 @@ class TestFanoPlaneStructure:
     def test_triples_values(self) -> None:
         """Triples match the Baez 2002 convention."""
         expected = (
-            (1, 2, 4), (2, 3, 5), (3, 4, 6), (4, 5, 7),
-            (5, 6, 1), (6, 7, 2), (7, 1, 3),
+            (1, 2, 4),
+            (2, 3, 5),
+            (3, 4, 6),
+            (4, 5, 7),
+            (5, 6, 1),
+            (6, 7, 2),
+            (7, 1, 3),
         )
         assert FANO_PLANE.triples == expected
 

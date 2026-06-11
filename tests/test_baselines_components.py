@@ -393,9 +393,7 @@ class TestConvNonZeroOutput:
             ("OctonionConv2d", (2, 3, 8, 8, 8)),
         ],
     )
-    def test_nonzero_output(
-        self, ConvClass: str, input_shape: tuple[int, ...]
-    ) -> None:
+    def test_nonzero_output(self, ConvClass: str, input_shape: tuple[int, ...]) -> None:
         import octonion.baselines._algebra_conv as conv_mod
 
         cls = getattr(conv_mod, ConvClass)
@@ -412,7 +410,8 @@ class TestOctonionConvFusedEquivalence:
 
     @staticmethod
     def _unfused_forward_2d(
-        layer: torch.nn.Module, x: torch.Tensor,
+        layer: torch.nn.Module,
+        x: torch.Tensor,
     ) -> torch.Tensor:
         """Reference unfused implementation for numerical comparison."""
         from octonion._multiplication import STRUCTURE_CONSTANTS as C
@@ -430,8 +429,10 @@ class TestOctonionConvFusedEquivalence:
 
         conv_cache: dict[tuple[int, int], torch.Tensor] = {}
         trial = torch.nn.functional.conv2d(
-            x[:, :, 0, :, :], layer.weights[0],
-            stride=layer.stride, padding=layer.padding,
+            x[:, :, 0, :, :],
+            layer.weights[0],
+            stride=layer.stride,
+            padding=layer.padding,
         )
         spatial = trial.shape[2:]
 
@@ -444,8 +445,10 @@ class TestOctonionConvFusedEquivalence:
             key = (i, j)
             if key not in conv_cache:
                 conv_cache[key] = torch.nn.functional.conv2d(
-                    x[:, :, j, :, :], layer.weights[i],
-                    stride=layer.stride, padding=layer.padding,
+                    x[:, :, j, :, :],
+                    layer.weights[i],
+                    stride=layer.stride,
+                    padding=layer.padding,
                 )
             out_comps[k] = out_comps[k] + c * conv_cache[key]
 
@@ -456,7 +459,8 @@ class TestOctonionConvFusedEquivalence:
 
     @staticmethod
     def _unfused_forward_1d(
-        layer: torch.nn.Module, x: torch.Tensor,
+        layer: torch.nn.Module,
+        x: torch.Tensor,
     ) -> torch.Tensor:
         """Reference unfused implementation for 1D."""
         from octonion._multiplication import STRUCTURE_CONSTANTS as C
@@ -474,8 +478,10 @@ class TestOctonionConvFusedEquivalence:
 
         conv_cache: dict[tuple[int, int], torch.Tensor] = {}
         trial = torch.nn.functional.conv1d(
-            x[:, :, 0, :], layer.weights[0],
-            stride=layer.stride, padding=layer.padding,
+            x[:, :, 0, :],
+            layer.weights[0],
+            stride=layer.stride,
+            padding=layer.padding,
         )
         L_out = trial.shape[-1]
 
@@ -488,8 +494,10 @@ class TestOctonionConvFusedEquivalence:
             key = (i, j)
             if key not in conv_cache:
                 conv_cache[key] = torch.nn.functional.conv1d(
-                    x[:, :, j, :], layer.weights[i],
-                    stride=layer.stride, padding=layer.padding,
+                    x[:, :, j, :],
+                    layer.weights[i],
+                    stride=layer.stride,
+                    padding=layer.padding,
                 )
             out_comps[k] = out_comps[k] + c * conv_cache[key]
 

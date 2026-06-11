@@ -16,7 +16,8 @@ Usage:
     docker compose run --rm dev uv run python scripts/run_cifar_reproduction.py --seeds 3
 
     # Run specific algebras (e.g., just R and H first since they're fastest)
-    docker compose run --rm dev uv run python scripts/run_cifar_reproduction.py --algebras R H --seeds 3
+    docker compose run --rm dev uv run python scripts/run_cifar_reproduction.py \\
+        --algebras R H --seeds 3
 
     # Quick validation (2 epochs)
     docker compose run --rm dev uv run python scripts/run_cifar_reproduction.py --epochs 2 --seeds 1
@@ -130,24 +131,24 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         default=True,
         help="Use same-width mode (all algebras get same base_filters). "
-             "Matches the protocol in Gaudet & Maida 2018 / Trabelsi et al. 2018 "
-             "where H had fewer params but same architecture width as R.",
+        "Matches the protocol in Gaudet & Maida 2018 / Trabelsi et al. 2018 "
+        "where H had fewer params but same architecture width as R.",
     )
     parser.add_argument(
         "--use-amp",
         action="store_true",
         default=True,
         help="Enable automatic mixed precision (AMP) for faster training. "
-             "All BN layers (including ComplexBN) are protected with "
-             "autocast(enabled=False) + float32 casting so AMP is safe "
-             "for all four algebras.",
+        "All BN layers (including ComplexBN) are protected with "
+        "autocast(enabled=False) + float32 casting so AMP is safe "
+        "for all four algebras.",
     )
     parser.add_argument(
         "--compile",
         action="store_true",
         default=True,
         help="Enable torch.compile with inductor backend (experimental on ROCm). "
-             "Falls back to eager mode if compilation fails. Default: off.",
+        "Falls back to eager mode if compilation fails. Default: off.",
     )
     parser.add_argument(
         "--no-early-stop",
@@ -298,9 +299,7 @@ def main() -> None:
     print("\n" + "=" * 70)
     print("  CIFAR-10 BENCHMARK REPRODUCTION RESULTS")
     print("=" * 70)
-    print(
-        f"\n{'Algebra':<10} {'Published':<20} {'Ours':<25} {'Verdict':<10}"
-    )
+    print(f"\n{'Algebra':<10} {'Published':<20} {'Ours':<25} {'Verdict':<10}")
     print("-" * 70)
 
     for alg_name in ["R", "C", "H", "O"]:

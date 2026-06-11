@@ -219,8 +219,8 @@ def run_comparison(
     match_params = nc_overrides.get("match_params", True)
 
     # Build data to get dimensions
-    train_loader, val_loader, test_loader, input_dim, output_dim, input_channels = (
-        build_data_fn(config.train_config.batch_size)
+    train_loader, val_loader, test_loader, input_dim, output_dim, input_channels = build_data_fn(
+        config.train_config.batch_size
     )
 
     # ── Topology-aware model builder ──
@@ -310,9 +310,7 @@ def run_comparison(
         for algebra in config.algebras:
             matched_widths[algebra.short_name] = ref_hidden
             model = _build_model(algebra, ref_hidden)
-            param_counts[algebra.short_name] = sum(
-                p.numel() for p in model.parameters()
-            )
+            param_counts[algebra.short_name] = sum(p.numel() for p in model.parameters())
 
         logger.info(
             f"Same-width mode: base_hidden={ref_hidden} for all algebras "
@@ -369,11 +367,11 @@ def run_comparison(
         for seed_idx in range(config.seeds):
             run_num += 1
             print(
-                f"\n{'='*60}\n"
+                f"\n{'=' * 60}\n"
                 f"  {task_name}: {alg_name} seed {seed_idx}  "
                 f"[run {run_num}/{total_runs}]  "
                 f"width={width}  params={param_counts[alg_name]:,}\n"
-                f"{'='*60}",
+                f"{'=' * 60}",
                 flush=True,
             )
             seed_everything(seed_idx)
@@ -424,26 +422,22 @@ def run_comparison(
             )
 
             # Save metrics.json
-            metrics_serializable = {
-                k: v for k, v in metrics.items() if k != "lr_history"
-            }
-            metrics_serializable["lr_history"] = [
-                float(lr) for lr in metrics.get("lr_history", [])
-            ]
+            metrics_serializable = {k: v for k, v in metrics.items() if k != "lr_history"}
+            metrics_serializable["lr_history"] = [float(lr) for lr in metrics.get("lr_history", [])]
             with open(experiment_dir / "metrics.json", "w") as f:
                 json.dump(metrics_serializable, f, indent=2)
 
             # Generate convergence plot
-            plot_convergence(
-                metrics, str(experiment_dir / "convergence.png")
-            )
+            plot_convergence(metrics, str(experiment_dir / "convergence.png"))
 
             # Collect run result
-            per_run.append({
-                "algebra": alg_name,
-                "seed": seed_idx,
-                "metrics": metrics,
-            })
+            per_run.append(
+                {
+                    "algebra": alg_name,
+                    "seed": seed_idx,
+                    "metrics": metrics,
+                }
+            )
 
             logger.info(
                 f"  {alg_name} seed {seed_idx}: "
@@ -465,9 +459,7 @@ def run_comparison(
 
     for a_name, b_name in combinations(algebra_names, 2):
         key = f"{a_name}_vs_{b_name}"
-        pairwise[key] = paired_comparison(
-            algebra_accs[a_name], algebra_accs[b_name]
-        )
+        pairwise[key] = paired_comparison(algebra_accs[a_name], algebra_accs[b_name])
 
     # ── Step 7: Apply Holm-Bonferroni correction ──
     raw_p_values = [p["t_p_value"] for p in pairwise.values()]

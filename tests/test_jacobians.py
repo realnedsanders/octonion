@@ -84,16 +84,20 @@ def _assert_jacobians_close(
 class TestJacobianMul:
     """Analytic mul Jacobian vs numeric for both arguments."""
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_mul_wrt_a(self, a: torch.Tensor, b: torch.Tensor) -> None:
         J_a_analytic, _ = jacobian_mul(a, b)
         J_a_numeric = numeric_jacobian_2arg(octonion_mul, a, b, wrt="a", eps=EPS)
         _assert_jacobians_close(J_a_analytic, J_a_numeric, "mul Jacobian wrt a")
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_mul_wrt_b(self, a: torch.Tensor, b: torch.Tensor) -> None:
         _, J_b_analytic = jacobian_mul(a, b)
@@ -121,13 +125,11 @@ class TestJacobianExp:
 
         J_analytic = jacobian_exp(o)
         J_numeric = numeric_jacobian(exp_raw, o, eps=EPS)
-        _assert_jacobians_close(J_analytic, J_numeric, "exp Jacobian",
-                                atol=ATOL_TRANSCENDENTAL)
+        _assert_jacobians_close(J_analytic, J_numeric, "exp Jacobian", atol=ATOL_TRANSCENDENTAL)
 
     def test_exp_near_zero_imag(self) -> None:
         """Near-zero ||v|| should not produce NaN."""
-        o = torch.tensor([1.0, 1e-15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                         dtype=torch.float64)
+        o = torch.tensor([1.0, 1e-15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=torch.float64)
         J = jacobian_exp(o)
         assert not torch.any(torch.isnan(J)), "exp Jacobian has NaN for near-zero imag"
         assert not torch.any(torch.isinf(J)), "exp Jacobian has Inf for near-zero imag"
@@ -145,7 +147,7 @@ class TestJacobianLog:
     @settings(max_examples=50, deadline=None)
     def test_log_general(self, o: torch.Tensor) -> None:
         # Need positive norm and non-trivial imaginary part
-        q_norm = torch.sqrt(torch.sum(o ** 2))
+        q_norm = torch.sqrt(torch.sum(o**2))
         v_norm = torch.sqrt(torch.sum(o[1:] ** 2))
         assume(q_norm.item() > 0.1)
         assume(v_norm.item() > 0.1)
@@ -155,8 +157,7 @@ class TestJacobianLog:
 
         J_analytic = jacobian_log(o)
         J_numeric = numeric_jacobian(log_raw, o, eps=EPS)
-        _assert_jacobians_close(J_analytic, J_numeric, "log Jacobian",
-                                atol=ATOL_TRANSCENDENTAL)
+        _assert_jacobians_close(J_analytic, J_numeric, "log Jacobian", atol=ATOL_TRANSCENDENTAL)
 
 
 # =============================================================================
@@ -190,7 +191,7 @@ class TestJacobianInverse:
     @settings(max_examples=50, deadline=None)
     def test_inverse(self, o: torch.Tensor) -> None:
         # Ensure norm is well away from zero for numerical stability of inverse
-        n = torch.sqrt(torch.sum(o ** 2))
+        n = torch.sqrt(torch.sum(o**2))
         assume(n.item() > 0.5)
 
         def inv_raw(x: torch.Tensor) -> torch.Tensor:
@@ -198,8 +199,7 @@ class TestJacobianInverse:
 
         J_analytic = jacobian_inverse(o)
         J_numeric = numeric_jacobian(inv_raw, o, eps=EPS)
-        _assert_jacobians_close(J_analytic, J_numeric, "inverse Jacobian",
-                                atol=ATOL_TRANSCENDENTAL)
+        _assert_jacobians_close(J_analytic, J_numeric, "inverse Jacobian", atol=ATOL_TRANSCENDENTAL)
 
 
 # =============================================================================
@@ -210,8 +210,10 @@ class TestJacobianInverse:
 class TestJacobianInnerProduct:
     """Inner product Jacobians are trivially the other argument."""
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_inner_product_wrt_a(self, a: torch.Tensor, b: torch.Tensor) -> None:
         def ip_raw(x: torch.Tensor) -> torch.Tensor:
@@ -221,8 +223,10 @@ class TestJacobianInnerProduct:
         J_a_numeric = numeric_jacobian(ip_raw, a, eps=EPS)
         _assert_jacobians_close(J_a_analytic, J_a_numeric, "inner_product Jacobian wrt a")
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_inner_product_wrt_b(self, a: torch.Tensor, b: torch.Tensor) -> None:
         def ip_raw(x: torch.Tensor) -> torch.Tensor:
@@ -241,8 +245,10 @@ class TestJacobianInnerProduct:
 class TestJacobianCrossProduct:
     """Cross product Jacobians via structure constants."""
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_cross_product_wrt_a(self, a: torch.Tensor, b: torch.Tensor) -> None:
         def cp_raw(x: torch.Tensor) -> torch.Tensor:
@@ -252,8 +258,10 @@ class TestJacobianCrossProduct:
         J_a_numeric = numeric_jacobian(cp_raw, a, eps=EPS)
         _assert_jacobians_close(J_a_analytic, J_a_numeric, "cross_product Jacobian wrt a")
 
-    @given(a=octonion_tensors(min_value=-10, max_value=10),
-           b=octonion_tensors(min_value=-10, max_value=10))
+    @given(
+        a=octonion_tensors(min_value=-10, max_value=10),
+        b=octonion_tensors(min_value=-10, max_value=10),
+    )
     @settings(max_examples=50, deadline=None)
     def test_cross_product_wrt_b(self, a: torch.Tensor, b: torch.Tensor) -> None:
         def cp_raw(x: torch.Tensor) -> torch.Tensor:

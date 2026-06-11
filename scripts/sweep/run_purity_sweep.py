@@ -16,10 +16,12 @@ Per D-07: All 5 benchmarks.
 
 Usage:
     # Run purity strategy sweep:
-    python scripts/sweep/run_purity_sweep.py --features-dir results/T2/features --db results/T2/sweep.db --workers 24
+    python scripts/sweep/run_purity_sweep.py \\
+        --features-dir results/T2/features --db results/T2/sweep.db --workers 24
 
     # Run noise interaction analysis (after purity sweep):
-    python scripts/sweep/run_purity_sweep.py --noise-interaction --features-dir results/T2/features --db results/T2/sweep.db
+    python scripts/sweep/run_purity_sweep.py --noise-interaction \\
+        --features-dir results/T2/features --db results/T2/sweep.db
 """
 
 from __future__ import annotations
@@ -72,9 +74,7 @@ NOISE_INTERACTION_CONFIG_ID_BASE = 950000
 # ── Query best configs from DB ────────────────────────────────────
 
 
-def get_top_global_assoc_thresholds(
-    db_path: str, n: int = 3
-) -> list[float]:
+def get_top_global_assoc_thresholds(db_path: str, n: int = 3) -> list[float]:
     """Query top-N assoc_threshold values from global sweep by mean accuracy.
 
     Args:
@@ -120,9 +120,7 @@ def get_top_global_assoc_thresholds(
         conn.close()
 
 
-def get_top_global_sim_thresholds(
-    db_path: str, n: int = 2
-) -> list[float]:
+def get_top_global_sim_thresholds(db_path: str, n: int = 2) -> list[float]:
     """Query top-N sim_threshold values from global sweep by mean accuracy.
 
     Per D-03: co-adapt sim_threshold with purity hyperparameters.
@@ -209,9 +207,7 @@ def get_best_global_per_benchmark(db_path: str) -> dict[str, dict[str, Any]]:
         conn.close()
 
 
-def get_best_strategy_per_benchmark(
-    db_path: str, strategy: str
-) -> dict[str, dict[str, Any]]:
+def get_best_strategy_per_benchmark(db_path: str, strategy: str) -> dict[str, dict[str, Any]]:
     """Query best accuracy per benchmark for a specific strategy.
 
     Args:
@@ -254,9 +250,7 @@ def get_best_strategy_per_benchmark(
         conn.close()
 
 
-def get_top_strategy_configs(
-    db_path: str, strategy: str, n: int = 5
-) -> list[dict[str, Any]]:
+def get_top_strategy_configs(db_path: str, strategy: str, n: int = 5) -> list[dict[str, Any]]:
     """Query top-N configs for a strategy by mean accuracy across benchmarks.
 
     Args:
@@ -535,12 +529,14 @@ def generate_noise_interaction_configs(
                         noise=noise,
                         epochs=DEFAULT_EPOCHS,
                         seed=seed,
-                        policy_params=json.dumps({
-                            "assoc_threshold": top_cfg["assoc_threshold"],
-                            "sim_threshold": top_cfg["sim_threshold"],
-                            "min_share": top_cfg.get("min_share", 0.05),
-                            "min_count": top_cfg.get("min_count", 3),
-                        }),
+                        policy_params=json.dumps(
+                            {
+                                "assoc_threshold": top_cfg["assoc_threshold"],
+                                "sim_threshold": top_cfg["sim_threshold"],
+                                "min_share": top_cfg.get("min_share", 0.05),
+                                "min_count": top_cfg.get("min_count", 3),
+                            }
+                        ),
                     )
                 )
                 config_id += 1
@@ -548,9 +544,7 @@ def generate_noise_interaction_configs(
     return configs
 
 
-def _get_top_global_configs(
-    db_path: str, n: int = 5
-) -> list[dict[str, Any]]:
+def _get_top_global_configs(db_path: str, n: int = 5) -> list[dict[str, Any]]:
     """Query top-N global configs by mean accuracy across benchmarks.
 
     Args:
@@ -609,12 +603,9 @@ def print_independent_signal_analysis(db_path: str, benchmarks: list[str]) -> No
         logger.info("=" * 80)
         logger.info("INDEPENDENT SIGNAL ANALYSIS")
         logger.info("=" * 80)
-        logger.info(
-            "Phase A: assoc variance only (sim_weight=0)")
-        logger.info(
-            "Phase B: sim variance only (assoc_weight=0)")
-        logger.info(
-            "Phase C: combined (both > 0)")
+        logger.info("Phase A: assoc variance only (sim_weight=0)")
+        logger.info("Phase B: sim variance only (assoc_weight=0)")
+        logger.info("Phase C: combined (both > 0)")
         logger.info("")
 
         for bm in benchmarks:
@@ -663,15 +654,9 @@ def print_independent_signal_analysis(db_path: str, benchmarks: list[str]) -> No
                         "params": f"aw={aw}, sw={sw}, sens={pp.get('sensitivity', '?')}",
                     }
 
-            logger.info(
-                f"  Phase A (assoc only): {best_a['accuracy']:.4f} -- {best_a['params']}"
-            )
-            logger.info(
-                f"  Phase B (sim only):   {best_b['accuracy']:.4f} -- {best_b['params']}"
-            )
-            logger.info(
-                f"  Phase C (combined):   {best_c['accuracy']:.4f} -- {best_c['params']}"
-            )
+            logger.info(f"  Phase A (assoc only): {best_a['accuracy']:.4f} -- {best_a['params']}")
+            logger.info(f"  Phase B (sim only):   {best_b['accuracy']:.4f} -- {best_b['params']}")
+            logger.info(f"  Phase C (combined):   {best_c['accuracy']:.4f} -- {best_c['params']}")
 
             # Determine winner
             phases = [("A (assoc)", best_a), ("B (sim)", best_b), ("C (combined)", best_c)]
@@ -761,10 +746,7 @@ def print_noise_interaction_analysis(db_path: str, benchmarks: list[str]) -> Non
                 else:
                     noise_strs.append(f"{'N/A':>10}")
 
-            logger.info(
-                f"{strategy:<12} {' '.join(noise_strs)} "
-                f"{best_noise:>11.3f} {synergy:>8}"
-            )
+            logger.info(f"{strategy:<12} {' '.join(noise_strs)} {best_noise:>11.3f} {synergy:>8}")
 
         logger.info("")
         logger.info("Synergy = YES means noise > 0 produces higher accuracy than noise = 0")
@@ -853,8 +835,7 @@ def print_comparison_table(db_path: str, benchmarks: list[str]) -> None:
 
         if best_strategy:
             logger.info(
-                f"\nBest overall strategy: {best_strategy} "
-                f"(mean accuracy: {best_mean:.4f})"
+                f"\nBest overall strategy: {best_strategy} (mean accuracy: {best_mean:.4f})"
             )
 
         # Purity-specific comparison: delta vs each strategy
@@ -961,9 +942,7 @@ def run_purity_sweep(
     elapsed = time.time() - t0
 
     ok_count = sum(1 for r in results if r["status"] == "ok")
-    logger.info(
-        f"\nPurity sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s"
-    )
+    logger.info(f"\nPurity sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s")
 
     # 3. Print analysis
     print_top_purity_configs(db_path)
@@ -1014,9 +993,7 @@ def run_noise_interaction(
     elapsed = time.time() - t0
 
     ok_count = sum(1 for r in results if r["status"] == "ok")
-    logger.info(
-        f"\nNoise interaction sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s"
-    )
+    logger.info(f"\nNoise interaction sweep: {ok_count}/{len(results)} succeeded in {elapsed:.1f}s")
 
     # Print analysis
     print_noise_interaction_analysis(db_path, benchmarks)
@@ -1126,9 +1103,7 @@ Examples:
 
     # Run noise interaction if requested
     if args.noise_interaction:
-        results = run_noise_interaction(
-            runner, args.features_dir, args.benchmarks, args.db
-        )
+        results = run_noise_interaction(runner, args.features_dir, args.benchmarks, args.db)
         all_results.extend(results)
 
     total_elapsed = time.time() - t_total

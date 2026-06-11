@@ -29,14 +29,10 @@ def real_init(weight: torch.Tensor, criterion: str = "he") -> None:
         elif criterion == "glorot":
             nn.init.xavier_normal_(weight)
         else:
-            raise ValueError(
-                f"Unknown criterion: {criterion!r}. Use 'he' or 'glorot'."
-            )
+            raise ValueError(f"Unknown criterion: {criterion!r}. Use 'he' or 'glorot'.")
 
 
-def _compute_sigma(
-    fan_in: int, fan_out: int, criterion: str
-) -> float:
+def _compute_sigma(fan_in: int, fan_out: int, criterion: str) -> float:
     """Compute standard deviation for hypercomplex initialization.
 
     Args:
@@ -52,9 +48,7 @@ def _compute_sigma(
     elif criterion == "he":
         return 1.0 / math.sqrt(2 * fan_in)
     else:
-        raise ValueError(
-            f"Unknown criterion: {criterion!r}. Use 'glorot' or 'he'."
-        )
+        raise ValueError(f"Unknown criterion: {criterion!r}. Use 'glorot' or 'he'.")
 
 
 def complex_init(
@@ -148,9 +142,7 @@ def octonion_init(
         criterion: "glorot" or "he".
     """
     if len(weights) != 8:
-        raise ValueError(
-            f"Expected 8 weight tensors for octonion init, got {len(weights)}."
-        )
+        raise ValueError(f"Expected 8 weight tensors for octonion init, got {len(weights)}.")
 
     W0 = weights[0]
     fan_in, fan_out = W0.shape[1], W0.shape[0]
@@ -158,18 +150,14 @@ def octonion_init(
 
     # Chi distribution with 8 DOF for magnitude
     magnitude = torch.distributions.Chi2(df=8).sample(W0.shape).sqrt() * sigma
-    phases = [
-        torch.empty_like(W0).uniform_(-math.pi, math.pi) for _ in range(7)
-    ]
+    phases = [torch.empty_like(W0).uniform_(-math.pi, math.pi) for _ in range(7)]
 
     with torch.no_grad():
         # Nested polar decomposition: 7 phases -> 8 components
         remaining = magnitude
         for idx in range(7):
             weights[idx].copy_(
-                (remaining * torch.cos(phases[idx])).to(
-                    weights[idx].device, weights[idx].dtype
-                )
+                (remaining * torch.cos(phases[idx])).to(weights[idx].device, weights[idx].dtype)
             )
             remaining = remaining * torch.sin(phases[idx])
         # Last component gets whatever remains
