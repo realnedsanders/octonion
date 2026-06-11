@@ -8,10 +8,81 @@ Convention: Baez 2002, mod-7 Fano plane.
 
 from __future__ import annotations
 
+import math
+
 import torch
 
 from octonion._multiplication import octonion_mul
 from octonion._octonion import Octonion
+
+
+def _series_threshold(dtype: torch.dtype) -> float:
+    """Branch point between exact formulas and small-r Taylor series.
+
+    sqrt(machine eps): below it the O(r^2) series truncation error is under
+    one ulp, while the exact expressions start losing digits to cancellation.
+    Dtype-aware so float32 (~3.4e-4) gets a usable guard band, not the
+    float64 one.
+    """
+    eps: float = torch.finfo(dtype).eps
+    return math.sqrt(eps)
+
+
+def _exp_forward(o: torch.Tensor) -> torch.Tensor:
+    """Tensor-level forward for octonion_exp (shared with OctonionExpFunction)."""
+    a = o[..., 0:1]  # [..., 1]
+    v = o[..., 1:]  # [..., 7]
+    r = torch.sqrt(torch.sum(v**2, dim=-1, keepdim=True))  # [..., 1]
+
+    exp_a = torch.exp(a)
+
+    # sin(r)/r with the r -> 0 limit handled by series (1 - r^2/6)
+    thresh = _series_threshold(o.dtype)
+    near_zero = r < thresh
+    safe_r = torch.where(near_zero, torch.ones_like(r), r)
+    sinc = torch.where(near_zero, 1.0 - r**2 / 6.0, torch.sin(r) / safe_r)
+
+    result_real = exp_a * torch.cos(r)
+    result_imag = exp_a * sinc * v
+    return torch.cat([result_real, result_imag], dim=-1)
+
+
+def _log_forward(o: torch.Tensor) -> torch.Tensor:
+    """Tensor-level forward for octonion_log (shared with OctonionLogFunction)."""
+    a = o[..., 0:1]  # [..., 1]
+    v = o[..., 1:]  # [..., 7]
+    r = torch.sqrt(torch.sum(v**2, dim=-1, keepdim=True))  # [..., 1]
+    q = torch.sqrt(a**2 + r**2)  # [..., 1]
+
+    if bool(torch.any(q == 0)):
+        raise ValueError("octonion_log requires non-zero norm (log of zero octonion)")
+
+    log_q = torch.log(q)
+
+    # theta = angle between o and the positive real axis. atan2 is accurate
+    # in all quadrants (acos(a/q) loses half the significant digits for
+    # small theta, which corrupted theta/r for small ||v||).
+    theta = torch.atan2(r, a)
+
+    # imag coefficient theta/r:
+    #   - exact for r away from 0 (accurate in all quadrants via atan2)
+    #   - series 1/a - r^2/(3 a^3) for r/q below threshold with a > 0
+    #   - NaN at r == 0 with a < 0: log(-|a|) has no preferred imaginary
+    #     direction in O (any unit imaginary works); the principal branch
+    #     is genuinely undefined there.
+    thresh = _series_threshold(o.dtype)
+    series_mask = (r < thresh * q) & (a > 0)
+    safe_r = torch.where(r == 0, torch.ones_like(r), r)
+    safe_a = torch.where(a > 0, a, torch.ones_like(a))
+    coeff = torch.where(
+        series_mask,
+        1.0 / safe_a - r**2 / (3.0 * safe_a**3),
+        theta / safe_r,
+    )
+    undefined = (r == 0) & (a < 0)
+    coeff = torch.where(undefined, torch.full_like(coeff, float("nan")), coeff)
+
+    return torch.cat([log_q, coeff * v], dim=-1)
 
 
 def octonion_exp(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
@@ -20,7 +91,11 @@ def octonion_exp(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     For octonion q = a + v where a is the real part and v is the imaginary vector:
       exp(q) = exp(a) * (cos(||v||) * e_0 + sin(||v||) * v / ||v||)
 
-    When ||v|| is near zero, reduces to exp(a) * e_0 (pure real exponential).
+    with the smooth limit exp(a) * e_0 as ||v|| -> 0.
+
+    Gradients flow through the analytic Jacobian (OctonionExpFunction), so
+    differentiation is exact and NaN-free even at pure-real inputs where the
+    naive sqrt(||v||^2) formulation has an undefined derivative.
 
     Args:
         o: Octonion instance or raw [..., 8] tensor.
@@ -28,51 +103,31 @@ def octonion_exp(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     Returns:
         Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    if isinstance(o, Octonion):
-        raw_tensor = False
-    else:
-        raw_tensor = True
-        o = Octonion(o)
-    a = o.real  # [...] scalar part
-    v = o.imag  # [..., 7] imaginary vector
-    v_norm = torch.sqrt(torch.sum(v**2, dim=-1))  # [...]
+    from octonion.calculus._autograd_functions import OctonionExpFunction
 
-    # exp(a) factor
-    exp_a = torch.exp(a)  # [...]
-
-    # Handle near-zero imaginary norm: pure real exponential
-    eps = 1e-15
-    safe_v_norm = torch.where(v_norm > eps, v_norm, torch.ones_like(v_norm))
-
-    cos_v = torch.cos(v_norm)  # [...]
-    sin_v = torch.sin(v_norm)  # [...]
-
-    # Normalized imaginary direction: v / ||v||
-    v_hat = v / safe_v_norm.unsqueeze(-1)  # [..., 7]
-
-    # For near-zero ||v||, sin(||v||)/||v|| -> 1, so the imaginary part -> v itself
-    # But we use the full formula and zero out when near-zero
-    result_real = (exp_a * cos_v).unsqueeze(-1)  # [..., 1]
-    result_imag = (exp_a * sin_v).unsqueeze(-1) * v_hat  # [..., 7]
-
-    # When ||v|| is near zero, imaginary part should be zero (not v_hat which is arbitrary)
-    near_zero_mask = (v_norm < eps).unsqueeze(-1)  # [..., 1]
-    result_imag = torch.where(near_zero_mask, torch.zeros_like(result_imag), result_imag)
-
-    result = torch.cat([result_real, result_imag], dim=-1)
-    return result if raw_tensor else Octonion(result)
+    data = o.components if isinstance(o, Octonion) else o
+    result: torch.Tensor = OctonionExpFunction.apply(data)  # type: ignore[no-untyped-call]
+    return Octonion(result) if isinstance(o, Octonion) else result
 
 
 def octonion_log(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
-    """Compute the logarithm of an octonion.
+    """Compute the principal logarithm of an octonion.
 
     For octonion q = a + v where a is the real part and v is the imaginary vector:
-      log(q) = log(||q||) * e_0 + (arccos(a / ||q||) / ||v||) * v
+      log(q) = log(||q||) * e_0 + (theta / ||v||) * v,   theta = atan2(||v||, a)
 
-    When ||v|| is near zero, reduces to log(||q||) * e_0 (pure real log).
+    with the smooth limit log(a) * e_0 as ||v|| -> 0 for a > 0.
 
-    This is the principal logarithm. The function is an approximate inverse
-    of exp for pure octonions and near-identity octonions.
+    Domain notes:
+      - Raises ValueError if any element has zero norm.
+      - On the negative real axis (a < 0, v = 0) the principal logarithm is
+        undefined in O (every unit imaginary direction is equally valid, the
+        analogue of log(-1) = i*pi having no preferred i); the imaginary
+        components are NaN there. Arbitrarily close to the axis (tiny but
+        non-zero v) the value is well-defined and computed accurately.
+
+    Gradients flow through the analytic Jacobian (OctonionLogFunction), so
+    differentiation is exact and NaN-free away from the singular set.
 
     Args:
         o: Octonion instance or raw [..., 8] tensor. Must have non-zero norm.
@@ -80,39 +135,11 @@ def octonion_log(o: Octonion | torch.Tensor) -> Octonion | torch.Tensor:
     Returns:
         Same type as input: Octonion if given Octonion, raw tensor if given tensor.
     """
-    if isinstance(o, Octonion):
-        raw_tensor = False
-    else:
-        raw_tensor = True
-        o = Octonion(o)
-    a = o.real  # [...] scalar part
-    v = o.imag  # [..., 7] imaginary vector
-    v_norm = torch.sqrt(torch.sum(v**2, dim=-1))  # [...]
-    q_norm = o.norm()  # [...]
+    from octonion.calculus._autograd_functions import OctonionLogFunction
 
-    eps = 1e-15
-
-    # log(||q||) for real part
-    safe_q_norm = torch.clamp(q_norm, min=eps)
-    log_q_norm = torch.log(safe_q_norm)  # [...]
-
-    # arccos(a / ||q||) / ||v|| for imaginary coefficient
-    # Clamp a/||q|| to [-1, 1] for numerical safety with arccos
-    ratio = torch.clamp(a / safe_q_norm, min=-1.0, max=1.0)
-    theta = torch.acos(ratio)  # [...]
-
-    safe_v_norm = torch.where(v_norm > eps, v_norm, torch.ones_like(v_norm))
-    imag_coeff = theta / safe_v_norm  # [...]
-
-    result_real = log_q_norm.unsqueeze(-1)  # [..., 1]
-    result_imag = imag_coeff.unsqueeze(-1) * v  # [..., 7]
-
-    # When ||v|| is near zero, imaginary part should be zero
-    near_zero_mask = (v_norm < eps).unsqueeze(-1)
-    result_imag = torch.where(near_zero_mask, torch.zeros_like(result_imag), result_imag)
-
-    result = torch.cat([result_real, result_imag], dim=-1)
-    return result if raw_tensor else Octonion(result)
+    data = o.components if isinstance(o, Octonion) else o
+    result: torch.Tensor = OctonionLogFunction.apply(data)  # type: ignore[no-untyped-call]
+    return Octonion(result) if isinstance(o, Octonion) else result
 
 
 def commutator(a: Octonion, b: Octonion) -> Octonion:

@@ -10,8 +10,10 @@ Critical design patterns (per RESEARCH.md anti-patterns):
     computations from forward (which runs in no-grad mode and would break
     create_graph=True).
   - All backward operations use differentiable PyTorch ops for double backward.
-  - STRUCTURE_CONSTANTS is fetched fresh in backward() with correct device/dtype
-    (not cached from forward).
+  - Structure constants are fetched via the per-device cache in backward()
+    with correct device/dtype (not captured from forward).
+  - Binary operations support broadcasting between inputs: backward reduces
+    gradients back to each input's original shape.
 
 Convention: Baez 2002, mod-7 Fano plane basis.
 """
@@ -20,12 +22,27 @@ from __future__ import annotations
 
 import torch
 
-from octonion._multiplication import STRUCTURE_CONSTANTS, octonion_mul
+from octonion._multiplication import octonion_mul, structure_constants
 from octonion._octonion import Octonion
 from octonion._operations import (
-    octonion_exp,
-    octonion_log,
+    _exp_forward,
+    _log_forward,
+    _series_threshold,
 )
+
+
+def _reduce_to_shape(grad: torch.Tensor, shape: torch.Size) -> torch.Tensor:
+    """Sum-reduce a gradient at the broadcast shape back to an input shape.
+
+    Standard unbroadcasting: sum over the leading dims the input didn't have,
+    then over dims where the input had size 1.
+    """
+    while grad.dim() > len(shape):
+        grad = grad.sum(dim=0)
+    for i, size in enumerate(shape):
+        if size == 1 and grad.shape[i] != 1:
+            grad = grad.sum(dim=i, keepdim=True)
+    return grad
 
 
 class OctonionMulFunction(torch.autograd.Function):
@@ -57,10 +74,10 @@ class OctonionMulFunction(torch.autograd.Function):
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         a, b = ctx.saved_tensors  # type: ignore[attr-defined]
-        C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+        C = structure_constants(a.device, a.dtype)
         grad_a = torch.einsum("...k, ijk, ...j -> ...i", grad_output, C, b)
         grad_b = torch.einsum("...k, ijk, ...i -> ...j", grad_output, C, a)
-        return grad_a, grad_b
+        return _reduce_to_shape(grad_a, a.shape), _reduce_to_shape(grad_b, b.shape)
 
 
 class OctonionExpFunction(torch.autograd.Function):
@@ -82,7 +99,7 @@ class OctonionExpFunction(torch.autograd.Function):
         o: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(o)
-        return octonion_exp(o)  # type: ignore[return-value]
+        return _exp_forward(o)
 
     @staticmethod
     def backward(
@@ -96,12 +113,14 @@ class OctonionExpFunction(torch.autograd.Function):
         v = o[..., 1:]  # [..., 7]
 
         r_sq = torch.sum(v**2, dim=-1, keepdim=True)  # [..., 1]
-        r = torch.sqrt(r_sq + 1e-30)  # [..., 1] (add tiny eps for sqrt grad stability)
+        # finfo.tiny keeps sqrt's backward finite at r = 0 (for double
+        # backward) with negligible bias in the exact branch.
+        r = torch.sqrt(r_sq + torch.finfo(o.dtype).tiny)  # [..., 1]
 
         ea = torch.exp(a)  # [..., 1]
 
-        eps = 1e-12
-        near_zero = r < eps
+        # Same series branches as jacobian_exp (see _jacobians.py)
+        near_zero = r < _series_threshold(o.dtype)
 
         safe_r = torch.where(near_zero, torch.ones_like(r), r)
         safe_r_cu = safe_r**3
@@ -109,10 +128,10 @@ class OctonionExpFunction(torch.autograd.Function):
         cos_r = torch.cos(r)
         sin_r = torch.sin(r)
 
-        sinc = torch.where(near_zero, torch.ones_like(r), sin_r / safe_r)
+        sinc = torch.where(near_zero, 1.0 - r_sq / 6.0, sin_r / safe_r)
         outer_coeff = torch.where(
             near_zero,
-            torch.full_like(r, -1.0 / 3.0),
+            -1.0 / 3.0 + r_sq / 30.0,
             (cos_r * safe_r - sin_r) / safe_r_cu,
         )
 
@@ -150,7 +169,7 @@ class OctonionLogFunction(torch.autograd.Function):
         o: torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(o)
-        return octonion_log(o)  # type: ignore[return-value]
+        return _log_forward(o)
 
     @staticmethod
     def backward(
@@ -163,31 +182,38 @@ class OctonionLogFunction(torch.autograd.Function):
         v = o[..., 1:]
 
         r_sq = torch.sum(v**2, dim=-1, keepdim=True)
-        r = torch.sqrt(r_sq + 1e-30)
+        tiny = torch.finfo(o.dtype).tiny
+        r = torch.sqrt(r_sq + tiny)
         q_sq = a**2 + r_sq
-        q = torch.sqrt(q_sq + 1e-30)
+        q = torch.sqrt(q_sq + tiny)
 
-        eps = 1e-12
-        near_zero_r = r < eps
+        # Same branch structure as jacobian_log (see _jacobians.py):
+        # series for a > 0 near the positive real axis, NaN on the negative
+        # real axis (r = 0, a < 0) where the derivative genuinely diverges.
+        series = (r < _series_threshold(o.dtype) * q) & (a > 0)
+        undefined = (r_sq == 0) & (a < 0)
 
-        safe_r = torch.where(near_zero_r, torch.ones_like(r), r)
+        safe_r = torch.where(r_sq == 0, torch.ones_like(r), r)
         safe_r_sq = safe_r**2
         safe_q_sq = q**2
+        safe_a = torch.where(a > 0, a, torch.ones_like(a))
 
-        ratio = torch.clamp(a / q, min=-1.0, max=1.0)
-        theta = torch.acos(ratio)
+        theta = torch.atan2(r, a)
 
         theta_over_r = torch.where(
-            near_zero_r,
-            1.0 / q,
+            series,
+            1.0 / safe_a - r_sq / (3.0 * safe_a**3),
             theta / safe_r,
         )
+        nan = torch.full_like(theta_over_r, float("nan"))
+        theta_over_r = torch.where(undefined, nan, theta_over_r)
 
         outer_coeff = torch.where(
-            near_zero_r,
-            -torch.ones_like(r) / (3.0 * q * safe_q_sq),
+            series,
+            -2.0 / (3.0 * safe_a**3),
             (a / safe_q_sq - theta_over_r) / safe_r_sq,
         )
+        outer_coeff = torch.where(undefined, nan, outer_coeff)
 
         # Compute J^T @ grad_output efficiently
         g0 = grad_output[..., 0:1]
@@ -316,7 +342,7 @@ class OctonionInnerProductFunction(torch.autograd.Function):
         go = grad_output.unsqueeze(-1)
         grad_a = go * b
         grad_b = go * a
-        return grad_a, grad_b
+        return _reduce_to_shape(grad_a, a.shape), _reduce_to_shape(grad_b, b.shape)
 
 
 class OctonionCrossProductFunction(torch.autograd.Function):
@@ -353,7 +379,7 @@ class OctonionCrossProductFunction(torch.autograd.Function):
         grad_output: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         a, b = ctx.saved_tensors  # type: ignore[attr-defined]
-        C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+        C = structure_constants(a.device, a.dtype)
 
         # grad_output has zero real part (output is pure imaginary), but
         # the grad_output from upstream may have arbitrary values.
@@ -387,4 +413,4 @@ class OctonionCrossProductFunction(torch.autograd.Function):
         grad_b = grad_b.clone()
         grad_b[..., 0] = 0.0
 
-        return grad_a, grad_b
+        return _reduce_to_shape(grad_a, a.shape), _reduce_to_shape(grad_b, b.shape)

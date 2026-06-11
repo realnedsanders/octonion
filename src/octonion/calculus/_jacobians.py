@@ -22,7 +22,8 @@ from __future__ import annotations
 
 import torch
 
-from octonion._multiplication import STRUCTURE_CONSTANTS
+from octonion._multiplication import structure_constants
+from octonion._operations import _series_threshold
 
 
 def jacobian_mul(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -44,7 +45,7 @@ def jacobian_mul(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tensor, torch.
     Returns:
         (J_a, J_b) each of shape [..., 8, 8].
     """
-    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+    C = structure_constants(a.device, a.dtype)
     # J_a[k, i] = sum_j C[i,j,k] * b[j]
     J_a = torch.einsum("ijk, ...j -> ...ki", C, b)
     # J_b[k, j] = sum_i C[i,j,k] * a[i]
@@ -75,10 +76,10 @@ def jacobian_exp(o: torch.Tensor) -> torch.Tensor:
             = ea * [ (cos(r)*r - sin(r)) * v[k-1]*v_i / r^3
                       + sin(r)/r * delta_{k-1,i} ]
 
-    Near-zero ||v|| handling via L'Hopital:
-      sin(r)/r -> 1
-      cos(r)/r -> 1/r (but multiplied by terms that vanish, so overall 0)
-      (cos(r)*r - sin(r))/r^3 -> -1/3 as r -> 0
+    Near-zero ||v|| handling via Taylor series (below sqrt(machine eps),
+    where the exact expressions lose digits to cancellation):
+      sin(r)/r = 1 - r^2/6 + O(r^4)
+      (cos(r)*r - sin(r))/r^3 = -1/3 + r^2/30 + O(r^4)
 
     Args:
         o: Octonion tensor [..., 8].
@@ -94,26 +95,25 @@ def jacobian_exp(o: torch.Tensor) -> torch.Tensor:
 
     ea = torch.exp(a)  # [..., 1]
 
-    # Threshold for near-zero handling
-    eps = 1e-12
-    near_zero = r < eps
+    # Below sqrt(machine eps) the exact expressions cancel catastrophically;
+    # the O(r^2) series are accurate to one ulp there.
+    near_zero = r < _series_threshold(o.dtype)
 
     # Safe denominators
     safe_r = torch.where(near_zero, torch.ones_like(r), r)
-    safe_r**2
     safe_r_cu = safe_r**3
 
     cos_r = torch.cos(r)  # [..., 1]
     sin_r = torch.sin(r)  # [..., 1]
 
-    # sinc = sin(r)/r, handling r -> 0 via sinc(0) = 1
-    sinc = torch.where(near_zero, torch.ones_like(r), sin_r / safe_r)
+    # sinc = sin(r)/r = 1 - r^2/6 + O(r^4)
+    sinc = torch.where(near_zero, 1.0 - r_sq / 6.0, sin_r / safe_r)
 
-    # coeff for the outer-product term: (cos(r)*r - sin(r)) / r^3
-    # At r=0: limit is -1/3
+    # coeff for the outer-product term:
+    # (cos(r)*r - sin(r)) / r^3 = -1/3 + r^2/30 + O(r^4)
     outer_coeff = torch.where(
         near_zero,
-        torch.full_like(r, -1.0 / 3.0),
+        -1.0 / 3.0 + r_sq / 30.0,
         (cos_r * safe_r - sin_r) / safe_r_cu,
     )
 
@@ -199,8 +199,18 @@ def jacobian_log(o: torch.Tensor) -> torch.Tensor:
             = v[k-1] * v_i * (a/q^2 - theta/r) / r^2
               + theta/r * delta_{k-1,i}
 
-    Near-zero ||v||: limit of theta/r -> 1/q (since theta ~ r/q for small r).
-    The outer coefficient (a/q^2 - theta/r)/r^2 needs careful limit analysis.
+    Near-zero ||v|| handling (below r < sqrt(machine eps) * q, where the
+    exact expressions cancel catastrophically), via Taylor series valid
+    for a > 0:
+      theta/r = 1/a - r^2/(3 a^3) + O(r^4)
+      (a/q^2 - theta/r)/r^2 = -2/(3 a^3) + O(r^2)
+
+    On the negative real axis (r = 0, a < 0) the logarithm itself is
+    undefined (no preferred imaginary direction) and theta/r diverges, so
+    the Jacobian rows/columns touching the imaginary block are NaN there.
+    Arbitrarily close to the axis (tiny non-zero r) the exact expressions
+    are accurate: theta = atan2(r, a) ~ pi is O(1) and no cancellation
+    occurs for a < 0.
 
     Args:
         o: Octonion tensor [..., 8]. Must have positive norm.
@@ -216,25 +226,33 @@ def jacobian_log(o: torch.Tensor) -> torch.Tensor:
     q_sq = a**2 + r_sq  # [..., 1]
     q = torch.sqrt(q_sq)  # [..., 1]
 
-    eps = 1e-12
-    near_zero_r = r < eps
-    near_zero_q = q < eps
-
-    safe_r = torch.where(near_zero_r, torch.ones_like(r), r)
+    near_zero_q = q < torch.finfo(o.dtype).tiny ** 0.5
     safe_q = torch.where(near_zero_q, torch.ones_like(q), q)
     safe_q_sq = safe_q**2
+
+    # Series branch: only valid (and only needed) for a > 0. For a < 0 the
+    # exact formulas are accurate at any r > 0; at exactly r = 0 the
+    # derivative genuinely diverges -> NaN.
+    series = (r < _series_threshold(o.dtype) * safe_q) & (a > 0)
+    undefined = (r == 0) & (a < 0)
+
+    safe_r = torch.where(r == 0, torch.ones_like(r), r)
     safe_r_sq = safe_r**2
+    safe_a = torch.where(a > 0, a, torch.ones_like(a))
 
-    # theta = arccos(a/q), clamped for numerical safety
-    ratio = torch.clamp(a / safe_q, min=-1.0, max=1.0)
-    theta = torch.acos(ratio)  # [..., 1]
+    # theta = atan2(r, a): accurate in all quadrants. (arccos(a/q) loses
+    # half the significant digits for small theta.)
+    theta = torch.atan2(r, a)  # [..., 1]
 
-    # theta_over_r = theta / r, with limit 1/q as r -> 0
+    # theta_over_r = theta / r, series 1/a - r^2/(3a^3) near the positive
+    # real axis, NaN on the negative real axis.
     theta_over_r = torch.where(
-        near_zero_r,
-        1.0 / safe_q,
+        series,
+        1.0 / safe_a - r_sq / (3.0 * safe_a**3),
         theta / safe_r,
     )
+    nan = torch.full_like(theta_over_r, float("nan"))
+    theta_over_r = torch.where(undefined, nan, theta_over_r)
 
     batch_shape = o.shape[:-1]
     J = torch.zeros(*batch_shape, 8, 8, dtype=o.dtype, device=o.device)
@@ -252,35 +270,21 @@ def jacobian_log(o: torch.Tensor) -> torch.Tensor:
     # d(theta/r * v_{k-1})/dv_i:
     #   = v_{k-1} * v_i * (a/q^2 - theta/r) / r^2  + theta/r * delta_{k-1,i}
     #
-    # The outer coefficient: (a/q^2 - theta/r) / r^2
-    # At r -> 0: theta ~ r/q - r^3/(3q^3) + ...
-    #   theta/r ~ 1/q - r^2/(3q^3) + ...
-    #   a/q^2 - theta/r ~ a/q^2 - 1/q + r^2/(3q^3) + ...
-    #                   = (a - q)/q^2 + r^2/(3q^3) + ...
-    #                   = (a - q)/q^2 + r^2/(3q^3) + ...
-    # Since q = sqrt(a^2 + r^2) ~ a + r^2/(2a) for small r (assuming a > 0):
-    #   a - q ~ -r^2/(2a)
-    #   (a - q)/q^2 ~ -r^2/(2a * a^2) = -r^2/(2a^3)
-    # So (a/q^2 - theta/r) / r^2 ~ (-1/(2a^3) + 1/(3a^3)) + ...
-    #                               = -1/(6a^3) + ...
-    # This limit depends on a. More generally, using Taylor expansion of theta:
-    #   theta = arccos(a/q), where a/q = cos(theta)
-    #   For small r: a/q ~ 1 - r^2/(2q^2), theta ~ r * sqrt(1 - (a/q)^2) / ... Hmm.
-    #
-    # A cleaner approach: at r=0, the function theta/r * v = 0 (since v=0).
-    # The Jacobian rows 1..7 at r=0: the imaginary output IS zero, and
-    # the derivative d(theta/r * v_k)/dv_i at v=0 = (theta/r)|_{r=0} * delta_{k,i}
-    # = (1/q) * delta_{k,i}. The outer product term vanishes since v=0.
-    #
-    # For the outer_coeff at general r:
+    # The outer coefficient (a/q^2 - theta/r) / r^2. Near the positive real
+    # axis (a > 0, r -> 0), with theta/r = 1/a - r^2/(3a^3) + O(r^4) and
+    # a/q^2 = 1/a - r^2/a^3 + O(r^4):
+    #   a/q^2 - theta/r = -r^2/a^3 + r^2/(3a^3) + O(r^4)
+    #                   = -(2/3) r^2/a^3 + O(r^4)
+    # so the limit is -2/(3 a^3). (The outer product v v^T vanishes as r^2
+    # there, but the correct limit keeps the Jacobian continuous.) On the
+    # negative real axis the coefficient diverges -> NaN, matching
+    # theta_over_r above.
     outer_coeff = torch.where(
-        near_zero_r,
-        # limit: -1/(3*q^3) is the leading correction; but at v=0 the v_outer
-        # product is 0 anyway, so the exact value here doesn't matter for correctness.
-        # We use a numerically stable expression.
-        -torch.ones_like(r) / (3.0 * safe_q * safe_q_sq),
+        series,
+        -2.0 / (3.0 * safe_a**3),
         (a / safe_q_sq - theta_over_r) / safe_r_sq,
     )
+    outer_coeff = torch.where(undefined, nan, outer_coeff)
 
     # v outer product
     v_outer = v.unsqueeze(-2) * v.unsqueeze(-1)  # [..., 7, 7]
@@ -420,7 +424,7 @@ def jacobian_cross_product(a: torch.Tensor, b: torch.Tensor) -> tuple[torch.Tens
     Returns:
         (J_a, J_b) each of shape [..., 8, 8].
     """
-    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+    C = structure_constants(a.device, a.dtype)
 
     # Construct pure imaginary versions: zero real part
     a_pure = torch.zeros_like(a)
