@@ -427,32 +427,32 @@ class TestOctonionGradcheck:
         result = octonion_gradcheck(OctonionMulFunction.apply, (a, b))
         assert result["passed"] is True
         assert "per_component_errors" in result
-        assert "wirtinger_passed" in result
-        assert result["wirtinger_passed"] is True
+        assert "ghr_passed" in result
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_exp(self) -> None:
         o = (torch.randn(8, dtype=torch.float64) * 0.5).requires_grad_(True)
         result = octonion_gradcheck(OctonionExpFunction.apply, (o,))
         assert result["passed"] is True
-        assert result["wirtinger_passed"] is True
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_log(self) -> None:
         o = (torch.randn(8, dtype=torch.float64) + 1.0).requires_grad_(True)
         result = octonion_gradcheck(OctonionLogFunction.apply, (o,))
         assert result["passed"] is True
-        assert result["wirtinger_passed"] is True
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_conjugate(self) -> None:
         o = torch.randn(8, dtype=torch.float64, requires_grad=True)
         result = octonion_gradcheck(OctonionConjugateFunction.apply, (o,))
         assert result["passed"] is True
-        assert result["wirtinger_passed"] is True
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_inverse(self) -> None:
         o = (torch.randn(8, dtype=torch.float64) + 1.0).requires_grad_(True)
         result = octonion_gradcheck(OctonionInverseFunction.apply, (o,))
         assert result["passed"] is True
-        assert result["wirtinger_passed"] is True
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_inner_product(self) -> None:
         a = torch.randn(8, dtype=torch.float64, requires_grad=True)
@@ -467,7 +467,7 @@ class TestOctonionGradcheck:
         b = torch.randn(8, dtype=torch.float64, requires_grad=True)
         result = octonion_gradcheck(OctonionCrossProductFunction.apply, (a, b))
         assert result["passed"] is True
-        assert result["wirtinger_passed"] is True
+        assert result["ghr_passed"] is True
 
     def test_gradcheck_reports_per_component_errors(self) -> None:
         """Verify that per-component errors are reported for each input."""

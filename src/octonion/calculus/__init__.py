@@ -25,8 +25,9 @@ formalism extended from quaternions to octonions, providing:
 
 The GHR formalism adds value over plain R^8 gradient computation by:
 1. Providing derivatives in octonionic form (structured, not 8 separate reals)
-2. Tracking both Wirtinger derivatives for non-real-valued intermediates
-3. Enabling product and chain rules that respect octonionic structure
+2. Decomposing any real Jacobian exactly into 8 octonionic GHR derivatives
+   over the involution basis sigma_a(x) = e_a x e_a^{-1} (see _ghr.py)
+3. Enabling chain rules that respect octonionic structure
 
 Usage::
 
@@ -67,9 +68,13 @@ from octonion.calculus._composition import (
     all_parenthesizations,
 )
 from octonion.calculus._ghr import (
+    INVOLUTION_SIGNS,
     conjugate_derivative,
+    ghr_conjugate_derivatives_from_jacobian,
     ghr_derivative,
-    wirtinger_from_jacobian,
+    ghr_derivatives_from_jacobian,
+    involute,
+    reconstruct_jacobian,
 )
 from octonion.calculus._gradcheck import octonion_gradcheck, octonion_gradgradcheck
 from octonion.calculus._inspector import inspect_tree, tree_to_string
@@ -90,10 +95,14 @@ from octonion.calculus._lr_scaling import (
 from octonion.calculus._numeric import numeric_jacobian, numeric_jacobian_2arg
 
 __all__ = [
-    # GHR Wirtinger formalism
+    # GHR formalism (involution-basis decomposition)
     "ghr_derivative",
     "conjugate_derivative",
-    "wirtinger_from_jacobian",
+    "ghr_derivatives_from_jacobian",
+    "ghr_conjugate_derivatives_from_jacobian",
+    "reconstruct_jacobian",
+    "involute",
+    "INVOLUTION_SIGNS",
     # Analytic Jacobians
     "jacobian_mul",
     "jacobian_exp",

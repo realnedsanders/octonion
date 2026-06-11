@@ -2,15 +2,16 @@
 
 Unlike torch.autograd.gradcheck, these utilities:
 1. Report per-component octonionic errors (e0, e1, ..., e7) for each input
-2. Validate both Wirtinger derivatives (df/do and df/do*) using
-   wirtinger_from_jacobian from _ghr.py
+2. Validate the GHR decomposition (the 8 involution-basis derivatives from
+   ghr_derivatives_from_jacobian in _ghr.py) and its round-trip
 3. Return structured dicts with detailed error information
 
 The checking approach:
   - Compute numeric 8x8 Jacobian via central differences
   - Compute autograd 8x8 Jacobian by backpropagating unit vectors
   - Compare element-wise for per-component reporting
-  - Convert both to Wirtinger pairs and compare
+  - Decompose both into GHR derivatives, compare, and verify the
+    reconstruction round-trips to the original Jacobian
 
 Convention: Baez 2002, mod-7 Fano plane basis.
 """
@@ -21,8 +22,9 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
+from torch.autograd.gradcheck import GradcheckError
 
-from octonion.calculus._ghr import wirtinger_from_jacobian
+from octonion.calculus._ghr import ghr_derivatives_from_jacobian, reconstruct_jacobian
 from octonion.calculus._numeric import numeric_jacobian
 
 
@@ -123,8 +125,8 @@ def octonion_gradcheck(
 
     Unlike torch.autograd.gradcheck, this:
     1. Reports per-component octonionic errors (e0..e7) for each input
-    2. Validates both Wirtinger derivatives (df/do and df/do*) by converting
-       the Jacobian to Wirtinger form and comparing
+    2. Validates the GHR involution-basis decomposition of the Jacobian
+       (autograd vs numeric, plus reconstruction round-trip)
     3. Returns a structured dict with detailed error information
 
     Args:
@@ -142,8 +144,8 @@ def octonion_gradcheck(
             - "max_rel_error" (float): Maximum relative error across all inputs
             - "per_component_errors" (list[list[float]]): Per-input, per-component
               max absolute errors
-            - "wirtinger_passed" (bool): Whether Wirtinger pair comparison passed
-            - "wirtinger_error" (float): Max error in Wirtinger pair comparison
+            - "ghr_passed" (bool): Whether GHR decomposition validation passed
+            - "ghr_error" (float): Max error in GHR decomposition validation
     """
     if isinstance(inputs, torch.Tensor):
         inputs = (inputs,)
@@ -152,8 +154,8 @@ def octonion_gradcheck(
     max_abs_error = 0.0
     max_rel_error = 0.0
     per_component_errors: list[list[float]] = []
-    wirtinger_passed = True
-    wirtinger_error = 0.0
+    ghr_passed = True
+    ghr_error = 0.0
 
     for idx, inp in enumerate(inputs):
         if not inp.requires_grad:
@@ -189,29 +191,33 @@ def octonion_gradcheck(
         if not close.all():
             all_passed = False
 
-        # Wirtinger derivative validation (only for 8x8 Jacobians)
+        # GHR derivative validation (only for 8x8 Jacobians): the autograd
+        # and numeric Jacobians must yield matching GHR decompositions, and
+        # the decomposition must round-trip back to the Jacobian exactly
+        # (df = sum_a (df/do^{sigma_a}) do^{sigma_a} — see _ghr.py).
         m = J_autograd.shape[0]
         if m == 8 and n == 8:
-            w_auto_do, w_auto_dostar = wirtinger_from_jacobian(J_autograd.unsqueeze(0))
-            w_num_do, w_num_dostar = wirtinger_from_jacobian(J_numeric.unsqueeze(0))
+            ghr_auto = ghr_derivatives_from_jacobian(J_autograd)
+            ghr_num = ghr_derivatives_from_jacobian(J_numeric)
 
-            w_err_do = torch.abs(w_auto_do - w_num_do).max().item()
-            w_err_dostar = torch.abs(w_auto_dostar - w_num_dostar).max().item()
-            w_err = max(w_err_do, w_err_dostar)
-            wirtinger_error = max(wirtinger_error, w_err)
+            w_err = torch.abs(ghr_auto - ghr_num).max().item()
+            roundtrip_err = torch.abs(reconstruct_jacobian(ghr_auto) - J_autograd).max().item()
+            ghr_error = max(ghr_error, w_err, roundtrip_err)
 
-            w_close_do = torch.allclose(w_auto_do, w_num_do, atol=atol, rtol=rtol)
-            w_close_dostar = torch.allclose(w_auto_dostar, w_num_dostar, atol=atol, rtol=rtol)
-            if not (w_close_do and w_close_dostar):
-                wirtinger_passed = False
+            ghr_close = torch.allclose(ghr_auto, ghr_num, atol=atol, rtol=rtol)
+            roundtrip_close = torch.allclose(
+                reconstruct_jacobian(ghr_auto), J_autograd, atol=atol, rtol=rtol
+            )
+            if not (ghr_close and roundtrip_close):
+                ghr_passed = False
 
     return {
         "passed": all_passed,
         "max_abs_error": max_abs_error,
         "max_rel_error": max_rel_error,
         "per_component_errors": per_component_errors,
-        "wirtinger_passed": wirtinger_passed,
-        "wirtinger_error": wirtinger_error,
+        "ghr_passed": ghr_passed,
+        "ghr_error": ghr_error,
     }
 
 
@@ -246,5 +252,8 @@ def octonion_gradgradcheck(
     try:
         passed = torch.autograd.gradgradcheck(fn, inputs, eps=eps, atol=atol, rtol=rtol)
         return {"passed": bool(passed)}
-    except Exception:
+    except GradcheckError:
+        # Genuine gradient mismatch -> failed check. Anything else (device
+        # mismatch, shape bugs, ...) propagates instead of masquerading as
+        # a gradient failure.
         return {"passed": False}
