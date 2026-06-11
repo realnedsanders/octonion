@@ -73,12 +73,18 @@ class FanoPlane:
 
     @property
     def automorphism_generators(self) -> list[dict[int, int]]:
-        """Generators of GL(3, F_2), the symmetry group of the Fano plane (order 168).
+        """Generators of the Frobenius subgroup F21 of the Fano plane symmetry group.
 
         These are permutations of {1,...,7} that preserve the incidence structure.
-        Returns two generators whose products generate the full group:
+        Returns two generators:
           - cycle_7: i -> i+1 mod 7 (with 1-indexing), order 7
           - quad_res: i -> 2i mod 7, order 3
+
+        Together they generate the Frobenius group F21 = Z7 ⋊ Z3 of order 21
+        (verified by brute-force closure), NOT the full automorphism group of
+        the Fano plane, which is PGL(3, F_2) ≅ GL(3, F_2) of order 168.
+        Generating the full group would require an additional involution that
+        is not expressible as an affine map i -> a*i + b mod 7.
         """
         # The cyclic permutation i -> (i mod 7) + 1 (order 7)
         cycle_7 = {i: (i % 7) + 1 for i in range(1, 8)}

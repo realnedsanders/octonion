@@ -349,3 +349,28 @@ class TestFanoPlaneStructure:
         cycle = gens[0]
         assert cycle[1] == 2
         assert cycle[7] == 1
+
+    def test_automorphism_generators_closure_is_f21(self) -> None:
+        """The two generators close to the Frobenius group F21 (order 21).
+
+        They generate Z7 ⋊ Z3, NOT the full Fano automorphism group
+        PGL(3, F_2) ≅ GL(3, F_2) of order 168.
+        """
+        gens = FANO_PLANE.automorphism_generators
+        perms = {tuple(g[i] for i in range(1, 8)) for g in gens}
+
+        def compose(p: tuple[int, ...], q: tuple[int, ...]) -> tuple[int, ...]:
+            return tuple(p[q[i] - 1] for i in range(7))
+
+        group = set(perms)
+        frontier = set(perms)
+        while frontier:
+            new = set()
+            for a in frontier:
+                for b in group:
+                    for c in (compose(a, b), compose(b, a)):
+                        if c not in group:
+                            new.add(c)
+            group |= new
+            frontier = new
+        assert len(group) == 21
