@@ -23,6 +23,20 @@ jobs:
       - name: Ruff format check
         run: ruff format --check src/
 
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CPU-only PyTorch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install package with dev dependencies
+        run: pip install ".[dev]"
+      - name: Mypy (strict) on the library
+        run: mypy src/
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -45,7 +59,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, typecheck, test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

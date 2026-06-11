@@ -75,10 +75,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/realnedsanders/octonion-computation-substrate"
-Documentation = "https://realnedsanders.github.io/octonion-computation-substrate"
-Repository = "https://github.com/realnedsanders/octonion-computation-substrate"
-Issues = "https://github.com/realnedsanders/octonion-computation-substrate/issues"
+Homepage = "https://github.com/realnedsanders/octonion"
+Documentation = "https://realnedsanders.github.io/octonion"
+Repository = "https://github.com/realnedsanders/octonion"
+Issues = "https://github.com/realnedsanders/octonion/issues"
 
 [tool.uv]
 # torch and triton are provided by the ROCm dev container (/opt/venv/).
@@ -110,6 +110,14 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 strict = true
 python_version = "3.12"
 exclude = ["docs/"]
+# Torch stubs vary across versions (container ships 2.9, CI installs latest),
+# so an ignore needed on one version is "unused" on another. Keep ignores
+# tolerant of that skew rather than churning them per torch release.
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = ["torchvision", "torchvision.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "geoopt"

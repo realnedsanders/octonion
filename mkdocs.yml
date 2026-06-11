@@ -1,8 +1,8 @@
 site_name: octonion
 site_description: PyTorch-native octonionic algebra for ML research
-site_url: https://realnedsanders.github.io/octonion-computation-substrate
-repo_url: https://github.com/realnedsanders/octonion-computation-substrate
-repo_name: realnedsanders/octonion-computation-substrate
+site_url: https://realnedsanders.github.io/octonion
+repo_url: https://github.com/realnedsanders/octonion
+repo_name: realnedsanders/octonion
 
 theme:
   name: material
