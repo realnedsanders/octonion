@@ -30,12 +30,42 @@ class TestOctonionConstruction:
         expected = torch.tensor([2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=torch.float64)
         assert torch.equal(o.imag, expected)
 
-    def test_getitem_returns_component(self) -> None:
-        """o[i] returns component i for i in 0..7."""
-        data = torch.tensor([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0], dtype=torch.float64)
-        o = Octonion(data)
-        for i in range(8):
-            assert o[i].item() == data[i].item()
+    def test_getitem_indexes_batch(self) -> None:
+        """batch[i] returns the i-th octonion of a batched Octonion."""
+        data = torch.arange(24, dtype=torch.float64).reshape(3, 8)
+        batch = Octonion(data)
+        for i in range(3):
+            item = batch[i]
+            assert isinstance(item, Octonion)
+            assert torch.equal(item.components, data[i])
+
+    def test_getitem_slice_returns_octonion(self) -> None:
+        """batch[i:j] returns an Octonion slice of the batch."""
+        data = torch.arange(40, dtype=torch.float64).reshape(5, 8)
+        batch = Octonion(data)
+        sliced = batch[1:4]
+        assert isinstance(sliced, Octonion)
+        assert sliced.components.shape == (3, 8)
+        assert torch.equal(sliced.components, data[1:4])
+
+    def test_getitem_unbatched_raises_indexerror(self) -> None:
+        """Indexing a single (unbatched) octonion raises IndexError."""
+        o = Octonion(torch.arange(8, dtype=torch.float64))
+        with pytest.raises(IndexError, match="components"):
+            _ = o[0]
+
+    def test_len_returns_batch_size(self) -> None:
+        """len(batch) returns the leading batch dimension size."""
+        batch = Octonion(torch.zeros(7, 8, dtype=torch.float64))
+        assert len(batch) == 7
+        multi = Octonion(torch.zeros(4, 3, 8, dtype=torch.float64))
+        assert len(multi) == 4
+
+    def test_len_unbatched_raises_typeerror(self) -> None:
+        """len() of an unbatched octonion raises TypeError."""
+        o = Octonion(torch.zeros(8, dtype=torch.float64))
+        with pytest.raises(TypeError, match="unbatched"):
+            len(o)
 
     def test_dim_returns_8(self) -> None:
         """Octonion.dim returns 8."""

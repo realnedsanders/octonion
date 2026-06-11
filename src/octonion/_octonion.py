@@ -26,6 +26,10 @@ class Octonion(NormedDivisionAlgebra):
 
     Shape: The last dimension must be 8. Batch dimensions are fully supported:
     a tensor of shape [B, 8] represents a batch of B octonions.
+
+    Indexing: For batched octonions, ``batch[i]`` returns the i-th octonion
+    (indexing batch dimensions), and ``len(batch)`` returns the leading batch
+    size. Component access uses ``.components[..., i]``, ``.real``, and ``.imag``.
     """
 
     __slots__ = ("_data",)
@@ -67,9 +71,44 @@ class Octonion(NormedDivisionAlgebra):
 
     # --- Indexing ---
 
-    def __getitem__(self, i: int) -> torch.Tensor:
-        """Return component e_i (i in 0..7)."""
-        return self._data[..., i]
+    def __getitem__(self, index: int | slice) -> Octonion:
+        """Index into the batch dimensions, returning an Octonion.
+
+        For a batched Octonion (underlying tensor shape [B, ..., 8]),
+        ``batch[i]`` returns the i-th octonion and ``batch[i:j]`` returns an
+        Octonion slice of the batch. The component dimension is never indexed.
+
+        Args:
+            index: Integer or slice into the leading batch dimension.
+
+        Returns:
+            Octonion wrapping the selected sub-tensor.
+
+        Raises:
+            IndexError: If this Octonion has no batch dimensions. Use
+                ``.components[..., i]``, ``.real``, or ``.imag`` for
+                component access.
+        """
+        if self._data.dim() == 1:
+            raise IndexError(
+                "Cannot index an unbatched Octonion: indexing selects octonions "
+                "from batch dimensions, not components. For component access use "
+                ".components[..., i], .real (e0), or .imag (e1..e7)."
+            )
+        return Octonion(self._data[index])
+
+    def __len__(self) -> int:
+        """Return the size of the leading batch dimension.
+
+        Raises:
+            TypeError: If this Octonion is unbatched (a single octonion).
+        """
+        if self._data.dim() == 1:
+            raise TypeError(
+                "len() of unbatched Octonion: a single octonion has no batch "
+                "dimension. Use .dim for the algebraic dimension (8)."
+            )
+        return self._data.shape[0]
 
     # --- Arithmetic operators ---
 
