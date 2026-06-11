@@ -39,7 +39,10 @@ from torch.utils.data import DataLoader, TensorDataset
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-DATA_DIR = os.environ.get("TRIE_DATA_DIR", "/workspace/.data")
+# Default to <repo root>/.data (the repo root is /workspace in the dev
+# container); override with TRIE_DATA_DIR.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.environ.get("TRIE_DATA_DIR", os.path.join(_REPO_ROOT, ".data"))
 os.makedirs(DATA_DIR, exist_ok=True)
 
 SEED = 42
