@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import torch
 
-from octonion._multiplication import STRUCTURE_CONSTANTS
+from octonion._multiplication import structure_constants
 from octonion._octonion import Octonion
 
 
@@ -30,7 +30,7 @@ def left_mul_matrix(a: Octonion) -> torch.Tensor:
     Returns:
         Tensor of shape [..., 8, 8] where result[..., k, j] = sum_i a_i * C[i, j, k].
     """
-    C = STRUCTURE_CONSTANTS.to(device=a.components.device, dtype=a.components.dtype)
+    C = structure_constants(a.components.device, a.components.dtype)
     # L[k, j] = sum_i a[i] * C[i, j, k]
     # So (L @ x)[k] = sum_j L[k,j] * x[j] = sum_{i,j} a[i] * C[i,j,k] * x[j] = (a*x)[k]
     return torch.einsum("...i, ijk -> ...kj", a.components, C)
@@ -50,7 +50,7 @@ def right_mul_matrix(b: Octonion) -> torch.Tensor:
     Returns:
         Tensor of shape [..., 8, 8] where result[..., k, i] = sum_j b_j * C[i, j, k].
     """
-    C = STRUCTURE_CONSTANTS.to(device=b.components.device, dtype=b.components.dtype)
+    C = structure_constants(b.components.device, b.components.dtype)
     # R[k, i] = sum_j b[j] * C[i, j, k]
     # So (R @ x)[k] = sum_i R[k,i] * x[i] = sum_{i,j} b[j] * C[i,j,k] * x[i] = (x*b)[k]
     return torch.einsum("...j, ijk -> ...ki", b.components, C)

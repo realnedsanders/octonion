@@ -39,7 +39,7 @@ from collections.abc import Callable
 
 import torch
 
-from octonion._multiplication import STRUCTURE_CONSTANTS
+from octonion._multiplication import structure_constants
 from octonion.calculus._numeric import numeric_jacobian
 
 
@@ -60,7 +60,7 @@ def cauchy_riemann_octonion(J: torch.Tensor) -> torch.Tensor:
         A value near zero indicates the function is octonionic-analytic at the
         evaluated point.
     """
-    C = STRUCTURE_CONSTANTS.to(device=J.device, dtype=J.dtype)
+    C = structure_constants(J.device, J.dtype)
 
     # Extract putative c from first column: c[k] = J[..., k, 0]
     c = J[..., :, 0]  # [..., 8]

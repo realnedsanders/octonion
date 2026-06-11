@@ -12,7 +12,7 @@ from __future__ import annotations
 import torch
 from torch.utils.data import TensorDataset
 
-from octonion._multiplication import STRUCTURE_CONSTANTS
+from octonion._multiplication import structure_constants
 
 
 def _seven_dim_cross_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -33,7 +33,7 @@ def _seven_dim_cross_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     a_oct = torch.cat([zero_real, a], dim=-1)  # [..., 8]
     b_oct = torch.cat([zero_real, b], dim=-1)  # [..., 8]
 
-    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=a.dtype)
+    C = structure_constants(a.device, a.dtype)
     product = torch.einsum("...i, ijk, ...j -> ...k", a_oct, C, b_oct)
 
     # Extract imaginary part (indices 1:8)

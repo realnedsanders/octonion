@@ -60,6 +60,27 @@ def _build_structure_constants() -> torch.Tensor:
 # Built once at import time (module-level constant)
 STRUCTURE_CONSTANTS = _build_structure_constants()
 
+# Per-(device, dtype) cache so hot paths don't pay a host-to-device copy on
+# every call. Keyed by string device repr to avoid issues with device aliases
+# (e.g. "cuda" vs "cuda:0") resolving to distinct keys after .to().
+_STRUCTURE_CONSTANTS_CACHE: dict[tuple[str, torch.dtype], torch.Tensor] = {}
+
+
+def structure_constants(device: torch.device, dtype: torch.dtype) -> torch.Tensor:
+    """Return the [8, 8, 8] structure constants on the given device/dtype.
+
+    Cached per (device, dtype): repeated calls (every octonion_mul, Jacobian,
+    or backward pass) reuse the same tensor instead of re-copying to device.
+    """
+    key = (str(device), dtype)
+    cached = _STRUCTURE_CONSTANTS_CACHE.get(key)
+    if cached is None:
+        cached = STRUCTURE_CONSTANTS.to(device=device, dtype=dtype)
+        _STRUCTURE_CONSTANTS_CACHE[key] = cached
+        # Also cache under the resolved device string ("cuda" vs "cuda:0")
+        _STRUCTURE_CONSTANTS_CACHE.setdefault((str(cached.device), dtype), cached)
+    return cached
+
 
 def octonion_mul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """Multiply two octonions represented as [..., 8] tensors.
@@ -79,5 +100,5 @@ def octonion_mul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     common_dtype = torch.promote_types(a.dtype, b.dtype)
     a = a.to(dtype=common_dtype)
     b = b.to(dtype=common_dtype)
-    C = STRUCTURE_CONSTANTS.to(device=a.device, dtype=common_dtype)
+    C = structure_constants(a.device, common_dtype)
     return torch.einsum("...i, ijk, ...j -> ...k", a, C, b)
