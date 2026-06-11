@@ -6,7 +6,8 @@ The ``octonion.calculus`` submodule provides GHR differentiation tools::
     from octonion.calculus import ghr_derivative, jacobian_mul, octonion_gradcheck
 """
 
-from octonion import baselines  # noqa: F401
+from typing import TYPE_CHECKING
+
 from octonion._cayley_dickson import cayley_dickson_mul
 from octonion._fano import FANO_PLANE, FanoPlane
 from octonion._linear import OctonionLinear
@@ -23,6 +24,24 @@ from octonion._operations import (
 from octonion._random import random_octonion, random_pure_octonion, random_unit_octonion
 from octonion._tower import Complex, Quaternion, Real
 from octonion._types import NormedDivisionAlgebra
+
+if TYPE_CHECKING:
+    from octonion import baselines as baselines
+
+
+def __getattr__(name: str) -> object:
+    """Lazily import heavy research subpackages.
+
+    ``baselines`` pulls in the full research stack (matplotlib, etc.), which
+    is an optional extra — eager import would break ``import octonion`` for
+    core-only installs.
+    """
+    if name == "baselines":
+        import octonion.baselines as baselines
+
+        return baselines
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     # Subpackages
